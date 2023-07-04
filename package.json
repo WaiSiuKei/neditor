@@ -1,0 +1,17 @@
+{
+  "name": "neditor",
+  "private": true,
+  "scripts": {
+    "dev": "cd ./packages/neditor && yarn run start",
+    "build": "cd ./packages/neditor && yarn run build"
+  },
+  "workspaces": [
+    "packages/*",
+    "third_party/*"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+  }
+}

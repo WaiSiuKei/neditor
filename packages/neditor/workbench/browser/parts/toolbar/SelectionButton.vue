@@ -1,0 +1,18 @@
+<template>
+  <IconButton :isActive="isActive" :onClick="onClick">
+    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30" fill="none">
+      <path stroke="currentColor" stroke-linejoin="round" stroke-width="2"
+            d="m17.072 28.713 4.245-1.935-4.415-9.701 8.037-.355L7.123 1.287v23.55l5.525-5.826 4.424 9.702Z"/>
+    </svg>
+  </IconButton>
+</template>
+<script lang="ts" setup>
+import IconButton from '../components/IconButton.vue';
+
+type Props = {
+  isActive: boolean;
+  onClick: () => void;
+};
+
+const props = defineProps<Props>();
+</script>

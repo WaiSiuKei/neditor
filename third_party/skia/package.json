@@ -1,0 +1,13 @@
+{
+  "name": "@neditor/skia",
+  "version": "0.0.1",
+  "main": "./src/index.ts",
+  "scripts": {
+    "start": "vite"
+  },
+  "devDependencies": {
+  },
+  "dependencies": {
+    "canvaskit-wasm": "0.30.0"
+  }
+}

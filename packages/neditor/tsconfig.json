@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "module": "ES2015",
+    "moduleResolution": "node",
+    "target": "ESNext",
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES6",
+      "ES2015",
+      "ESNext"
+    ],
+    "sourceMap": false,
+    "declaration": false,
+    "newLine": "LF",
+    "allowJs": true,
+    "experimentalDecorators": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "noImplicitAny": true,
+    "resolveJsonModule": true,
+    "downlevelIteration": true,
+    "isolatedModules": true,
+    "types": [
+      "@types/big.js"
+    ],
+    "strict": true,
+  },
+  "exclude": [
+    "postcss.config.js",
+    "tailwind.config.js"
+  ]
+}

@@ -1,0 +1,19 @@
+:root {
+  --color-surface-canvas: #eee;
+  --color-surface-panel: #fff;
+  --color-surface-subtle: #f3f3f3;
+  --color-divider: #eee;
+  --color-foreground-600: #333;
+  --color-foreground-500: #444;
+  --color-foreground-400: #555;
+  --color-foreground-300: #666;
+  --color-foreground-200: #888;
+  --color-foreground-100: #999;
+  --color-primary: #0044ff;
+  --color-white: #fff;
+  --shadow-popup: 0px 2px 4px rgba(0, 0, 0, 0.1),
+  0px 0px 0px 1px rgba(0, 0, 0, 0.05);
+
+  --colors-hover: #ececec;
+  --colors-selected: rgba(66, 133, 244, 1);
+}

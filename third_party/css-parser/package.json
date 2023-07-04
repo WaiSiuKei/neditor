@@ -1,0 +1,13 @@
+{
+  "name": "@neditor/css-parser",
+  "version": "0.0.1",
+  "scripts": {
+    "build": "rm -rf ./gen && antlr4ts -visitor -o ./gen inline.g4"
+  },
+  "devDependencies": {
+    "antlr4ts-cli": "0.5.0-alpha.4"
+  },
+  "dependencies": {
+    "antlr4ts": "0.5.0-alpha.4"
+  }
+}
