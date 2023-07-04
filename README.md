@@ -2,6 +2,11 @@
 
 a rich text editor on a port of Cobalt to JavaScript aimed at running in Canvas.
 
+## DEMO
+[waisiukei.github.io/neditor](https://waisiukei.github.io/neditor/)
+
+![preview](./preview.png)
+
 ## Goals
 
 - Produce a rich text editor in pure JavaScript that supports rendering to WebGL/Canvas contexts.
