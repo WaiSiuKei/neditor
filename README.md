@@ -42,7 +42,7 @@ yarn start
 ### Build
 
 ```shell script
-yarn start
+yarn build
 ```
 
 ## License
