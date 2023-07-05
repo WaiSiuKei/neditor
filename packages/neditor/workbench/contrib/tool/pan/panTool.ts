@@ -1,10 +1,11 @@
 import { ITool, IToolFactory, MouseButtonShortcut } from '@neditor/core/platform/tool/common/tool';
 import { ICanvas } from '@neditor/core/canvas/canvas/canvas';
-import { BaseTool, StrokeTool } from '@neditor/core/platform/tool/browser/baseTool';
-import { InputEventType, IMouseInputEvent, InputEvents, IWheelInputEvent } from '@neditor/core/platform/input/browser/event';
+import { StrokeTool } from '@neditor/core/platform/tool/browser/baseTool';
+import { InputEventType, InputEvents, } from '@neditor/core/platform/input/browser/event';
 import { Optional } from '@neditor/core/base/common/typescript';
 import { CursorStyle } from '@neditor/core/canvas/view/view';
 import { Buttons } from '../../../../base/browser/mouseEvent';
+import { DCHECK } from '../../../../base/check';
 
 class PanTool extends StrokeTool {
   startX: Optional<number>;
@@ -60,7 +61,15 @@ class PanTool extends StrokeTool {
     this.canvas.view.setCursor(CursorStyle.grab);
   }
   processEvent(event: InputEvents) {
-    // console.log(event.type);
+    if (event.type === InputEventType.WHEEL) {
+      const wheelEvent = event.asWheelInputEvent();
+      DCHECK(wheelEvent);
+      const { deltaX, deltaY } = wheelEvent;
+      const mx = this.canvas.view.mx;
+      this.fromTX = mx.tx;
+      this.fromTY = mx.ty;
+      this.canvas.view.translate(this.fromTX! + deltaX, this.fromTY! + deltaY);
+    }
   }
 }
 
