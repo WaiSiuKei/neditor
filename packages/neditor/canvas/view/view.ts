@@ -28,6 +28,7 @@ export interface ICanvasView extends IDisposable {
   document: Document;
   layoutManager: LayoutManager;
   onCursorMoved: Event<Optional<IPhysicalCursorPosition>>;
+  onCameraChagned: Event<void>;
   translate(translateX: number, translateY: number): void;
   setCursor(s: CursorStyle): void;
   drawCursor(position: Optional<IPhysicalCursorPosition>): void;

@@ -8,6 +8,8 @@ import './textCursor.css';
 import { Disposable } from '@neditor/core/base/common/lifecycle';
 import { Optional } from '@neditor/core/base/common/typescript';
 import { createFastDomNode, FastDomNode } from '@neditor/core/base/browser/fastDomNode';
+import { toTramsform } from '../../../../base/browser/css';
+import { ICanvasView } from '../../view';
 
 export interface IViewCursorRenderData {
   top: number;
@@ -26,7 +28,10 @@ export class TextCursor extends Disposable {
 
   private readonly _cursorFlatBlinkInterval: IntervalTimer;
 
-  constructor(container: HTMLElement) {
+  constructor(
+    container: HTMLElement,
+    private view: ICanvasView,
+  ) {
     super();
 
     // Create the dom node
@@ -39,7 +44,6 @@ export class TextCursor extends Disposable {
     this._cursorFlatBlinkInterval = new IntervalTimer();
 
     this._updateDomClassName();
-    // this._updateBlinking();
   }
 
   private _restartBlinking(): void {
@@ -68,6 +72,7 @@ export class TextCursor extends Disposable {
   public show(): void {
     if (!this._isVisible) {
       this._domNode.setVisibility('visible');
+      this._domNode.setTransform(toTramsform(this.view.mx));
       this._isVisible = true;
     }
   }

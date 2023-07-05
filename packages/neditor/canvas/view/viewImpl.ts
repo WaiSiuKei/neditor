@@ -5,6 +5,7 @@ import { Optional } from '@neditor/core/base/common/typescript';
 import { Selection } from '@neditor/core/engine/editing/selection';
 import { HitTestOptions, DOMHitTestResult, LayoutManager } from '@neditor/core/engine/layout/layout_manager';
 import { Emitter, Event } from '../../base/common/event';
+import { Matrix } from '../../base/common/geometry';
 import { IContextKeyService } from '../../platform/contextkey/common/contextkey';
 import { TInputEventType } from '../../platform/input/browser/event';
 import { HitTestLevel } from '../../platform/input/common/input';
@@ -29,6 +30,10 @@ export class View extends Disposable implements ICanvasView {
   private _overlay: Overlay;
   private _selection!: Selection;
   private _selectionOverlay!: SelectionOverlay;
+  mx = Matrix.Identity;
+
+  private _onCameraChagned = new Emitter<void>();
+  public onCameraChagned = this._onCameraChagned.event;
 
   private _onCursorMoved = new Emitter<Optional<IPhysicalCursorPosition>>();
   public onCursorMoved = this._onCursorMoved.event;
@@ -46,9 +51,9 @@ export class View extends Disposable implements ICanvasView {
 
     this.domNode.tabIndex = 1;
     let viewController = new ViewController(viewUserInputEvents);
-    this._canvas = this._register(new Canvas(this.domNode, viewModel));
+    this._canvas = this._register(new Canvas(this.domNode, this, viewModel));
     this._overlay = this._register(new Overlay(this.domNode));
-    this._textCursor = this._register(new TextCursor(this.domNode));
+    this._textCursor = this._register(new TextCursor(this.domNode, this));
     Event.once(this._canvas.onMounted)(() => {
       const selection = this.document.getSelection();
       this._register(new CursorUpdater(this, this.mvvm));
@@ -56,10 +61,6 @@ export class View extends Disposable implements ICanvasView {
       this._selectionOverlay = this._register(new SelectionOverlay(this.domNode, this._selection, this.layoutManager, mvvm));
       this._register(new PointerHandler(viewController, this._createPointerHandlerHelper()));
     });
-  }
-
-  get mx() {
-    return this._canvas.mx;
   }
 
   get document() {
@@ -73,7 +74,7 @@ export class View extends Disposable implements ICanvasView {
         return this.hitTest(posx, posy, opt);
       },
       getTransform: () => {
-        return this._canvas.mx;
+        return this.mx;
       },
       getHitTestLevel: (eventType: TInputEventType) => {
         return this._contextKeyService.getContextKeyValue<HitTestLevel>(CanvasContextKeys.hitTestLevel.key)!;
@@ -122,7 +123,9 @@ export class View extends Disposable implements ICanvasView {
   }
 
   translate(tx: number, ty: number) {
-    this._canvas.translate(tx, ty);
+    this.mx.tx = tx;
+    this.mx.ty = ty;
+    this._onCameraChagned.fire();
   }
 
   internal_disconnect() {

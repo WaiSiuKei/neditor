@@ -29,6 +29,7 @@ export class FastDomNode<T extends HTMLElement> {
 	private _layerHint: boolean = false;
 	private _contain: 'none' | 'strict' | 'content' | 'size' | 'layout' | 'style' | 'paint' = 'none';
 	private _boxShadow: string = '';
+  private _transform: string = '';
 
 	constructor(
 		public readonly domNode: T
@@ -232,6 +233,14 @@ export class FastDomNode<T extends HTMLElement> {
 		this._boxShadow = boxShadow;
 		this.domNode.style.boxShadow = boxShadow;
 	}
+
+  public setTransform(transform: string): void {
+    if (this._transform === transform) {
+      return;
+    }
+    this._transform = transform;
+    this.domNode.style.transform= transform;
+  }
 
 	public setContain(contain: 'none' | 'strict' | 'content' | 'size' | 'layout' | 'style' | 'paint'): void {
 		if (this._contain === contain) {

@@ -3,6 +3,7 @@ import { isFirefox, isEdge } from '@neditor/core/base/browser/browser';
 import * as browser from '@neditor/core/base/browser/browser';
 import { createFastDomNode, FastDomNode } from '@neditor/core/base/browser/fastDomNode';
 import { Disposable } from '@neditor/core/base/common/lifecycle';
+import { toTramsform } from '../../../../../base/browser/css';
 import { IKeyboardEvent } from '../../../../../base/browser/keyboardEvent';
 import { NOTREACHED } from '../../../../../base/common/notreached';
 import { OS } from '../../../../../base/common/platform';
@@ -42,7 +43,7 @@ export class TextAreaHandler extends Disposable {
 
   constructor(
     viewController: ViewController,
-    view: ICanvasView,
+    private view: ICanvasView,
   ) {
     super();
 
@@ -221,8 +222,11 @@ export class TextAreaHandler extends Disposable {
     ta.setLineHeight(this.textAreaSize);
     ta.setTop(textAreaTop);
     ta.setLeft(textAreaLeft);
+    const transform = toTramsform(this.view.mx);
+    ta.setTransform(transform);
     tac.setTop(textAreaTop);
     tac.setLeft(textAreaLeft);
+    tac.setTransform(transform);
 
     if (canUseZeroSizeTextarea) {
       ta.setWidth(0);

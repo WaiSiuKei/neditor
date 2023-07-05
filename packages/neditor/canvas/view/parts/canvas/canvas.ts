@@ -7,6 +7,7 @@ import { Matrix } from '@neditor/core/base/common/geometry';
 import {
   ICanvasViewModel,
 } from '../../../viewModel/viewModel';
+import { ICanvasView } from '../../view';
 import { mountAPP } from './app';
 import { Emitter } from '../../../../base/common/event';
 import { WebModule } from '../../../../engine/browser/web_module';
@@ -21,7 +22,6 @@ import { DCHECK } from '../../../../base/check';
 const kMainWebModuleZIndex = 1;
 
 export class Canvas extends Disposable {
-  mx = Matrix.Identity;
   private _onMounted = new Emitter<void>();
   get onMounted() {
     return this._onMounted.event;
@@ -38,6 +38,7 @@ export class Canvas extends Disposable {
 
   constructor(
     private container: HTMLElement,
+    private view: ICanvasView,
     private vm: ICanvasViewModel,
   ) {
     super();
@@ -69,7 +70,7 @@ export class Canvas extends Disposable {
       render_target,
       resource_provider,
       transformAccessor: () => {
-        return this.mx;
+        return this.view.mx;
       }
     });
 
@@ -77,6 +78,10 @@ export class Canvas extends Disposable {
     this.main_web_module_layer_ = this.render_tree_combiner_.CreateLayer(kMainWebModuleZIndex)!;
 
     this.init();
+
+    this._register(view.onCameraChagned(() => {
+      this.SubmitCurrentRenderTreeToRenderer();
+    }));
   }
 
   get layoutManager() {
@@ -161,12 +166,6 @@ export class Canvas extends Disposable {
   SetApplicationStartOrPreloadTimestamp(is_preload: boolean, timestamp: number) {
     DCHECK(this.web_module_);
     this.web_module_.SetApplicationStartOrPreloadTimestamp(is_preload, timestamp);
-  }
-
-  translate(tx: number, ty: number) {
-    this.mx.tx = tx;
-    this.mx.ty = ty;
-    this.SubmitCurrentRenderTreeToRenderer();
   }
 }
 

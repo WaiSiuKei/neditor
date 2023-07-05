@@ -68,7 +68,7 @@ class PanTool extends StrokeTool {
       const mx = this.canvas.view.mx;
       this.fromTX = mx.tx;
       this.fromTY = mx.ty;
-      this.canvas.view.translate(this.fromTX! + deltaX, this.fromTY! + deltaY);
+      this.canvas.view.translate(this.fromTX! + deltaX / 2, this.fromTY! + deltaY / 2);
     }
   }
 }
