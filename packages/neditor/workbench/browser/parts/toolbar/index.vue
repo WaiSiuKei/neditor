@@ -5,8 +5,8 @@
         <SelectionButton :is-active="states[HoverToolID]" :on-click="handlers[HoverToolID]"/>
         <PanButton :is-active="states[PanToolID]" :on-click="handlers[PanToolID]"/>
         <PencilButton :is-active="states[BrushToolID]" :on-click="handlers[BrushToolID]"/>
-        <EraserButton :is-active="states[EraserToolID]" :on-click="handlers[EraserToolID]"/>
-        <RectangleButton :is-active="states[RectToolID]" :on-click="handlers[RectToolID]"/>
+<!--        <EraserButton :is-active="states[EraserToolID]" :on-click="handlers[EraserToolID]"/>-->
+<!--        <RectangleButton :is-active="states[RectToolID]" :on-click="handlers[RectToolID]"/>-->
         <TextButton :is-active="states[TextToolID]" :on-click="handlers[TextToolID]"/>
       </div>
       <div class="seperator"></div>
