@@ -1,16 +1,11 @@
 import { Optional } from '@neditor/core/base/common/typescript';
 import { ICanvas } from '@neditor/core/canvas/canvas/canvas';
+import { DCHECK } from '../../../base/check';
 import { KeyCode } from '../../../base/common/keyCodes';
 import { NOTIMPLEMENTED, NOTREACHED } from '../../../base/common/notreached';
 import { assertValue } from '../../../base/common/type';
 import { DLOG, INFO, WARNING } from '../../../base/logging';
-import {
-  InputEventType,
-  IKeyboardInputEvent,
-  IMouseInputEvent,
-  InputEvents,
-  IWheelInputEvent
-} from '../../input/browser/event';
+import { IKeyboardInputEvent, IMouseInputEvent, InputEvents, InputEventType, IWheelInputEvent } from '../../input/browser/event';
 import { ActionState, ITool, IToolController, IToolFactory, ToolInvocationPhase } from '../common/tool';
 
 function DEBUG_LOG(...args: any[]) {
@@ -90,6 +85,7 @@ export class ToolController implements IToolController {
 
   private _beginTool(event: InputEvents) {
     this._forwardEvent(ActionState.BEGIN, event);
+    this._activeTool!.phase = ToolInvocationPhase.runningPrimaryAction;
   }
 
   private _continueTool(event: InputEvents) {
@@ -293,7 +289,12 @@ export class ToolController implements IToolController {
       // DEBUG_LOG('mousemove')
 
       if (this._activeTool) {
-        return this.processEvent(event);
+        if (this._activeTool.isStrokeTool() && this._activeTool.phase === ToolInvocationPhase.runningPrimaryAction) {
+          this._continueTool(event);
+          return true;
+        } else {
+          return this.processEvent(event);
+        }
       }
 
       return this._tryRunCursorTool(event);
@@ -331,12 +332,15 @@ export class ToolController implements IToolController {
     if (canBeTerminated) {
       // first reset running shortcut to avoid infinite recursion via end()
       const lifecycleEnded = shortcut.once;
+      DCHECK(this._activeTool);
       if (lifecycleEnded) {
+        this._activeTool.phase === ToolInvocationPhase.noop;
         DEBUG_LOG('Ending running shortcut at event', event);
         this.setActiveTool(undefined);
       } else {
         if (shortcut.isMouseShortcut()) {
           this._endTool(event);
+          this._activeTool.phase = ToolInvocationPhase.activated;
         }
       }
     }

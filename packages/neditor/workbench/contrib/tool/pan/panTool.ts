@@ -4,7 +4,7 @@ import { BaseTool, StrokeTool } from '@neditor/core/platform/tool/browser/baseTo
 import { InputEventType, IMouseInputEvent, InputEvents, IWheelInputEvent } from '@neditor/core/platform/input/browser/event';
 import { Optional } from '@neditor/core/base/common/typescript';
 import { CursorStyle } from '@neditor/core/canvas/view/view';
-import { Buttons } from "../../../../base/browser/mouseEvent";
+import { Buttons } from '../../../../base/browser/mouseEvent';
 
 class PanTool extends StrokeTool {
   startX: Optional<number>;
@@ -17,13 +17,11 @@ class PanTool extends StrokeTool {
   }
   activate() {
     super.activate();
-    console.log('panTool::activate');
-    this.useCursor(CursorStyle.grab)
+    this.useCursor(CursorStyle.grab);
   }
 
   activatePrimaryAction() {
-    console.log('panTool::activatePrimaryAction');
-    this.useCursor(CursorStyle.grabbing)
+    this.useCursor(CursorStyle.grabbing);
     this.startX = undefined;
     this.startY = undefined;
     this.fromTX = undefined;
@@ -36,11 +34,9 @@ class PanTool extends StrokeTool {
 
   deactivate() {
     super.deactivate();
-    console.log('panTool::deactivate');
   }
 
   beginPrimaryAction(event: InputEvents) {
-    console.log('panTool::beginPrimaryAction');
     const e = event.asMouseInputEvent();
     if (e && e.type === InputEventType.MOUSE_DOWN) {
       this.canvas.view.setCursor(CursorStyle.grabbing);
@@ -61,7 +57,6 @@ class PanTool extends StrokeTool {
     }
   }
   endPrimaryAction(event: InputEvents) {
-    console.log('panTool::endPrimaryAction');
     this.canvas.view.setCursor(CursorStyle.grab);
   }
   processEvent(event: InputEvents) {
@@ -77,5 +72,5 @@ export class PanToolFactory implements IToolFactory {
   createTool(canvas: ICanvas): ITool {
     return new PanTool(canvas, CursorStyle.grab);
   }
-  shortcut = new MouseButtonShortcut(Buttons.Primary)
+  shortcut = new MouseButtonShortcut(Buttons.Primary);
 }

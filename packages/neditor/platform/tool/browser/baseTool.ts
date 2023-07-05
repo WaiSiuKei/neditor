@@ -23,13 +23,6 @@ export abstract class BaseTool extends Disposable implements ITool {
   }
 
   set phase(val: ToolInvocationPhase) {
-    if (val && val < this._phase) {
-      throw new Error('Lifecycle cannot go backwards');
-    }
-    if (val && val - this._phase !== 1) {
-      throw new Error('');
-    }
-
     this._phase = val;
   }
 
