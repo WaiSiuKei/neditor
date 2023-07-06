@@ -17,7 +17,7 @@ const a: IDocumentModel = {
         marginLeft: '50px',
         marginTop: '100px',
         position: 'absolute',
-        backgroundColor: 'yellow'
+        backgroundColor: 'white'
       },
       from: RootNodeId,
       order: '0.5',
@@ -64,7 +64,7 @@ const a: IDocumentModel = {
         marginLeft: '550px',
         marginTop: '100px',
         position: 'absolute',
-        backgroundColor: 'yellow'
+        backgroundColor: 'white'
       },
       from: RootNodeId,
       order: '0.75',
