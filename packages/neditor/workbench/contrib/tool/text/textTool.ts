@@ -59,6 +59,7 @@ export class TextTool extends BaseTool {
   deactivate() {
     this.canvas.view.setHitTestLevel(HitTestLevel.BlockBox);
     this._disposeEditor();
+    this.canvas.view.focus();
   }
 
   processEvent(event: InputEvents) {

@@ -2,7 +2,7 @@ import './textAreaHandler.css';
 import { isFirefox, isEdge } from '@neditor/core/base/browser/browser';
 import * as browser from '@neditor/core/base/browser/browser';
 import { createFastDomNode, FastDomNode } from '@neditor/core/base/browser/fastDomNode';
-import { Disposable } from '@neditor/core/base/common/lifecycle';
+import { Disposable, toDisposable } from '@neditor/core/base/common/lifecycle';
 import { toTramsform } from '../../../../../base/browser/css';
 import { IKeyboardEvent } from '../../../../../base/browser/keyboardEvent';
 import { NOTREACHED } from '../../../../../base/common/notreached';
@@ -58,9 +58,11 @@ export class TextAreaHandler extends Disposable {
     this.textArea.setAttribute('autocomplete', 'off');
     this.textArea.setAttribute('spellcheck', 'false');
     this.textArea.setAttribute('tabindex', '1');
+    this._register(toDisposable(() => this.textArea.domNode.remove()));
 
     this.textAreaCover = createFastDomNode(document.createElement('div'));
     this.textAreaCover.setPosition('absolute');
+    this._register(toDisposable(() => this.textAreaCover.domNode.remove()));
 
     this._register(view.onCursorMoved((pos) => this.handleCursorMoved(pos)));
 
