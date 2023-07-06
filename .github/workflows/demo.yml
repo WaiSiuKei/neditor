@@ -1,5 +1,4 @@
-name: Deploy Demo
-uses: JamesIves/github-pages-deploy-action@v4.4.2
+name: Deploy to GitHub Pages
 
 on:
   push:
@@ -14,15 +13,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: Setup
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'yarn'
+
+      - name: Install
+        run: yarn
+
       - name: Build
-        run: |
-          yarn
-          yarn build
+        run: yarn build
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
