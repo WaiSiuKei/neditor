@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy Demo
 uses: JamesIves/github-pages-deploy-action@v4.4.2
 
 on:
