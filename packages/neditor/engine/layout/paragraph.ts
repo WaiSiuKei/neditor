@@ -29,7 +29,7 @@ import {
   ubidi_setPara, UBiDiLevel,
   UnicodeString,
   getValue, _free,
-  scoped_ubidi_openSized
+  ubidi_close
 } from '@neditor/icu';
 import { BreakIteratorDone } from '@neditor/icu/src/icu-c';
 
@@ -715,7 +715,10 @@ export class Paragraph implements IDisposable {
 
     // Create a scoped ubidi ptr when opening the text. It guarantees that the
     // UBiDi object will be closed when it goes out of scope.
-    scoped_ubidi_openSized(this.unicode_text_.length(), 0)((ubidi) => {
+    const len = this.unicode_text_.length();
+    if (len === 0) return;
+    const ubidi = ubidi_openSized(len, 0);
+    try {
       if (!ubidi) {
         return;
       }
@@ -729,6 +732,7 @@ export class Paragraph implements IDisposable {
       }
 
       let runs = ubidi_countRuns(ubidi);
+      DCHECK(runs);
       if (runs === -1) {
         return;
       }
@@ -736,7 +740,7 @@ export class Paragraph implements IDisposable {
       this.level_runs_.length = 0;
 
       let run_start_position = 0;
-      // int 是4字节
+      // int是4字节
       let run_end_position_ptr = _malloc(4);
       let run_ubidi_level_ptr = _malloc(4);
 
@@ -744,15 +748,21 @@ export class Paragraph implements IDisposable {
       let text_end_position = this.GetTextEndPosition();
       while (run_start_position < text_end_position) {
         count++;
-        if (count > 3) throw new Error;
         ubidi_getLogicalRun(ubidi, run_start_position, run_end_position_ptr, run_ubidi_level_ptr);
-        const run_ubidi_level = getValue(run_ubidi_level_ptr, 'i32');
+        let run_ubidi_level = getValue(run_ubidi_level_ptr, 'i32');
+        let run_end_position = getValue(run_end_position_ptr, 'i32');
+        // run_ubidi_level 有时是负数，奇怪
+        if (run_ubidi_level < 0 && run_end_position === text_end_position) {
+          run_ubidi_level = 0;
+        }
         this.level_runs_.push(new BidiLevelRun(run_start_position, (run_ubidi_level)));
-        run_start_position = getValue(run_end_position_ptr, 'i32');
+        run_start_position = run_end_position;
       }
       _free(run_end_position_ptr);
       _free(run_ubidi_level_ptr);
-    });
+    } finally {
+      ubidi_close(ubidi);
+    }
   }
 
   private GetRunIndex(position: number): number {
