@@ -1,4 +1,6 @@
+import { Optional } from '../../base/common/typescript';
 import { Vector2dF } from '../math/vector2d_f';
+import { Background } from './background';
 import { GlyphBuffer } from './glyph_buffer';
 import { ColorRGBA } from './color_rgba';
 import { Shadow } from './shadow';
@@ -19,10 +21,19 @@ export class TextNodeBuilder {
   // back-to-front order, so the last shadow will be on the bottom.
   shadows: Shadow[] = [];
 
-  constructor(offset: Vector2dF, glyph_buffer: GlyphBuffer, color: ColorRGBA) {
+  // The background color of the text.
+  background: Background | undefined
+
+  constructor(
+    offset: Vector2dF,
+    glyph_buffer: GlyphBuffer,
+    color: ColorRGBA,
+    background?: Optional<Background>
+  ) {
     this.offset = offset;
     this.glyph_buffer = glyph_buffer;
     this.color = color;
+    this.background = background;
   }
 }
 
@@ -35,7 +46,7 @@ export class TextNodeBuilder {
 export class TextNode extends Node {
   data_: TextNodeBuilder;
   static ID = 1;
-  id = TextNode.ID ++
+  id = TextNode.ID++;
 
   constructor(builder: TextNodeBuilder)
   constructor(offset: Vector2dF, glyph_buffer: GlyphBuffer, color: ColorRGBA)

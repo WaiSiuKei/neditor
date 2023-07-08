@@ -96,8 +96,7 @@ export class Canvas extends Disposable {
     return new ViewportSize(1280, 720);
   }
 
-  private QueueOnRenderTreeProduced(
-    layout_results: LayoutResults) {
+  private QueueOnRenderTreeProduced(layout_results: LayoutResults) {
     TRACE_EVENT0('cobalt::browser', 'BrowserModule::QueueOnRenderTreeProduced()');
     this.OnRenderTreeProduced(layout_results);
     this.ProcessRenderTreeSubmissionQueue();

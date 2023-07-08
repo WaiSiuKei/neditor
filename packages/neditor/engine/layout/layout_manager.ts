@@ -1,4 +1,3 @@
-import { runWhenIdle } from '../../base/common/async';
 import { Emitter } from '../../base/common/event';
 import { Optional } from '../../base/common/typescript';
 import type { OnRenderTreeProducedCallback } from '../browser/web_module';
@@ -9,6 +8,7 @@ import type { Node } from '../render_tree/node';
 import { Time, TimeDelta } from '@neditor/core/base/time/time';
 import { Paragraph } from './paragraph';
 import { ITextBoxRTreeItem, RTree } from './r_tree';
+import { SelectionBackground } from './selection_background';
 import { UsedStyleProvider } from './used_style';
 import { DocumentObserver } from '../dom/document';
 import { castInt } from '@neditor/core/base/common/number';
@@ -30,6 +30,7 @@ import { assertIsDefined } from '@neditor/core/base/common/type';
 import { LayoutUnit } from './layout_unit';
 import { RectLayoutUnit } from './rect_layout_unit';
 import { HitTestLevel } from '../../platform/input/common/input';
+import { Selection } from '../editing/selection';
 import RBush from 'rbush';
 
 export type OnLayoutCallback = Function
@@ -79,6 +80,7 @@ export class LayoutManager implements DocumentObserver {
   initial_containing_block_?: BlockLevelBlockContainerBox;
   private _onDidLayout = new Emitter<void>();
   public onDidLayout = this._onDidLayout.event;
+  private _selectionBackground: SelectionBackground;
 
   textRTree: RTree<ITextBoxRTreeItem>;
   constructor(
@@ -117,6 +119,7 @@ export class LayoutManager implements DocumentObserver {
     this.character_break_iterator_ = BreakIterator.createCharacterInstance(this.locale_);
 
     this.textRTree = new RBush<ITextBoxRTreeItem>();
+    this._selectionBackground = new SelectionBackground(this);
   }
 
   // From dom::DocumentObserver.
@@ -248,11 +251,12 @@ export class LayoutManager implements DocumentObserver {
       Reflect.set(window, 'dumpLayout', () => {
         console.log(this.initial_containing_block_?.DumpWithIndent());
       });
+      this._updateSelection();
       if (!display_none_prevents_render) {
-        let render_tree_root = GenerateRenderTreeFromBoxTree(this.used_style_provider_,
+        let render_tree_root = GenerateRenderTreeFromBoxTree(
+          this.used_style_provider_,
           // layout_stat_tracker_,
           this.initial_containing_block_!);
-        let run_on_render_tree_produced_callback = true;
         this.produced_render_tree_ = true;
 
         let current_time = document.timeline().current_time()!;
@@ -262,6 +266,7 @@ export class LayoutManager implements DocumentObserver {
         this.is_render_tree_pending_ = false;
         Reflect.set(window, 'dumpRender', () => {
           console.log(DumpRenderTreeToString(render_tree_root));
+          console.log(render_tree_root);
         });
       }
 
@@ -269,6 +274,32 @@ export class LayoutManager implements DocumentObserver {
     }
 
     this.on_layout_callback_();
+  }
+
+  DoProduceRenderTree() {
+    let document = this.window_.document();
+
+    let display_none_prevents_render = !this.produced_render_tree_ && !document.html()!.IsDisplayed();
+    Reflect.set(window, 'dumpLayout', () => {
+      console.log(this.initial_containing_block_?.DumpWithIndent());
+    });
+    if (!display_none_prevents_render) {
+      let render_tree_root = GenerateRenderTreeFromBoxTree(
+        this.used_style_provider_,
+        // layout_stat_tracker_,
+        this.initial_containing_block_!);
+      this.produced_render_tree_ = true;
+
+      let current_time = document.timeline().current_time()!;
+      DCHECK(current_time);
+      this.on_render_tree_produced_callback_(new LayoutResults(render_tree_root, TimeDelta.FromMilliseconds(current_time), noop));
+
+      this.is_render_tree_pending_ = false;
+      Reflect.set(window, 'dumpRender', () => {
+        console.log(DumpRenderTreeToString(render_tree_root));
+        console.log(render_tree_root);
+      });
+    }
   }
 
   hitTestDOM(posx: number, posy: number, opt: HitTestOptions): DOMHitTestResult[] {
@@ -340,6 +371,16 @@ export class LayoutManager implements DocumentObserver {
     const box = node.GetLayoutObject().box;
     if (!box.isTextBox()) return undefined;
     return box.paragraph;
+  }
+
+  onSelectionChanged(selection: Selection) {
+    this._updateSelection();
+  }
+
+  private _updateSelection() {
+    const selection = this.window_.document().getSelection();
+    this._selectionBackground.update(selection);
+    this.DoProduceRenderTree();
   }
 }
 

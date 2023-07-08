@@ -1228,8 +1228,7 @@ export abstract class Box extends Disposable {
     // Furthermore, descendants of the element will be visible if they have
     // 'visibility: visible'.
     //   https://www.w3.org/TR/CSS21/visufx.html#propdef-visibility
-    let box_is_visible =
-      this.computed_style()!.visibility == KeywordValue.GetVisible();
+    let box_is_visible = this.computed_style()!.visibility == KeywordValue.GetVisible();
     if (box_is_visible) {
       let background_image_result =
         this.RenderAndAnimateBackgroundImage(padding_rounded_corners);
@@ -2592,8 +2591,7 @@ function SetupBackgroundColorNodeFromStyle(
   style: ComputedStyleData,
   rect_node_builder: RectNodeBuilder) {
   rect_node_builder.background_brush =
-    new SolidColorBrush(
-      GetUsedColor(style.background_color));
+    new SolidColorBrush(GetUsedColor(style.background_color));
 
   if (rounded_corners) {
     rect_node_builder.rounded_corners = new RoundedCorners(rounded_corners);

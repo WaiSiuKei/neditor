@@ -1,18 +1,13 @@
-import { Disposable, toDisposable } from '@neditor/core/base/common/lifecycle';
-import { Selection, SelectionType } from '@neditor/core/engine/editing/selection';
-import { NOTREACHED } from '@neditor/core/base/common/notreached';
-import { createApp, reactive } from 'vue';
-import { DCHECK } from '../../../../base/check';
-import { DCHECK_EQ } from '../../../../base/check_op';
-import { HTMLDivElement } from '../../../../engine/dom/html_div_element';
-import { HTMLParagraphElement } from '../../../../engine/dom/html_paragraph_element';
-import { NodeTraversal } from '../../../../engine/dom/node_traversal';
-import { Text } from '../../../../engine/dom/text';
-import type { LayoutManager } from '../../../../engine/layout/layout_manager';
-import { IMVVMStatus } from '../../../canvas/canvas';
-import SelectionAPP from './selectionRects.vue';
-import { Rect } from '@neditor/core/base/common/geometry';
-import { TextBox } from '@neditor/core/engine/layout/text_box';
+import { DCHECK } from '../../base/check';
+import { DCHECK_EQ } from '../../base/check_op';
+import { NOTREACHED } from '../../base/common/notreached';
+import { HTMLDivElement } from '../dom/html_div_element';
+import { HTMLParagraphElement } from '../dom/html_paragraph_element';
+import { NodeTraversal } from '../dom/node_traversal';
+import { Text } from '../dom/text';
+import { Selection, SelectionType } from '../editing/selection';
+import { LayoutManager } from './layout_manager';
+import { TextBox } from './text_box';
 
 function offsetInBox(textBox: TextBox, offset: number): boolean {
   const textStartPosition = textBox.GetTextStartPosition();
@@ -20,59 +15,46 @@ function offsetInBox(textBox: TextBox, offset: number): boolean {
   return textStartPosition <= offset && textEndPosition >= offset;
 }
 
-export class SelectionOverlay extends Disposable {
-  rects: Array<Rect>;
+export class SelectionBackground {
+  selected = new Set<TextBox>();
   constructor(
-    private container: HTMLElement,
-    private selection: Selection,
     private layoutManager: LayoutManager,
-    private mvvm: IMVVMStatus,
   ) {
-    super();
-
-    this._register(selection.onDidChange(async () => {
-      await mvvm.maybeWaitForReLayout();
-      this.update();
-    }));
-    let div = document.createElement('div');
-    container.appendChild(div);
-    Object.assign(div.style, {
-      pointerEvents: 'none'
-    } as Partial<CSSStyleDeclaration>);
-    this.rects = reactive([]);
-    const app = createApp(SelectionAPP, { rects: this.rects });
-    app.mount(div);
-    this._register(toDisposable(() => app.unmount()));
   }
 
-  update() {
-    switch (this.selection.type) {
+  update(selection: Selection) {
+    this.clearSelectionBackground();
+    switch (selection.type) {
       case SelectionType.None:
       case SelectionType.Caret:
-        this.rects.length = 0;
         break;
       case SelectionType.Range:
-        this.doUpdateSelection();
+        this.doUpdateSelection(selection);
         break;
     }
   }
 
-  doUpdateSelection() {
-    this.rects.length = 0;
-    const { anchorNode, focusNode, anchorOffset, focusOffset } = this.selection;
+  private clearSelectionBackground() {
+    for (let box of this.selected) {
+      box.unsetSelection();
+    }
+  }
+
+  private doUpdateSelection(selection: Selection) {
+    const { anchorNode, focusNode, anchorOffset, focusOffset } = selection;
     DCHECK(anchorNode);
     DCHECK(focusNode);
     DCHECK(anchorOffset);
     DCHECK(focusOffset);
     if (anchorNode.IsText()) {
-      return this.doUpdateSelectionInsideText();
+      return this.doUpdateSelectionInsideText(selection);
     } else {
-      return this.doUpdateSelectionInsideElement();
+      return this.doUpdateSelectionInsideElement(selection);
     }
   }
 
-  doUpdateSelectionInsideText() {
-    const { anchorNode, focusNode, anchorOffset, focusOffset } = this.selection;
+  doUpdateSelectionInsideText(selection: Selection) {
+    const { anchorNode, focusNode, anchorOffset, focusOffset } = selection;
     DCHECK(anchorNode);
     DCHECK(focusNode);
     DCHECK(anchorOffset);
@@ -86,8 +68,8 @@ export class SelectionOverlay extends Disposable {
     }
   }
 
-  doUpdateSelectionInsideElement() {
-    const { anchorNode, focusNode, anchorOffset, focusOffset } = this.selection;
+  doUpdateSelectionInsideElement(selection: Selection) {
+    const { anchorNode, focusNode, anchorOffset, focusOffset } = selection;
     DCHECK(anchorNode);
     DCHECK(focusNode);
     DCHECK(anchorOffset);
@@ -120,7 +102,8 @@ export class SelectionOverlay extends Disposable {
         const textBox = item.box;
         const textStartPosition = textBox.GetTextStartPosition();
         const textEndPosition = textBox.GetTextEndPosition();
-        this.rects.push(textBox.RectOfSlice(textStartPosition, textEndPosition));
+        textBox.setSelection(textStartPosition, textEndPosition);
+        this.selected.add(textBox);
       }
     }
   }
@@ -152,7 +135,8 @@ export class SelectionOverlay extends Disposable {
           const textStartPosition = textBox.GetTextStartPosition();
           const textEndPosition = textBox.GetTextEndPosition();
           if (textEndPosition > totalMinOffset) {
-            this.rects.push(textBox.RectOfSlice(Math.max(textStartPosition, totalMinOffset), textEndPosition));
+            textBox.setSelection(Math.max(textStartPosition, totalMinOffset), textEndPosition);
+            this.selected.add(textBox);
           }
         }
       } else if (i === maxParagraphIndex) {
@@ -161,7 +145,8 @@ export class SelectionOverlay extends Disposable {
           const textStartPosition = textBox.GetTextStartPosition();
           const textEndPosition = textBox.GetTextEndPosition();
           if (textStartPosition < totalMaxOffset) {
-            this.rects.push(textBox.RectOfSlice(textStartPosition, Math.min(textEndPosition, totalMaxOffset)));
+            textBox.setSelection(textStartPosition, Math.min(textEndPosition, totalMaxOffset));
+            this.selected.add(textBox);
           }
         }
       } else {
@@ -169,7 +154,8 @@ export class SelectionOverlay extends Disposable {
           const textBox = item.box;
           const textStartPosition = textBox.GetTextStartPosition();
           const textEndPosition = textBox.GetTextEndPosition();
-          this.rects.push(textBox.RectOfSlice(textStartPosition, textEndPosition));
+          textBox.setSelection(textStartPosition, textEndPosition)
+          this.selected.add(textBox)
         }
       }
     }
@@ -193,13 +179,17 @@ export class SelectionOverlay extends Disposable {
       let maxInBox = offsetInBox(textBox, maxOffset);
 
       if (minInBox && !maxInBox) {
-        this.rects.push(textBox.RectOfSlice(minOffset, textEndPosition));
+        textBox.setSelection(minOffset, textEndPosition);
+        this.selected.add(textBox);
       } else if (minInBox && maxInBox) {
-        this.rects.push(textBox.RectOfSlice(minOffset, maxOffset));
+        textBox.setSelection(minOffset, maxOffset);
+        this.selected.add(textBox);
       } else if (!minInBox && maxInBox) {
-        this.rects.push(textBox.RectOfSlice(textStartPosition, maxOffset));
+        textBox.setSelection(textStartPosition, maxOffset);
+        this.selected.add(textBox);
       } else if (minOffset <= textStartPosition && maxOffset >= textEndPosition) {
-        this.rects.push(textBox.RectOfSlice(textStartPosition, textEndPosition));
+        textBox.setSelection(textStartPosition, textEndPosition);
+        this.selected.add(textBox);
       }
     }
   }

@@ -14,7 +14,7 @@ import { CreateImageCache, ImageCache } from '../loader/image/image_cache';
 import { LoaderFactory } from '../loader/loader_factory';
 import { FetcherFactory } from '../loader/fetcher_factory';
 import { CreateRemoteTypefaceCache, RemoteTypefaceCache } from '../loader/font/remote_typeface_cache';
-import { Document } from "../dom/document";
+import { Document } from '../dom/document';
 
 export interface WebModuleOptions {
   // The name of the WebModule.  This is useful for debugging purposes as in
@@ -32,7 +32,7 @@ export interface WebModuleOptions {
 
   // ImageParser cache capacity in bytes.
   image_cache_capacity: number;
-  remote_typeface_cache_capacity: number
+  remote_typeface_cache_capacity: number;
 }
 
 const DefaultWebModuleOptions: Partial<WebModuleOptions> = {
@@ -136,21 +136,12 @@ export class WebModule {
   }
 
   get document(): Document {
-    return this.window_.document()
+    return this.window_.document();
   }
 
   SetApplicationStartOrPreloadTimestamp(is_preload: boolean, timestamp: number) {
     DCHECK(this.window_);
     this.window_.performance().SetApplicationStartOrPreloadTimestamp(is_preload, timestamp);
-  }
-
-  DoSynchronousLayout(): void {
-    this.window_.document().DoSynchronousLayout();
-  }
-  DoSynchronousLayoutAndGetRenderTree(): Node | null {
-    TRACE_EVENT0('cobalt::browser',
-      'WebModule::Impl::DoSynchronousLayoutAndGetRenderTree()');
-    return this.window_.document().DoSynchronousLayoutAndGetRenderTree();
   }
 
   OnRenderTreeProduced(layout_results: LayoutResults) {

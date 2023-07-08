@@ -11,6 +11,7 @@ import { CanvasKit, makePaint, makePath, MakePathFromSVGString } from '@neditor/
 // drawImage function.  The surface returned is guaranteed to have been
 // cleared to ARGB(0,0,0,0).
 import { Canvas, Paint, Surface } from 'canvaskit-wasm';
+import { DCHECK } from '../../../base/check';
 import { AccessorCallback, Optional } from '../../../base/common/typescript';
 import { baseGetTypeId } from '../../base/type_id';
 import { Matrix3F } from '../../math/matrix3_f';
@@ -273,6 +274,11 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
             shadow.blur_sigma == 0.0 ? blur_zero_sigma : shadow.blur_sigma);
         }
       }
+      const { background } = text_node.data();
+      if (background) {
+        const { colorBrush, rect } = background;
+        this.DrawRectWithBrush(colorBrush, rect);
+      }
 
       // Finally render the main text.
       let offset = text_node.data().offset.CLONE();
@@ -446,8 +452,7 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
 
     makePaint((paint) => {
       paint.setBlendMode(CanvasKit.BlendMode.Src);
-      paint.setColorComponents(color.r() * 255, color.g() * 255,
-        color.b() * 255, color.a() * 255);
+      paint.setColor(CanvasKit.Color(color.r() * 255, color.g() * 255, color.b() * 255, color.a()));
 
       this.draw_state_.render_target.drawRect(sk_rect, paint);
     });
@@ -487,8 +492,7 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
       //   paint.setAntiAlias(true);
       // }
 
-      draw_state_.render_target.drawRect(
-        SkRect_MakeXYWH(rect.x(), rect.y(), rect.width(), rect.height()), paint);
+      draw_state_.render_target.drawRect(SkRect_MakeXYWH(rect.x(), rect.y(), rect.width(), rect.height()), paint);
     });
   }
 
@@ -514,8 +518,7 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
       }
       makePaint((paint) => {
         paint.setAntiAlias(true);
-        paint.setColorComponents(color.r() * 255, color.g() * 255,
-          color.b() * 255, color.a() * 255,);
+        paint.setColor(CanvasKit.Color(color.r() * 255, color.g() * 255, color.b() * 255, color.a()));
 
         if (blur_sigma > 0.0) {
           NOTIMPLEMENTED();
@@ -546,22 +549,12 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
           }
           if (fill) {
             paint.setStyle(CanvasKit.PaintStyle.Fill);
-            paint.setColorComponents(
-              fill.r() * 255,
-              fill.g() * 255,
-              fill.b() * 255,
-              fill.a() * 255,
-            );
+            paint.setColor(CanvasKit.Color(fill.r() * 255, fill.g() * 255, fill.b() * 255, fill.a()));
             this.draw_state_.render_target.drawPath(path, paint);
           }
           if (stroke) {
             paint.setStyle(CanvasKit.PaintStyle.Stroke);
-            paint.setColorComponents(
-              stroke.r() * 255,
-              stroke.g() * 255,
-              stroke.b() * 255,
-              stroke.a() * 255,
-            );
+            paint.setColor(CanvasKit.Color(stroke.r() * 255, stroke.g() * 255, stroke.b() * 255, stroke.a()));
             this.draw_state_.render_target.drawPath(path, paint);
           }
         }
@@ -669,7 +662,7 @@ function DrawQuadWithColorIfBorderIsSolid(
     makePaint((paint) => {
       let alpha = color.a();
       alpha *= draw_state.opacity;
-      paint.setColorComponents(color.r() * 255, color.g() * 255, color.b() * 255, alpha * 255);
+      paint.setColor(CanvasKit.Color(color.r() * 255, color.g() * 255, color.b() * 255, alpha));
       paint.setAntiAlias(anti_alias);
       if (IsOpaque(alpha)) {
         paint.setBlendMode(CanvasKit.BlendMode.Src);
@@ -695,7 +688,7 @@ function DrawUniformSolidNonRoundRectBorder(
   anti_alias: boolean) {
   makePaint(paint => {
     let alpha = border_color.a() * draw_state.opacity;
-    paint.setColorComponents(border_color.r() * 255, border_color.g() * 255, border_color.b() * 255, alpha * 255);
+    paint.setColor(CanvasKit.Color(border_color.r() * 255, border_color.g() * 255, border_color.b() * 255, alpha));
     paint.setAntiAlias(anti_alias);
     if (IsOpaque(alpha)) {
       paint.setBlendMode(CanvasKit.BlendMode.Src);
@@ -785,8 +778,7 @@ class SkiaBrushVisitor extends BrushVisitor {
       this.paint_.setBlendMode(CanvasKit.BlendMode.SrcOver);
     }
 
-    this.paint_.setColorComponents(color.r() * 255, color.g() * 255,
-      color.b() * 255, alpha * 255);
+    this.paint_.setColor(CanvasKit.Color(color.r() * 255, color.g() * 255, color.b() * 255, alpha));
   }
 };
 

@@ -1,4 +1,10 @@
 // Although the CSS 2.1 specification assumes that the text is simply a part of
+import { Color } from '../../base/common/color';
+import { RGBAColorValue } from '../cssom/rgba_color_value';
+import { RectF } from '../math/rect_f';
+import { Background } from '../render_tree/background';
+import { SolidColorBrush } from '../render_tree/brush';
+import { ColorRGBA } from '../render_tree/color_rgba';
 // an inline box, it is impractical to implement it that way. Instead, we define
 // a text box as an anonymous replaced inline-level box that is breakable at
 // soft wrap opportunities.
@@ -41,10 +47,12 @@ import { Rect } from '@neditor/core/base/common/geometry';
 import { RectLayoutUnit } from './rect_layout_unit';
 import { PointLayoutUnit } from './point_layout_unit';
 import { SizeLayoutUnit } from './size_layout_unit';
-import { ICopyableReference, IReference } from '../../base/common/lifecycle';
+import { ICopyableReference } from '../../base/common/lifecycle';
 import { Context } from './box_generator';
 
 export class TextBox extends Box {
+  private _selectionStartPosition = -1;
+  private _selectionEndPosition = -1;
   constructor(
     css_computed_style_declaration: ComputedStyleDeclaration,
     paragraph_ref: ICopyableReference<Paragraph>,
@@ -106,6 +114,31 @@ export class TextBox extends Box {
     const left = borderBox.x();
     const top = borderBox.y().SUB(this.GetInlineLevelTopMargin());
     return new RectLayoutUnit(new PointLayoutUnit(left, top), new SizeLayoutUnit(borderBox.width(), this.GetInlineLevelBoxHeight()));
+  }
+
+  getSelectionStartPosition() {
+    return this._selectionStartPosition;
+  }
+  getSelectionEndPosition() {
+    return this._selectionEndPosition;
+  }
+  setSelection(from = -1, to = -1) {
+    DCHECK(from <= to);
+    if (from !== -1) {
+      DCHECK(from >= this.text_start_position_);
+    }
+    if (to !== -1) {
+      DCHECK(to <= this.text_end_position_);
+    }
+    this._selectionStartPosition = from;
+    this._selectionEndPosition = to;
+  }
+  hasSelection() {
+    return this._selectionStartPosition !== -1;
+  }
+
+  unsetSelection() {
+    this.setSelection();
   }
 
   UpdateContentSizeAndMargins(layout_params: LayoutParams) {
@@ -405,7 +438,40 @@ export class TextBox extends Box {
 
         let text_node_builder = new TextNodeBuilder(
           new Vector2dF(this.truncated_text_offset_from_left_, this.ascent_),
-          glyph_buffer, used_color);
+          glyph_buffer,
+          used_color);
+
+        if (this.hasSelection()) {
+          const anchorOffsetInParagraph = this._selectionStartPosition;
+          const focusOffsetInParagraph = this._selectionEndPosition;
+          const start = Math.max(anchorOffsetInParagraph, this.text_start_position_);
+          const end = Math.min(focusOffsetInParagraph, this.text_end_position_);
+          const startLocation = this.paragraph.GetSubstrWidth(
+            this.paragraph.base_direction(),
+            this.used_font_,
+            this.text_start_position_,
+            start - this.text_start_position_
+          );
+          const endLocation = end === start ? startLocation : this.paragraph.GetSubstrWidth(
+            this.paragraph.base_direction(),
+            this.used_font_,
+            this.text_start_position_,
+            end - this.text_start_position_
+          );
+          const h = this.GetInlineLevelBoxHeight().toFloat();
+          const left = Math.min(startLocation, endLocation);
+          const right = Math.max(startLocation, endLocation);
+          // --vscode-editor-selectionBackground: #add6ff;
+          // --vscode-editor-inactiveSelectionBackground: #e5ebf1;
+          const hex = Color.fromHex('#add6ff');
+          DCHECK(hex);
+          const rgpa = hex.rgba;
+          const y = this.inline_top_margin_?.toFloat() || 0;
+          text_node_builder.background = new Background(
+            new SolidColorBrush(new ColorRGBA(rgpa.r / 255, rgpa.g / 255, rgpa.b / 255, rgpa.a)),
+            new RectF(left, -y, right - left, h),
+          );
+        }
 
         if (text_shadow != KeywordValue.GetNone()) {
           let shadow_list = this.computed_style()!.text_shadow as PropertyListValue;
@@ -414,7 +480,6 @@ export class TextBox extends Box {
         }
 
         let text_node = new TextNode(text_node_builder);
-
         // The render tree API considers text coordinates to be a position
         // of a baseline, offset the text node accordingly.
         let node_to_add: Node;
@@ -444,32 +509,44 @@ export class TextBox extends Box {
   DumpProperties(stream: string): string {
     stream = Box.prototype.DumpProperties.call(this, stream);
 
-    stream += 'text_start=';
-    stream += this.text_start_position_;
-    stream += ' ';
-    stream += 'text_end=';
-    stream += this.text_end_position_;
+    stream += 'select_start=';
+    stream += this._selectionStartPosition;
     stream += ' ';
 
-    stream += `visible_text_start=${this.GetVisibleTextStartPosition()} `;
-    stream += `visible_text_end=${this.GetVisibleTextEndPosition()} `;
-
-    stream += 'line_height=';
-    stream += this.line_height_;
-    stream += ' ';
-    stream += 'inline_top_margin=';
-    stream += this.inline_top_margin_;
-    stream += ' ';
-    stream += 'has_leading_white_space=';
-    stream += this.HasLeadingWhiteSpace();
-    stream += ' ';
-    stream += 'has_trailing_white_space=';
-    stream += this.HasTrailingWhiteSpace();
+    stream += 'select_end=';
+    stream += this._selectionEndPosition;
     stream += ' ';
 
-    stream += 'bidi_level=';
-    stream += this.paragraph.GetBidiLevel(this.text_start_position_);
-    stream += ' ';
+    // stream += 'text_start=';
+    // stream += this.text_start_position_;
+    // stream += ' ';
+    //
+    // stream += 'text_end=';
+    // stream += this.text_end_position_;
+    // stream += ' ';
+    //
+    // stream += `visible_text_start=${this.GetVisibleTextStartPosition()} `;
+    // stream += `visible_text_end=${this.GetVisibleTextEndPosition()} `;
+    //
+    // stream += 'line_height=';
+    // stream += this.line_height_;
+    // stream += ' ';
+    //
+    // stream += 'inline_top_margin=';
+    // stream += this.inline_top_margin_;
+    // stream += ' ';
+    //
+    // stream += 'has_leading_white_space=';
+    // stream += this.HasLeadingWhiteSpace();
+    // stream += ' ';
+    //
+    // stream += 'has_trailing_white_space=';
+    // stream += this.HasTrailingWhiteSpace();
+    // stream += ' ';
+    //
+    // stream += 'bidi_level=';
+    // stream += this.paragraph.GetBidiLevel(this.text_start_position_);
+    // stream += ' ';
 
     return stream;
   }

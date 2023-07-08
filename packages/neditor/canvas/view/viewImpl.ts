@@ -19,7 +19,6 @@ import { CursorUpdater } from './cursorUpdater';
 import { Canvas } from './parts/canvas/canvas';
 import { TextCursor } from './parts/cursor/textCursor';
 import { Overlay } from './parts/overlay/overlay';
-import { SelectionOverlay } from './parts/selection/selectionOverlay';
 import { CursorStyle, IPhysicalCursorPosition, ICanvasView, IOutlineInit } from './view';
 import { ViewController } from './viewController';
 import { ViewOutgoingEvents } from './viewOutgoingEvents';
@@ -29,7 +28,6 @@ export class View extends Disposable implements ICanvasView {
   private _canvas: Canvas;
   private _overlay: Overlay;
   private _selection!: Selection;
-  private _selectionOverlay!: SelectionOverlay;
   mx = Matrix.Identity;
 
   private _onCameraChagned = new Emitter<void>();
@@ -58,7 +56,7 @@ export class View extends Disposable implements ICanvasView {
       const selection = this.document.getSelection();
       this._register(new CursorUpdater(this, this.mvvm));
       this._selection = this._register(selection);
-      this._selectionOverlay = this._register(new SelectionOverlay(this.domNode, this._selection, this.layoutManager, mvvm));
+      this._register(selection.onDidChange(() => this.layoutManager.onSelectionChanged(selection)));
       this._register(new PointerHandler(viewController, this._createPointerHandlerHelper()));
     });
   }
