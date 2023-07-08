@@ -62,9 +62,9 @@ export class Range extends AbstractRange {
     // compareBoundaryPoints(start_, end_, ASSERT_NO_EXCEPTION) > 0)
     // collapse(true);
     // }
-    if (this.compareBoundaryPointInstances(this.start_, this.end_) > 0) {
-      this.collapse(true);
-    }
+    // if (this.compareBoundaryPointInstances(this.start_, this.end_) > 0) {
+    //   this.collapse(true);
+    // }
   }
 
   setEnd(ref_node: Node,
@@ -93,9 +93,9 @@ export class Range extends AbstractRange {
     // HasDifferentRootContainer(&start_.Container(), &end_.Container()) ||
     // compareBoundaryPoints(start_, end_, ASSERT_NO_EXCEPTION) > 0)
     // collapse(false);
-    if (this.compareBoundaryPointInstances(this.start_, this.end_) > 0) {
-      this.collapse(false);
-    }
+    // if (this.compareBoundaryPointInstances(this.start_, this.end_) > 0) {
+    //   this.collapse(false);
+    // }
   }
 
   collapse(to_start: boolean) {

@@ -45,7 +45,7 @@ function getParagraphContainer(n: Node): Node {
 
 export class TextTool extends BaseTool {
   _editorView?: IEditorView;
-  focusY: Optional<number>;
+  anchorY: Optional<number>;
   anchorX: Optional<number>;
   private _textAreaHandler: Optional<TextAreaHandler>;
 
@@ -116,12 +116,11 @@ export class TextTool extends BaseTool {
     this._updateSelection(e);
   }
   handleDrop(e: IMouseInputEvent) {
-
   }
 
   private _handleClick(e: IMouseInputEvent): boolean {
-    this.focusY = e.clientY;
     this.anchorX = e.clientX;
+    this.anchorY = e.clientY;
     let prevAnchor = this.canvas.view.document.getSelection().anchorNode;
     this._editorView?.domObserver.stop();
     this._updateSelection(e);
@@ -137,7 +136,7 @@ export class TextTool extends BaseTool {
     if (!this._editorView && curAnchor) {
       DCHECK(!prevAnchor);
       this._initEditor(curAnchor);
-      return true;
+      return false;
     }
 
     DCHECK(prevAnchor);
@@ -181,19 +180,18 @@ export class TextTool extends BaseTool {
 
   private _updateSelection(e: IMouseInputEvent) {
     const anchorX = this.anchorX!;
-    const focusY = this.focusY!;
+    const anchorY = this.anchorY!;
     const { clientX, clientY } = e;
-    const firstAsMin = focusY <= clientY;
-    const minX = firstAsMin ? anchorX : clientX;
-    const minY = firstAsMin ? focusY : clientY;
-    const maxX = firstAsMin ? clientX : anchorX;
-    const maxY = firstAsMin ? clientY : focusY;
-    const isCollapsed = minX === maxX && minY === maxY;
-    if (isCollapsed) {
-      return this._updateCollapsedSelect(minX, minY);
+    if (anchorX === clientX && anchorY === clientY) {
+      return this._updateCollapsedSelect(anchorX, anchorY);
     }
+    const firstAsMin = anchorY <= clientY;
+    const minX = firstAsMin ? anchorX : clientX;
+    const minY = firstAsMin ? anchorY : clientY;
+    const maxX = firstAsMin ? clientX : anchorX;
+    const maxY = firstAsMin ? clientY : anchorY;
     const selection = this.canvas.view.document.getSelection();
-    const anchorItems = this.canvas.view.layoutManager.hitTestRTree(this.anchorX!, this.focusY!, this.anchorX!, this.focusY!);
+    const anchorItems = this.canvas.view.layoutManager.hitTestRTree(anchorX, anchorY, anchorX, anchorY);
     if (!anchorItems.length) {
       selection.removeAllRanges();
       return;
@@ -205,7 +203,6 @@ export class TextTool extends BaseTool {
     const anchorItem = anchorItems[0];
     const anchorNode = anchorItem.box.node!;
     const paragraphContainer = getParagraphContainer(anchorNode);
-    // const paragraphs = Array.from(paragraphContainer.childNodes).map(p => this.canvas.view.layoutManager.getParagraphOfNode(p!.firstChild!)!);
 
     const childNodes = Array.from(paragraphContainer.childNodes).filter(n => n?.IsElement());
     const items = childNodes.map(p => {
@@ -271,13 +268,15 @@ export class TextTool extends BaseTool {
     }
 
     selection.addRange(range);
-    if (selection.anchorOffset < 0) debugger;
-    if (selection.focusOffset < 0) debugger
+    if (selection.anchorOffset < 0) NOTREACHED();
+    if (selection.focusOffset < 0) NOTREACHED();
   }
 
   private _updateCollapsedSelect(x: number, y: number) {
+    const anchorX = this.anchorX!;
+    const anchorY = this.anchorY!;
     const selection = this.canvas.view.document.getSelection();
-    const startItems = this.canvas.view.layoutManager.hitTestRTree(this.anchorX!, this.focusY!, this.anchorX!, this.focusY!);
+    const startItems = this.canvas.view.layoutManager.hitTestRTree(anchorX, anchorY, anchorX, anchorY);
     if (!startItems.length) {
       selection.removeAllRanges();
       return;
