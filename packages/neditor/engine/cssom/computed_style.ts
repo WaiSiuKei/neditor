@@ -7,7 +7,7 @@ import { PropertyValue } from './property_value';
 import {
   GetInheritedAnimatableProperties,
   GetInheritedProperties,
-  GetPropertyInitialValue,
+  GetPropertyInitialValue, GetPropertyName,
   PropertyKey
 } from './property_definitions';
 import { NOTIMPLEMENTED, NOTREACHED } from '@neditor/core/base/common/notreached';
@@ -82,8 +82,7 @@ export function PromoteToComputedStyle(
   }
 
   // Go through all declared values and calculate their computed values.
-  let declared_property_values =
-    cascaded_style.declared_property_values();
+  let declared_property_values = cascaded_style.declared_property_values();
   for (let [k, v] of declared_property_values) {
     calculate_computed_style_context.SetComputedStyleForProperty(k, v);
   }
@@ -863,7 +862,7 @@ class OriginInfo {
   constructor(
     public origin_as_percentage: number,
     public offset_multiplier: number,
-    public  direction: Direction,
+    public direction: Direction,
   ) {}
 };
 
@@ -1102,10 +1101,10 @@ class ComputedBorderWidthProvider extends NotReachedPropertyValueVisitor {
   computed_border_width_?: PropertyValue;
 
   constructor(
-    private   computed_font_size_: LengthValue,
-    private  root_computed_font_size_: LengthValue,
-    private   viewport_size_: Size,
-    private   border_style_: PropertyValue
+    private computed_font_size_: LengthValue,
+    private root_computed_font_size_: LengthValue,
+    private viewport_size_: Size,
+    private border_style_: PropertyValue
   ) {super();}
 
   VisitLength(specified_length: LengthValue) {
@@ -1255,8 +1254,8 @@ class ComputedWidthValueProvider extends NotReachedPropertyValueVisitor {
   protected computed_value_?: PropertyValue;
 
   constructor(
-    private  computed_font_size_: LengthValue,
-    private  root_computed_font_size_: LengthValue,
+    private computed_font_size_: LengthValue,
+    private root_computed_font_size_: LengthValue,
     private viewport_size_: Size,
   ) {super();}
 
@@ -1363,9 +1362,9 @@ class ComputedFlexBasisProvider extends ComputedWidthValueProvider {
 class ComputedFontSizeProvider extends NotReachedPropertyValueVisitor {
   private computed_font_size_?: LengthValue;
   constructor(
-    private  parent_computed_font_size_: LengthValue,
-    private  root_computed_font_size_: LengthValue,
-    private   viewport_size_: Size,
+    private parent_computed_font_size_: LengthValue,
+    private root_computed_font_size_: LengthValue,
+    private viewport_size_: Size,
   ) {super();}
 
   VisitLength(length: LengthValue) {
@@ -1416,13 +1415,13 @@ class ComputedHeightProvider extends NotReachedPropertyValueVisitor {
   private computed_height_?: PropertyValue;
 
   constructor(
-    private  parent_computed_height_: PropertyValue,
-    private   parent_computed_top_: PropertyValue,
-    private    parent_computed_bottom_: PropertyValue,
-    private   computed_font_size_: LengthValue,
-    private  root_computed_font_size_: LengthValue,
-    private    viewport_size_: Size,
-    private  out_of_flow_: boolean,
+    private parent_computed_height_: PropertyValue,
+    private parent_computed_top_: PropertyValue,
+    private parent_computed_bottom_: PropertyValue,
+    private computed_font_size_: LengthValue,
+    private root_computed_font_size_: LengthValue,
+    private viewport_size_: Size,
+    private out_of_flow_: boolean,
   ) {super();}
 
   VisitKeyword(keyword: KeywordValue) {
@@ -1536,8 +1535,8 @@ class ComputedLineHeightProvider extends NotReachedPropertyValueVisitor {
 
   constructor(
     private computed_font_size_: LengthValue,
-    private     root_computed_font_size_: LengthValue,
-    private   viewport_size_: Size,
+    private root_computed_font_size_: LengthValue,
+    private viewport_size_: Size,
   ) {super();}
 
   VisitKeyword(keyword: KeywordValue) {
@@ -1648,9 +1647,9 @@ class ComputedMarginOrPaddingEdgeProvider extends NotReachedPropertyValueVisitor
   private computed_margin_or_padding_edge_?: PropertyValue;
 
   constructor(
-    private  computed_font_size_: LengthValue,
-    private    root_computed_font_size_: LengthValue,
-    private    viewport_size_: Size,
+    private computed_font_size_: LengthValue,
+    private root_computed_font_size_: LengthValue,
+    private viewport_size_: Size,
   ) {super();}
 
   VisitKeyword(keyword: KeywordValue) {
@@ -1750,10 +1749,10 @@ class ComputedMarginOrPaddingEdgeProvider extends NotReachedPropertyValueVisitor
 class ComputedMaxHeightProvider extends NotReachedPropertyValueVisitor {
   private computed_max_height_?: PropertyValue;
   constructor(
-    private    parent_computed_max_height_: PropertyValue,
-    private    computed_font_size_: LengthValue,
-    private    root_computed_font_size_: LengthValue,
-    private   viewport_size_: Size,
+    private parent_computed_max_height_: PropertyValue,
+    private computed_font_size_: LengthValue,
+    private root_computed_font_size_: LengthValue,
+    private viewport_size_: Size,
     private out_of_flow_: boolean,
   ) {super();}
 
@@ -1865,11 +1864,11 @@ class ComputedMinHeightProvider extends NotReachedPropertyValueVisitor {
   private computed_min_height_?: PropertyValue;
 
   constructor(
-    private    parent_computed_height_: PropertyValue,
-    private    computed_font_size_: LengthValue,
-    private   root_computed_font_size_: LengthValue,
-    private  viewport_size_: Size,
-    private   out_of_flow_: boolean
+    private parent_computed_height_: PropertyValue,
+    private computed_font_size_: LengthValue,
+    private root_computed_font_size_: LengthValue,
+    private viewport_size_: Size,
+    private out_of_flow_: boolean
   ) {super();}
 
   VisitKeyword(keyword: KeywordValue) {
@@ -1980,10 +1979,10 @@ class ComputedMinMaxWidthProvider extends NotReachedPropertyValueVisitor {
   private computed_min_max_width_?: PropertyValue;
 
   constructor(
-    private    parent_computed_width_: PropertyValue,
-    private  computed_font_size_: LengthValue,
-    private    root_computed_font_size_: LengthValue,
-    private    viewport_size_: Size
+    private parent_computed_width_: PropertyValue,
+    private computed_font_size_: LengthValue,
+    private root_computed_font_size_: LengthValue,
+    private viewport_size_: Size
   ) {super();}
 
   VisitKeyword(keyword: KeywordValue) {
@@ -2175,9 +2174,9 @@ class ComputedBackgroundSizeProvider extends NotReachedPropertyValueVisitor {
   private computed_background_size_?: PropertyValue;
 
   constructor(
-    private    computed_font_size_: LengthValue,
-    private   root_computed_font_size_: LengthValue,
-    private   viewport_size_: Size
+    private computed_font_size_: LengthValue,
+    private root_computed_font_size_: LengthValue,
+    private viewport_size_: Size
   ) {super();}
 
   VisitKeyword(keyword: KeywordValue) {
@@ -2209,8 +2208,8 @@ class ComputedBorderRadiusProvider extends NotReachedPropertyValueVisitor {
 
   constructor(
     private computed_font_size_: LengthValue,
-    private    root_computed_font_size_: LengthValue,
-    private   viewport_size_: Size
+    private root_computed_font_size_: LengthValue,
+    private viewport_size_: Size
   ) {super();}
 
   VisitLength(specified_length: LengthValue) {
@@ -2232,9 +2231,9 @@ class ComputedTextIndentProvider extends NotReachedPropertyValueVisitor {
   private computed_text_indent_?: LengthValue;
 
   constructor(
-    private  computed_font_size_: LengthValue,
-    private    root_computed_font_size_: LengthValue,
-    private   viewport_size_: Size
+    private computed_font_size_: LengthValue,
+    private root_computed_font_size_: LengthValue,
+    private viewport_size_: Size
   ) {super();}
 
   VisitLength(length: LengthValue) {
@@ -2259,9 +2258,9 @@ class ComputedTransformOriginProvider extends NotReachedPropertyValueVisitor {
   private computed_transform_origin_?: PropertyValue;
 
   constructor(
-    private    computed_font_size_: LengthValue,
-    private   root_computed_font_size_: LengthValue,
-    private   viewport_size_: Size
+    private computed_font_size_: LengthValue,
+    private root_computed_font_size_: LengthValue,
+    private viewport_size_: Size
   ) {super();}
 
   VisitPropertyList(property_list_value: PropertyListValue) {
@@ -2304,9 +2303,9 @@ class ComputedTransformProvider extends NotReachedPropertyValueVisitor {
   private computed_transform_list_?: PropertyValue;
 
   constructor(
-    private  computed_font_size_: LengthValue,
-    private     root_computed_font_size_: LengthValue,
-    private   viewport_size_: Size,
+    private computed_font_size_: LengthValue,
+    private root_computed_font_size_: LengthValue,
+    private viewport_size_: Size,
   ) {super();}
 
   VisitKeyword(keyword: KeywordValue) {
@@ -2428,9 +2427,9 @@ class ComputedPositionOffsetProvider extends NotReachedPropertyValueVisitor {
   private computed_position_offset_?: PropertyValue;
 
   constructor(
-    private  computed_font_size_: LengthValue,
-    private   root_computed_font_size_: LengthValue,
-    private    viewport_size_: Size
+    private computed_font_size_: LengthValue,
+    private root_computed_font_size_: LengthValue,
+    private viewport_size_: Size
   ) {super();}
 
   VisitKeyword(keyword: KeywordValue) {
@@ -2552,9 +2551,9 @@ class ComputedBackgroundSizeSingleValueProvider extends NotReachedPropertyValueV
   private computed_background_size_?: PropertyValue;
 
   constructor(
-    private    computed_font_size_: LengthValue,
-    private    root_computed_font_size_: LengthValue,
-    private    viewport_size_: Size
+    private computed_font_size_: LengthValue,
+    private root_computed_font_size_: LengthValue,
+    private viewport_size_: Size
   ) {super();}
 
   VisitLength(length: LengthValue) {
@@ -2655,9 +2654,9 @@ class ComputedTransformFunctionProvider extends TransformFunctionVisitor {
   private computed_transform_function_?: TransformFunction;
 
   constructor(
-    private    computed_font_size_: LengthValue,
-    private    root_computed_font_size_: LengthValue,
-    private    viewport_size_: Size,
+    private computed_font_size_: LengthValue,
+    private root_computed_font_size_: LengthValue,
+    private viewport_size_: Size,
   ) {super();}
 
   VisitMatrix(matrix_function: MatrixFunction) {

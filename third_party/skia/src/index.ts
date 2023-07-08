@@ -8,8 +8,8 @@ import type { CanvasKit as TCanvasKit } from 'canvaskit-wasm';
 export type { Surface, TextBlob } from 'canvaskit-wasm';
 // @ts-ignore
 import wasm from 'canvaskit-wasm/bin/canvaskit.wasm?url';
-import { NOTREACHED } from "@neditor/core/base/common/notreached";
-import type { AccessorCallback, ConstructorSignature } from "@neditor/core/base/common/typescript";
+import { NOTREACHED } from '@neditor/core/base/common/notreached';
+import type { AccessorCallback, ConstructorSignature } from '@neditor/core/base/common/typescript';
 
 const config = {
   locateFile: () => wasm,
@@ -26,9 +26,9 @@ export async function initSkiaModule() {
 export function makePaint<R>(cb: AccessorCallback<Paint, R>): R {
   const p = new CanvasKit.Paint();
   try {
-    return cb(p)
+    return cb(p);
   } finally {
-    p.deleteLater()
+    p.deleteLater();
   }
 }
 
@@ -36,12 +36,24 @@ export function MakePathFromSVGString<R>(str: string) {
   return (cb: AccessorCallback<Path, R>): R => {
     const p = CanvasKit.Path.MakeFromSVGString(str);
     if (!p) {
-      NOTREACHED()
+      NOTREACHED();
     }
     try {
-      return cb(p)
+      return cb(p);
     } finally {
-      p.deleteLater()
+      p.deleteLater();
     }
+  };
+}
+
+export function makePath<R>(cb: AccessorCallback<Path, R>) {
+  const p = new CanvasKit.Path();
+  if (!p) {
+    NOTREACHED();
+  }
+  try {
+    return cb(p);
+  } finally {
+    p.deleteLater();
   }
 }

@@ -92,14 +92,10 @@ class NonTrivialStaticFields {
       }
     }
 
-    this.computed_style_invalidation_property_checker = new PropertySetMatcher(
-      computed_style_invalidation_properties);
-    this.layout_box_invalidation_property_checker = new PropertySetMatcher(
-      layout_box_invalidation_properties);
-    this.size_invalidation_property_checker = new PropertySetMatcher(
-      size_invalidation_properties);
-    this.cross_references_invalidation_property_checker = new PropertySetMatcher(
-      cross_references_invalidation_properties);
+    this.computed_style_invalidation_property_checker = new PropertySetMatcher(computed_style_invalidation_properties);
+    this.layout_box_invalidation_property_checker = new PropertySetMatcher(layout_box_invalidation_properties);
+    this.size_invalidation_property_checker = new PropertySetMatcher(size_invalidation_properties);
+    this.cross_references_invalidation_property_checker = new PropertySetMatcher(cross_references_invalidation_properties);
   }
 
   // cssom::CSSComputedStyleData::
@@ -154,9 +150,6 @@ export class HTMLElement extends Element {
   }
   get style() {
     return this.style_;
-  }
-  StyleData() {
-    return this.style_.data();
   }
   OnSetAttribute(name: string,
                  value: string) {
@@ -315,10 +308,10 @@ export class HTMLElement extends Element {
         root_computed_style,
         document!.viewport_size(),
         this.computed_style()!,
-//        style_change_event_time,
-//        &css_transitions_,
-//        &css_animations_,
-//        document.keyframes_map(),
+        //        style_change_event_time,
+        //        &css_transitions_,
+        //        &css_animations_,
+        //        document.keyframes_map(),
         this.ancestors_are_displayed_,
         ancestors_are_displayed,
         IsPseudoElement.kIsNotPseudoElement,
@@ -566,13 +559,13 @@ function DoComputedStyleUpdate(
 ) {
   let animations_modified = false;
 
-  let new_computed_style =
-    PromoteMatchingRulesToComputedStyle(
-      // matching_rules,
-      // property_key_to_base_url_map,
-      inline_style,
-      parent_computed_style_declaration, root_computed_style,
-      viewport_size);
+  let new_computed_style = PromoteMatchingRulesToComputedStyle(
+    // matching_rules,
+    // property_key_to_base_url_map,
+    inline_style,
+    parent_computed_style_declaration,
+    root_computed_style,
+    viewport_size);
 
 //  PossiblyActivateAnimations(previous_computed_style, new_computed_style,
 //                             style_change_event_time, css_transitions,
@@ -601,8 +594,7 @@ function PromoteMatchingRulesToComputedStyle(
   // that is, apply values from matching rules on top of inline style, taking
   // into account rule specificity and location in the source file, as well as
   // property declaration importance.
-  let computed_style =
-    PromoteToCascadedStyle(
+  let computed_style = PromoteToCascadedStyle(
       inline_style,
       // matching_rules,
       // property_key_to_base_url_map

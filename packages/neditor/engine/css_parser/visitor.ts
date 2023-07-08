@@ -13,6 +13,7 @@ import type { CobaltCSSStyleDeclaration } from '@neditor/core/engine/cssom/style
 import { inlineVisitor } from '@neditor/css-parser/gen/inlineVisitor';
 import { StringValue } from '../cssom/string_value';
 import { GetPropertyKey, PropertyKey } from '../cssom/property_definitions';
+import { unpack } from './shorthandToLonghand';
 
 export class Visitor implements inlineVisitor<void> {
   private currentKey: string | null = null;
@@ -110,7 +111,54 @@ export class Visitor implements inlineVisitor<void> {
       // console.log('set', this.currentKey, this.currentValue);
       const key = GetPropertyKey(this.currentKey);
       DCHECK(key);
-      this.style.data().SetPropertyValue(key, this.currentValue);
+      const data = this.style.data();
+      switch (key) {
+        case PropertyKey.kBorderColorProperty: {
+          unpack(data,
+            PropertyKey.kBorderColorProperty,
+            [
+              PropertyKey.kBorderTopColorProperty,
+              PropertyKey.kBorderRightColorProperty,
+              PropertyKey.kBorderBottomColorProperty,
+              PropertyKey.kBorderLeftColorProperty,
+            ],
+            this.currentValue);
+          break;
+        }
+        case PropertyKey.kBorderStyleProperty: {
+          unpack(
+            data,
+            PropertyKey.kBorderStyleProperty,
+            [
+              PropertyKey.kBorderTopStyleProperty,
+              PropertyKey.kBorderTopStyleProperty,
+              PropertyKey.kBorderBottomStyleProperty,
+              PropertyKey.kBorderLeftStyleProperty,
+            ],
+            this.currentValue,
+          );
+          break;
+        }
+        case PropertyKey.kBorderWidthProperty: {
+          unpack(
+            data,
+            PropertyKey.kBorderWidthProperty,
+            [
+              PropertyKey.kBorderTopWidthProperty,
+              PropertyKey.kBorderRightWidthProperty,
+              PropertyKey.kBorderBottomWidthProperty,
+              PropertyKey.kBorderLeftWidthProperty,
+            ],
+            this.currentValue,
+          );
+          break;
+        }
+        default: {
+          data.SetPropertyValue(key, this.currentValue);
+          break;
+        }
+      }
+
       this.currentKey = null;
       this.currentValue = null;
     } else {

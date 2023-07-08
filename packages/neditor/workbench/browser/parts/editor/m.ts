@@ -17,7 +17,15 @@ const a: IDocumentModel = {
         marginLeft: '50px',
         marginTop: '100px',
         position: 'absolute',
-        backgroundColor: 'white'
+        backgroundColor: 'white',
+        paddingTop: '10px',
+        paddingRight: '10px',
+        paddingBottom: '10px',
+        paddingLeft: '10px',
+        borderColor: 'yellow',
+        borderStyle: 'solid',
+        borderWidth: '1px',
+        boxSizing: 'border-box'
       },
       from: RootNodeId,
       order: '0.5',

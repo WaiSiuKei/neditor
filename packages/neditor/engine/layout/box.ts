@@ -2009,15 +2009,15 @@ export abstract class Box extends Disposable {
 //    return ui_nav_item_ && ui_nav_item_.IsContainer();
 //  }
 
-// Helper methods used by |RenderAndAnimate|.
+  // Helper methods used by |RenderAndAnimate|.
   RenderAndAnimateBorder(
     rounded_corners: RoundedCorners | undefined,
     border_node_builder: CompositionNodeBuilder/*,
       render_tree::animations::AnimateNode::CompositionNodeBuilder* animate_node_builder*/): void {
     //  bool has_animated_border = HasAnimatedBorder(animations());
     let has_animated_border = false;
-//  // If the border is absent or all borders are transparent, there is no need
-//  // to render border.
+    // If the border is absent or all borders are transparent, there is no need
+    // to render border.
     if (this.border_insets_.zero() ||
       (!has_animated_border && AreAllBordersTransparent(this.computed_style()!))) {
       return;
@@ -2030,12 +2030,12 @@ export abstract class Box extends Disposable {
     let border_node = new RectNode(rect_node_builder);
     border_node_builder.AddChild(border_node);
 
-//  if (has_animated_border) {
-//    AddAnimations<RectNode>(
-//        base::Bind(&PopulateBaseStyleForBorderNode),
-//        base::Bind(&SetupBorderNodeFromStyle, rounded_corners),
-//        *css_computed_style_declaration(), border_node, animate_node_builder);
-//  }
+    //  if (has_animated_border) {
+    //    AddAnimations<RectNode>(
+    //        base::Bind(&PopulateBaseStyleForBorderNode),
+    //        base::Bind(&SetupBorderNodeFromStyle, rounded_corners),
+    //        *css_computed_style_declaration(), border_node, animate_node_builder);
+    //  }
   }
 
   RenderAndAnimateOutline(border_node_builder: CompositionNodeBuilder/*,

@@ -4,6 +4,7 @@ import { Optional } from '../../base/common/typescript';
 import type { OnRenderTreeProducedCallback } from '../browser/web_module';
 import type { Window } from '../dom/window';
 import type { Node as DOMNode } from '../dom/node';
+import { DumpRenderTreeToString } from '../render_tree/dump_render_tree_to_string';
 import type { Node } from '../render_tree/node';
 import { Time, TimeDelta } from '@neditor/core/base/time/time';
 import { Paragraph } from './paragraph';
@@ -244,9 +245,9 @@ export class LayoutManager implements DocumentObserver {
       // If no render tree has been produced yet, check if html display
       // should prevent the first render tree.
       let display_none_prevents_render = !this.produced_render_tree_ && !document.html()!.IsDisplayed();
-      Reflect.set(window, 'dump', () => {
+      Reflect.set(window, 'dumpLayout', () => {
         console.log(this.initial_containing_block_?.DumpWithIndent());
-      })
+      });
       if (!display_none_prevents_render) {
         let render_tree_root = GenerateRenderTreeFromBoxTree(this.used_style_provider_,
           // layout_stat_tracker_,
@@ -259,9 +260,9 @@ export class LayoutManager implements DocumentObserver {
         this.on_render_tree_produced_callback_(new LayoutResults(render_tree_root, TimeDelta.FromMilliseconds(current_time), noop));
 
         this.is_render_tree_pending_ = false;
-        // runWhenIdle(() => {
-        //   console.log(DumpRenderTreeToString(render_tree_root));
-        // });
+        Reflect.set(window, 'dumpRender', () => {
+          console.log(DumpRenderTreeToString(render_tree_root));
+        });
       }
 
       TRACE_EVENT_END0('cobalt::layout', kBenchmarkStatLayout);

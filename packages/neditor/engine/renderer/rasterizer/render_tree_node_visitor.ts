@@ -1,56 +1,50 @@
 // This callback may be called by the visitor in order to obtain a SkSurface
+import { devicePixelRatio } from '@neditor/core/base/browser/devicePixelRatio';
+import { Callback1, Closure } from '@neditor/core/base/callback';
+import { DCHECK_EQ } from '@neditor/core/base/check_op';
+import { NOTIMPLEMENTED, NOTREACHED } from '@neditor/core/base/common/notreached';
+import { isFunction } from '@neditor/core/base/common/type';
+import { TRACE_EVENT0 } from '@neditor/core/base/trace_event/common/trace_event_common';
+import { CanvasKit, makePaint, makePath, MakePathFromSVGString } from '@neditor/skia';
 // from which both a SkCanvas can be obtained (for rendering into) and then
 // a SkImage can be obtained which can be passed in to another SkCanvas'
 // drawImage function.  The surface returned is guaranteed to have been
 // cleared to ARGB(0,0,0,0).
-import { Canvas, Surface, Paint } from 'canvaskit-wasm';
-import { NodeVisitor } from '../../render_tree/node_visitor';
-import { Size } from '../../math/size';
-import { RenderTreeNodeVisitorDrawState } from './render_tree_node_visitor_draw_state';
-import { TRACE_EVENT0 } from '@neditor/core/base/trace_event/common/trace_event_common';
-import { ClearRectNode } from '../../render_tree/clear_rect_node';
-import { RectF } from '../../math/rect_f';
-import { ColorRGBA } from '../../render_tree/color_rgba';
-import { SkRect, SkRect_MakeXYWH } from './skia/sk_rect';
-import { CompositionNode } from '../../render_tree/composition_node';
-import { MatrixTransformNode } from '../../render_tree/matrix_transform_node';
-import { RectNode } from '../../render_tree/rect_node';
-import { TextNode } from '../../render_tree/text_node';
-import { SkMatrix } from './skia/sk_matrix';
-import { Node } from '../../render_tree/node';
-import { CobaltMatrixToSkia, CobaltRectFToSkiaRect } from './type_conversions';
-import { RoundedCorners } from '../../render_tree/rounded_corners';
-import { NOTIMPLEMENTED, NOTREACHED } from '@neditor/core/base/common/notreached';
-import {
-  Brush,
-  ColorStopList,
-  LinearGradientBrush,
-  RadialGradientBrush,
-  SolidColorBrush
-} from '../../render_tree/brush';
-import { BrushVisitor } from '../../render_tree/brush_visitor';
-import { IsOpaque } from './common/utils';
-import { SkColor } from './skia/sk_color';
-import { SkScalar } from './skia/sk_scalar';
-import { SkPoint } from './skia/sk_point';
-import { DCHECK_EQ } from '@neditor/core/base/check_op';
-import { Shadow } from '../../render_tree/shadow';
-import { PointAtOffsetFromOrigin, PointF } from '../../math/point_f';
-import { SkGradientShader } from './skia/effects/SkGradientShader';
-import { GlyphBuffer } from './sk_glyph_buffer';
-import { ImageNode } from '../../render_tree/image_node';
-import { MultiPlaneImage, SinglePlaneImage } from './sk_image';
-import { Image as BaseImage } from '../../render_tree/image';
-import { isFunction } from '@neditor/core/base/common/type';
+import { Canvas, Paint, Surface } from 'canvaskit-wasm';
+import { AccessorCallback, Optional } from '../../../base/common/typescript';
 import { baseGetTypeId } from '../../base/type_id';
-import { Callback1, Callback2, Closure } from '@neditor/core/base/callback';
-import { IsOnlyScaleAndTranslate } from '../../math/transform_2d';
 import { Matrix3F } from '../../math/matrix3_f';
-import { CanvasKit, makePaint, MakePathFromSVGString } from '@neditor/skia';
-import { devicePixelRatio } from '@neditor/core/base/browser/devicePixelRatio';
-import { FreehandNode } from "../../render_tree/freehand_node";
-import { Path } from "../../render_tree/path";
-import { AccessorCallback, Optional } from "../../../base/common/typescript";
+import { PointAtOffsetFromOrigin, PointF } from '../../math/point_f';
+import { RectF } from '../../math/rect_f';
+import { Size } from '../../math/size';
+import { IsOnlyScaleAndTranslate } from '../../math/transform_2d';
+import { Border, BorderStyle } from '../../render_tree/border';
+import { Brush, ColorStopList, LinearGradientBrush, RadialGradientBrush, SolidColorBrush } from '../../render_tree/brush';
+import { BrushVisitor } from '../../render_tree/brush_visitor';
+import { ClearRectNode } from '../../render_tree/clear_rect_node';
+import { ColorRGBA } from '../../render_tree/color_rgba';
+import { CompositionNode } from '../../render_tree/composition_node';
+import { FreehandNode } from '../../render_tree/freehand_node';
+import { Image as BaseImage } from '../../render_tree/image';
+import { ImageNode } from '../../render_tree/image_node';
+import { MatrixTransformNode } from '../../render_tree/matrix_transform_node';
+import { Node } from '../../render_tree/node';
+import { NodeVisitor } from '../../render_tree/node_visitor';
+import { RectNode } from '../../render_tree/rect_node';
+import { RoundedCorners } from '../../render_tree/rounded_corners';
+import { Shadow } from '../../render_tree/shadow';
+import { TextNode } from '../../render_tree/text_node';
+import { IsOpaque } from './common/utils';
+import { RenderTreeNodeVisitorDrawState } from './render_tree_node_visitor_draw_state';
+import { GlyphBuffer } from './sk_glyph_buffer';
+import { MultiPlaneImage, SinglePlaneImage } from './sk_image';
+import { SkGradientShader } from './skia/effects/SkGradientShader';
+import { SkColor } from './skia/sk_color';
+import { SkMatrix } from './skia/sk_matrix';
+import { SkPoint } from './skia/sk_point';
+import { SkRect, SkRect_MakeLeftTopRightBottom, SkRect_MakeXYWH } from './skia/sk_rect';
+import { SkScalar } from './skia/sk_scalar';
+import { CobaltMatrixToSkia, CobaltRectFToSkiaRect } from './type_conversions';
 
 export abstract class ScratchSurface {
   abstract GetSurface(): Surface
@@ -121,7 +115,7 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
     TRACE_EVENT0('cobalt::renderer', 'Visit(ClearRectNode)');
     this.withScaleAndTranslate(() => {
       this.DrawClearRect(clear_rect_node.data().rect, clear_rect_node.data().color);
-    })
+    });
   }
   VisitCompositionNode(composition_node: CompositionNode): void {
     TRACE_EVENT0('cobalt::renderer', 'Visit(CompositionNode)');
@@ -179,12 +173,13 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
       // #if ENABLE_FLUSH_AFTER_EVERY_NODE
       // draw_state_.render_target.flush();
       // #endif
-    })
+    });
   }
   VisitRectNode(rect_node: RectNode): void {
     TRACE_EVENT0('cobalt::renderer', 'Visit(RectNode)');
     this.withScaleAndTranslate(() => {
 
+      let rect = rect_node.data().rect;
       let content_rect = rect_node.data().rect.CLONE();
       let border = rect_node.data().border;
       if (border) {
@@ -225,21 +220,20 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
       }
 
       if (rect_node.data().border) {
-        NOTIMPLEMENTED;
-        // if (rect_node.data().rounded_corners) {
-        //   DrawSolidRoundedRectBorder(
-        //   draw_state_, rect, rect_node.data().rounded_corners, content_rect,
-        // inner_rounded_corners, rect_node.data().border);
-        // } else {
-        //   DrawSolidNonRoundRectBorder(draw_state_, rect,
-        // rect_node.data().border);
-        // }
+        if (rect_node.data().rounded_corners) {
+          NOTIMPLEMENTED();
+          //   DrawSolidRoundedRectBorder(
+          //   draw_state_, rect, rect_node.data().rounded_corners, content_rect,
+          // inner_rounded_corners, rect_node.data().border);
+        } else {
+          DrawSolidNonRoundRectBorder(this.draw_state_, rect, rect_node.data().border!);
+        }
       }
 
       // #if ENABLE_FLUSH_AFTER_EVERY_NODE
       // draw_state_.render_target.flush();
       // #endif
-    })
+    });
   }
   VisitTextNode(text_node: TextNode): void {
     TRACE_EVENT0('cobalt::renderer', 'Visit(TextNode)');
@@ -287,7 +281,7 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
         text_node.data().color,
         PointAtOffsetFromOrigin(offset),
         blur_zero_sigma);
-    })
+    });
   }
   VisitImageNode(image_node: ImageNode): void {
     // The image_node may contain nothing. For example, when it represents a video
@@ -362,14 +356,14 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
         data.d,
         data.fill,
         data.stroke,
-      )
-    })
+      );
+    });
   }
 
   private withScaleAndTranslate(cb: () => void) {
     this.draw_state_.render_target.save();
     this.draw_state_.render_target.scale(devicePixelRatio, devicePixelRatio);
-    cb()
+    cb();
     this.draw_state_.render_target.restore();
   }
 
@@ -422,7 +416,7 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
         //     CobaltRectFToSkiaRect(destination_rect), paint);
         // }
       }
-    })
+    });
   }
 
   private CreateSkPaintForImageRendering<R>(
@@ -444,7 +438,7 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
       } finally {
         paint.deleteLater();
       }
-    })
+    });
   }
 
   private DrawClearRect(rect: RectF, color: ColorRGBA) {
@@ -456,7 +450,7 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
         color.b() * 255, color.a() * 255);
 
       this.draw_state_.render_target.drawRect(sk_rect, paint);
-    })
+    });
   }
 
   private DrawRoundedRectWithBrush(brush: Brush,
@@ -495,7 +489,7 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
 
       draw_state_.render_target.drawRect(
         SkRect_MakeXYWH(rect.x(), rect.y(), rect.width(), rect.height()), paint);
-    })
+    });
   }
 
   private RenderText(
@@ -534,7 +528,7 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
           return;
         }
         this.draw_state_.render_target.drawTextBlob(text_blob, position.x(), position.y(), paint);
-      })
+      });
     }
   }
 
@@ -548,10 +542,10 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
       return MakePathFromSVGString(d)(
         (path) => {
           if (!path) {
-            NOTREACHED()
+            NOTREACHED();
           }
           if (fill) {
-            paint.setStyle(CanvasKit.PaintStyle.Fill)
+            paint.setStyle(CanvasKit.PaintStyle.Fill);
             paint.setColorComponents(
               fill.r() * 255,
               fill.g() * 255,
@@ -561,19 +555,166 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
             this.draw_state_.render_target.drawPath(path, paint);
           }
           if (stroke) {
-            paint.setStyle(CanvasKit.PaintStyle.Stroke)
+            paint.setStyle(CanvasKit.PaintStyle.Stroke);
             paint.setColorComponents(
               stroke.r() * 255,
               stroke.g() * 255,
               stroke.b() * 255,
               stroke.a() * 255,
-            )
+            );
             this.draw_state_.render_target.drawPath(path, paint);
           }
         }
-      )
-    })
+      );
+    });
   }
+}
+
+// Draw 4 trapezoids for 4 directions.
+//       A ___________ B
+//        |\_________/|
+//        ||E       F||
+//        ||         ||
+//        ||G_______H||
+//        |/_________\|
+//       C             D
+function DrawSolidNonRoundRectBorder(draw_state: RenderTreeNodeVisitorDrawState,
+                                     rect: RectF,
+                                     border: Border) {
+  // Check if the border colors are the same or not to determine whether we
+  // should be using antialiasing.  If the border colors are different, then
+  // there will be visible diagonal edges in the output and so we would like to
+  // render with antialiasing enabled to smooth those diagonal edges.
+  let border_colors_are_same = border.top.color.EQ(border.left.color) &&
+    border.top.color.EQ(border.bottom.color) &&
+    border.top.color.EQ(border.right.color);
+
+  // If any of the border edges have width less than this threshold, they will
+  // use antialiasing as otherwise depending on the border's fractional
+  // position, it may have one extra pixel visible, which is a large percentage
+  // of its small width.
+  const kAntiAliasWidthThreshold = 3.0;
+
+  // Use faster draw function if possible.
+  if (border_colors_are_same &&
+    border.top.style == BorderStyle.kBorderStyleSolid &&
+    border.bottom.style == BorderStyle.kBorderStyleSolid &&
+    border.left.style == BorderStyle.kBorderStyleSolid &&
+    border.right.style == BorderStyle.kBorderStyleSolid &&
+    border.top.width == border.bottom.width &&
+    border.top.width == border.left.width &&
+    border.top.width == border.right.width) {
+    let anti_alias = border.top.width < kAntiAliasWidthThreshold ||
+      border.bottom.width < kAntiAliasWidthThreshold ||
+      border.left.width < kAntiAliasWidthThreshold ||
+      border.right.width < kAntiAliasWidthThreshold;
+    DrawUniformSolidNonRoundRectBorder(draw_state, rect, border.top.width,
+      border.top.color, anti_alias);
+    return;
+  }
+
+  // Top
+  let top_points: SkPoint[] = [
+    [rect.x(), rect.y()],                                              // A
+    [rect.x() + border.left.width, rect.y() + border.top.width],       // E
+    [rect.right() - border.right.width, rect.y() + border.top.width],  // F
+    [rect.right(), rect.y()]                                           // B
+  ];
+  DrawQuadWithColorIfBorderIsSolid(
+    border.top.style, draw_state, border.top.color, top_points,
+    border.top.width < kAntiAliasWidthThreshold ? true
+      : !border_colors_are_same);
+
+  // Left
+  let left_points: SkPoint[] = [
+    [rect.x(), rect.y()],                                                 // A
+    [rect.x(), rect.bottom()],                                            // C
+    [rect.x() + border.left.width, rect.bottom() - border.bottom.width],  // G
+    [rect.x() + border.left.width, rect.y() + border.top.width]];         // E
+  DrawQuadWithColorIfBorderIsSolid(
+    border.left.style, draw_state, border.left.color, left_points,
+    border.left.width < kAntiAliasWidthThreshold ? true
+      : !border_colors_are_same);
+
+  // Bottom
+  let bottom_points: SkPoint[] = [
+    [rect.x() + border.left.width, rect.bottom() - border.bottom.width],  // G
+    [rect.x(), rect.bottom()],                                            // C
+    [rect.right(), rect.bottom()],                                        // D
+    [rect.right() - border.right.width,
+      rect.bottom() - border.bottom.width]];  // H
+  DrawQuadWithColorIfBorderIsSolid(
+    border.bottom.style, draw_state, border.bottom.color, bottom_points,
+    border.bottom.width < kAntiAliasWidthThreshold ? true
+      : !border_colors_are_same);
+
+  // // Right
+  let right_points: SkPoint[] = [
+    [rect.right() - border.right.width, rect.y() + border.top.width],  // F
+    [rect.right() - border.right.width,
+      rect.bottom() - border.bottom.width],  // H
+    [rect.right(), rect.bottom()],          // D
+    [rect.right(), rect.y()]];              // B
+  DrawQuadWithColorIfBorderIsSolid(
+    border.right.style, draw_state, border.right.color, right_points,
+    border.right.width < kAntiAliasWidthThreshold ? true
+      : !border_colors_are_same);
+}
+
+function DrawQuadWithColorIfBorderIsSolid(
+  border_style: BorderStyle,
+  draw_state: RenderTreeNodeVisitorDrawState,
+  color: ColorRGBA, points: SkPoint[],
+  anti_alias: boolean) {
+  if (border_style == BorderStyle.kBorderStyleSolid) {
+    makePaint((paint) => {
+      let alpha = color.a();
+      alpha *= draw_state.opacity;
+      paint.setColorComponents(color.r() * 255, color.g() * 255, color.b() * 255, alpha * 255);
+      paint.setAntiAlias(anti_alias);
+      if (IsOpaque(alpha)) {
+        paint.setBlendMode(CanvasKit.BlendMode.Src);
+      } else {
+        paint.setBlendMode(CanvasKit.BlendMode.SrcOver);
+      }
+
+      makePath((path) => {
+        path.addPoly(points.flat(), true);
+        draw_state.render_target.drawPath(path, paint);
+      });
+    });
+  } else {
+    DCHECK_EQ(border_style, BorderStyle.kBorderStyleNone);
+  }
+}
+
+function DrawUniformSolidNonRoundRectBorder(
+  draw_state: RenderTreeNodeVisitorDrawState,
+  rect: RectF,
+  border_width: number,
+  border_color: ColorRGBA,
+  anti_alias: boolean) {
+  makePaint(paint => {
+    let alpha = border_color.a() * draw_state.opacity;
+    paint.setColorComponents(border_color.r() * 255, border_color.g() * 255, border_color.b() * 255, alpha * 255);
+    paint.setAntiAlias(anti_alias);
+    if (IsOpaque(alpha)) {
+      paint.setBlendMode(CanvasKit.BlendMode.Src);
+    } else {
+      paint.setBlendMode(CanvasKit.BlendMode.SrcOver);
+    }
+    paint.setStyle(CanvasKit.PaintStyle.Stroke);
+    paint.setStrokeWidth(border_width);
+    let half_border_width = border_width * 0.5;
+    let skrect = SkRect_MakeLeftTopRightBottom(
+      rect.x() + half_border_width,
+      rect.y() + half_border_width,
+      rect.right() - half_border_width,
+      rect.bottom() - half_border_width
+    );
+
+    draw_state.render_target.drawRect(skrect, paint);
+  });
 }
 
 function NodeIsWithinCanvasBounds(total_matrix: SkMatrix,
