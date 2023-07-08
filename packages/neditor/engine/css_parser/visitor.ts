@@ -187,7 +187,7 @@ export class Visitor implements inlineVisitor<void> {
     } else if (ctx.Uri()) {
       this.visitUri(ctx.Uri()!);
     } else if (ctx.hexcolor()) {
-      NOTIMPLEMENTED();
+      this.terms.push(RGBAColorValue.fromHex(ctx.text));
     } else if (ctx.calc()) {
       NOTIMPLEMENTED();
     } else if (ctx.function_()) {

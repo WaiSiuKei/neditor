@@ -1,4 +1,6 @@
 // Represents color values that are convertible to RGBA without knowledge
+import { DCHECK } from '../../base/check';
+import { Color } from '../../base/common/color';
 // of element's context, for example:
 //   - #0047ab
 //   - rgb(0, 71, 171)
@@ -45,11 +47,15 @@ let non_trivial_static_fields: NonTrivialStaticFields;
 export class RGBAColorValue extends PropertyValue {
   static fromString(str: string) {
     const ret = Reflect.get(non_trivial_static_fields, str);
-    if (!ret) {
-      debugger
-      NOTIMPLEMENTED();
-    }
+    DCHECK(ret);
     return ret;
+  }
+
+  static fromHex(str: string) {
+    const color = Color.fromHex(str);
+    DCHECK(color);
+    const { rgba } = color;
+    return new RGBAColorValue(rgba.r, rgba.g, rgba.b, rgba.a * 255);
   }
 
   value_: number;
@@ -60,6 +66,10 @@ export class RGBAColorValue extends PropertyValue {
     if (arguments.length == 1) {
       this.value_ = castInt(r);
     } else {
+      checkRange(r);
+      checkRange(g!);
+      checkRange(b!);
+      checkRange(a!);
       this.value_ = castInt(r << 24) | castInt(g! << 16) | castInt(b! << 8) | castInt(a! << 0);
     }
   }
@@ -84,6 +94,11 @@ export class RGBAColorValue extends PropertyValue {
   GetTypeId(): number {
     return baseGetTypeId(RGBAColorValue);
   }
+}
+
+function checkRange(val: number) {
+  DCHECK(0 <= val);
+  DCHECK(255 >= val);
 }
 
 class NonTrivialStaticFields {
