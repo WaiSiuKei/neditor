@@ -19,6 +19,7 @@ export class Visitor implements inlineVisitor<void> {
   private currentKey: string | null = null;
   private currentValue: PropertyValue | null = null;
   private terms: PropertyValue[] = [];
+  private args: any[] = [];
 
   private currentKeyIsColor() {
     DCHECK(this.currentKey);
@@ -69,17 +70,25 @@ export class Visitor implements inlineVisitor<void> {
     this.terms.length = 0;
   }
   visitFunction_(ctx: Function_Context): void {
-    if (ctx.Function_().text === 'rgb(') {
+    const func = ctx.Function_().text;
+    if (func === 'rgb(') {
       let expr = ctx.expr()!;
       DCHECK(expr);
-      const numbers: number[] = [];
-      for (let child of expr.children!) {
-        if (child instanceof KnownTermContext) {
-          numbers.push(+child.number()!.text);
-        }
-      }
-      const [r, g, b] = numbers;
-      this.terms.push(new RGBAColorValue(r, g, b, 1));
+      DCHECK(expr.children);
+      this.args.length = 0;
+      expr.children.forEach(c => c.accept(this));
+      const [r, g, b, a] = this.args;
+      this.args.length = 0;
+      this.terms.push(new RGBAColorValue(r, g, b, 255));
+    } else if (func === 'rgba(') {
+      let expr = ctx.expr()!;
+      DCHECK(expr);
+      DCHECK(expr.children);
+      this.args.length = 0;
+      expr.children.forEach(c => c.accept(this));
+      const [r, g, b, a] = this.args;
+      this.args.length = 0;
+      this.terms.push(new RGBAColorValue(r, g, b, a * 255));
     } else {
       NOTIMPLEMENTED();
     }
@@ -89,7 +98,7 @@ export class Visitor implements inlineVisitor<void> {
     NOTIMPLEMENTED();
   }
   visitGoodOperator(ctx: GoodOperatorContext): void {
-    NOTIMPLEMENTED();
+    // noop
   }
   visitGoodProperty(ctx: GoodPropertyContext): void {
     if (ctx.ident()) {
@@ -99,7 +108,7 @@ export class Visitor implements inlineVisitor<void> {
     }
   }
   visitHexcolor(ctx: HexcolorContext): void {
-    NOTIMPLEMENTED();
+    this.terms.push(RGBAColorValue.fromHex(ctx.text));
   }
   visitIdent(ctx: IdentContext): void {
     this.terms.push(KeywordValue.fromString(ctx.text));
@@ -108,7 +117,6 @@ export class Visitor implements inlineVisitor<void> {
   visitKnownDeclaration(ctx: KnownDeclarationContext): void {
     ctx.children!.forEach(c => c.accept(this));
     if (this.currentKey && this.currentValue) {
-      // console.log('set', this.currentKey, this.currentValue);
       const key = GetPropertyKey(this.currentKey);
       DCHECK(key);
       const data = this.style.data();
@@ -167,7 +175,7 @@ export class Visitor implements inlineVisitor<void> {
   }
   visitKnownTerm(ctx: KnownTermContext): void {
     if (ctx.number()) {
-      NOTIMPLEMENTED();
+      this.visitNumber(ctx.number()!);
     } else if (ctx.percentage()) {
       NOTIMPLEMENTED();
     } else if (ctx.dimension()) {
@@ -187,7 +195,7 @@ export class Visitor implements inlineVisitor<void> {
     } else if (ctx.Uri()) {
       this.visitUri(ctx.Uri()!);
     } else if (ctx.hexcolor()) {
-      this.terms.push(RGBAColorValue.fromHex(ctx.text));
+      this.visitHexcolor(ctx.hexcolor()!);
     } else if (ctx.calc()) {
       NOTIMPLEMENTED();
     } else if (ctx.function_()) {
@@ -197,7 +205,7 @@ export class Visitor implements inlineVisitor<void> {
     }
   }
   visitNumber(ctx: NumberContext): void {
-    NOTIMPLEMENTED();
+    this.args.push(+ctx.text);
   }
   visitOperator_(ctx: Operator_Context): void {
     NOTIMPLEMENTED();
@@ -230,7 +238,7 @@ export class Visitor implements inlineVisitor<void> {
     NOTIMPLEMENTED();
   }
   visitWs(ctx: WsContext): void {
-
+    // noop
   }
   visit(tree: ParseTree): void {
     NOTIMPLEMENTED();
