@@ -131,7 +131,7 @@ export class Visitor implements inlineVisitor<void> {
             PropertyKey.kBorderStyleProperty,
             [
               PropertyKey.kBorderTopStyleProperty,
-              PropertyKey.kBorderTopStyleProperty,
+              PropertyKey.kBorderRightStyleProperty,
               PropertyKey.kBorderBottomStyleProperty,
               PropertyKey.kBorderLeftStyleProperty,
             ],

@@ -608,8 +608,7 @@ function DrawSolidNonRoundRectBorder(draw_state: RenderTreeNodeVisitorDrawState,
       border.bottom.width < kAntiAliasWidthThreshold ||
       border.left.width < kAntiAliasWidthThreshold ||
       border.right.width < kAntiAliasWidthThreshold;
-    DrawUniformSolidNonRoundRectBorder(draw_state, rect, border.top.width,
-      border.top.color, anti_alias);
+    DrawUniformSolidNonRoundRectBorder(draw_state, rect, border.top.width, border.top.color, anti_alias);
     return;
   }
 
