@@ -1,3 +1,4 @@
+import { DCHECK } from '../../base/check';
 import { ConstructionType, LegacyLayout, Node, NodeType, NodeVisitor } from './node';
 import type { Document } from './document';
 import { TRACE_EVENT1, TRACE_EVENT2 } from '@neditor/core/base/trace_event/common/trace_event_common';
@@ -50,7 +51,7 @@ export abstract class Element extends ContainerNode {
   }
   getNodeType(): NodeType {return NodeType.kElementNode;}
   get nodeName() {
-    return this.tagName
+    return this.tagName;
   }
   get tagName() {
     return this.local_name_;
@@ -288,5 +289,12 @@ export abstract class Element extends ContainerNode {
 
   HasElementFlag(mask: ElementFlags): boolean {
     return isNil(this.element_flags_) ? false : !!(this.element_flags_ & mask);
+  }
+
+  getBoundingClientRects() {
+    const layoutObject = this.GetLayoutObject();
+    DCHECK(layoutObject);
+    const rect = layoutObject.box.GetClientRect();
+    return new DOMRect(rect.x().toFloat(), rect.y().toFloat(), rect.width().toFloat(), rect.height().toFloat());
   }
 }

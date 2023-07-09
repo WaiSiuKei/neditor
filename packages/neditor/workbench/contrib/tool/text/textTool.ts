@@ -10,6 +10,7 @@ import { assertValue } from '../../../../base/common/type';
 import { Optional } from '../../../../base/common/typescript';
 import { ScopedIdentifier } from '../../../../canvas/canvasCommon/scope';
 import { AttrNameOfId, getScope } from '../../../../canvas/viewModel/path';
+import { HTMLParagraphElement } from '../../../../engine/dom/html_paragraph_element';
 import { Node } from '../../../../engine/dom/node';
 import { NodeTraversal } from '../../../../engine/dom/node_traversal';
 import { ITextBoxRTreeItem } from '../../../../engine/layout/r_tree';
@@ -183,7 +184,7 @@ export class TextTool extends BaseTool {
     const anchorY = this.anchorY!;
     const { clientX, clientY } = e;
     if (anchorX === clientX && anchorY === clientY) {
-      return this._updateCollapsedSelect(anchorX, anchorY);
+      return this._updateCollapsedSelect(e);
     }
     const firstAsMin = anchorY <= clientY;
     const minX = firstAsMin ? anchorX : clientX;
@@ -272,25 +273,38 @@ export class TextTool extends BaseTool {
     if (selection.focusOffset < 0) NOTREACHED();
   }
 
-  private _updateCollapsedSelect(x: number, y: number) {
-    const anchorX = this.anchorX!;
-    const anchorY = this.anchorY!;
+  private _updateCollapsedSelect(e: IMouseInputEvent) {
+    const { clientX, clientY } = e;
+    const { targetPath } = e;
+    const lastOne = tail(targetPath);
+    const targetNode = lastOne.node;
+    let startX = clientX;
+    let endX = clientX;
+    if (targetNode.IsElement()) {
+      const targetEl = targetNode.AsElement();
+      if (targetEl.tagName !== HTMLParagraphElement.kTagName) debugger
+      DCHECK(targetEl.tagName === HTMLParagraphElement.kTagName);
+      const rect = targetEl.getBoundingClientRects();
+      startX = Math.min(rect.left, clientX);
+      endX = Math.max(rect.right, clientX);
+    }
     const selection = this.canvas.view.document.getSelection();
-    const startItems = this.canvas.view.layoutManager.hitTestRTree(anchorX, anchorY, anchorX, anchorY);
+    const startItems = this.canvas.view.layoutManager.hitTestRTree(startX, clientY, endX, clientY);
     if (!startItems.length) {
       selection.removeAllRanges();
       return;
     }
     const startItem = startItems[0];
     const boxLeft = startItem.minX;
-    const position = x - boxLeft;
+    const boxRight = startItem.maxX;
+    const spaceFromLeft = clientX - boxLeft;
     let offset: number;
-    if (position <= 0) {
-      NOTREACHED();
-    } else if (position === 0) {
+    if (spaceFromLeft <= 0) {
       offset = startItem.box.GetTextStartPosition();
+    } else if (clientX >= boxRight) {
+      offset = startItem.box.GetTextEndPosition();
     } else {
-      offset = startItem.box.GetTextPositionAtVisualLocation(position);
+      offset = startItem.box.GetTextPositionAtVisualLocation(spaceFromLeft);
     }
     const node = startItem.box.node!;
     const range = this.canvas.view.document.createRange();

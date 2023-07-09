@@ -808,6 +808,27 @@ export abstract class Box extends Disposable {
     return this.content_size_;
   }
 
+  paddingBoxSize() {
+    return new SizeLayoutUnit(
+      this.content_box_size().width().ADD(this.padding_left()).ADD(this.padding_right()),
+      this.content_box_size().height().ADD(this.padding_top()).ADD(this.padding_bottom()),
+    );
+  }
+
+  borderBoxSize() {
+    return new SizeLayoutUnit(
+      this.paddingBoxSize().width().ADD(this.border_left_width()).ADD(this.border_right_width()),
+      this.paddingBoxSize().height().ADD(this.border_top_width()).ADD(this.border_bottom_width()),
+    );
+  }
+
+  marginBoxSize() {
+    return new SizeLayoutUnit(
+      this.borderBoxSize().width().ADD(this.margin_left()).ADD(this.margin_right()),
+      this.borderBoxSize().height().ADD(this.margin_top()).ADD(this.margin_bottom()),
+    );
+  }
+
   GetContentBoxFromMarginBox() {
     return new RectLayoutUnit(this.GetContentBoxLeftEdgeOffsetFromMarginBox(),
       this.GetContentBoxTopEdgeOffsetFromMarginBox(), this.width(),
@@ -817,12 +838,10 @@ export abstract class Box extends Disposable {
     return this.GetMarginBoxOffsetFromRoot(transform_forms_root).ADD(this.GetContentBoxOffsetFromMarginBox());
   }
   GetContentBoxOffsetFromMarginBox() {
-    return new Vector2dLayoutUnit(this.GetContentBoxLeftEdgeOffsetFromMarginBox(),
-      this.GetContentBoxTopEdgeOffsetFromMarginBox());
+    return new Vector2dLayoutUnit(this.GetContentBoxLeftEdgeOffsetFromMarginBox(), this.GetContentBoxTopEdgeOffsetFromMarginBox());
   }
   GetContentBoxOffsetFromBorderBox() {
-    return new Vector2dLayoutUnit(this.border_left_width().ADD(this.padding_left()),
-      this.border_top_width().ADD(this.padding_top()));
+    return new Vector2dLayoutUnit(this.border_left_width().ADD(this.padding_left()), this.border_top_width().ADD(this.padding_top()));
   }
   GetContentBoxOffsetFromPaddingBox() {
     return new Vector2dLayoutUnit(this.padding_left(), this.padding_top());
@@ -833,18 +852,15 @@ export abstract class Box extends Disposable {
   GetContentBoxTopEdgeOffsetFromMarginBox() {
     return this.margin_top().ADD(this.border_top_width()).ADD(this.padding_top());
   }
-  GetContentBoxOffsetFromContainingBlockContentBox(
-    containing_block: ContainerBox) {
+  GetContentBoxOffsetFromContainingBlockContentBox(containing_block: ContainerBox) {
     return this.GetContainingBlockOffsetFromItsContentBox(containing_block).ADD(this.GetContentBoxOffsetFromContainingBlock());
   }
-  GetContentBoxInsetFromContainingBlockContentBox(
-    containing_block: ContainerBox) {
+  GetContentBoxInsetFromContainingBlockContentBox(containing_block: ContainerBox) {
     // NOTE: Bottom inset is not computed and should not be queried.
     return this.GetContainingBlockInsetFromItsContentBox(containing_block).ADD(this.GetContentBoxInsetFromContainingBlock(containing_block));
   }
   GetContentBoxOffsetFromContainingBlock() {
-    return new Vector2dLayoutUnit(this.GetContentBoxLeftEdgeOffsetFromContainingBlock(),
-      this.GetContentBoxTopEdgeOffsetFromContainingBlock());
+    return new Vector2dLayoutUnit(this.GetContentBoxLeftEdgeOffsetFromContainingBlock(), this.GetContentBoxTopEdgeOffsetFromContainingBlock());
   }
   GetContentBoxInsetFromContainingBlock(
     containing_block: ContainerBox) {
@@ -1476,8 +1492,7 @@ export abstract class Box extends Disposable {
 
     // The border box offset is calculated in two steps because we want to
     // stop at the second transform and not the first (which is this box).
-    let containing_block_offset_from_root =
-      this.GetContainingBlockOffsetFromRoot(true /*transform_forms_root*/);
+    let containing_block_offset_from_root = this.GetContainingBlockOffsetFromRoot(true /*transform_forms_root*/);
 
     // The transform rect always includes the offset from the containing block.
     // However, in the case where the action is entering the transform, the full
