@@ -11,7 +11,7 @@ class HoverTool extends BaseTool {
   }
   activate() {
     super.activate();
-    this.resetCursorStyle()
+    this.resetCursorStyle();
   }
   deactivate() {
     super.deactivate();
@@ -40,8 +40,12 @@ class HoverTool extends BaseTool {
     if (layoutObject.AsLayoutTexes()) return;
     const { box } = layoutObject;
     const size = box.content_box_size();
-    const width = size.width().toFloat();
-    const height = size.height().toFloat();
+    const paddingTop = box.padding_top().toFloat();
+    const paddingRight = box.padding_right().toFloat();
+    const paddingBottom = box.padding_bottom().toFloat();
+    const paddingLeft = box.padding_left().toFloat();
+    const width = size.width().toFloat() + paddingLeft + paddingRight;
+    const height = size.height().toFloat() + paddingTop + paddingBottom;
     const offset = box.GetBorderBoxOffsetFromRoot(true);
     const top = offset.y().toFloat();
     const left = offset.x().toFloat();
