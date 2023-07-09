@@ -1513,11 +1513,16 @@ function renderDescs(parentDOM: HTMLElement, descs: readonly ViewDesc[], view: I
   const elToRemove: DOMNode[] = [];
   const clearContents: HTMLElement[] = [];
   // vue 的 anchor
+  let count = 0;
   while (dom && !Reflect.has(dom, '$anchor')) {
+    count++;
+    if (count > 100) debugger;
     let next = dom.nextSibling;
     dom.parentNode!.removeChild(dom);
     if (dom.IsElement()) {
-      elToRemove.push(dom);
+      if (dom.getAttribute(AttrNameOfComponentType) !== ComponentTypes.TrailingBreak) {
+        elToRemove.push(dom);
+      }
     } else {
       clearContents.push(parentDOM);
     }

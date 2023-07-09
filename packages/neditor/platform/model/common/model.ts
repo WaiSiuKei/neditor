@@ -4,13 +4,13 @@ import { URI } from '../../../base/common/uri';
 import { Event } from '../../../base/common/event';
 import { IModelContentChangedEvent } from './modelEvents';
 import { ScopedIdentifier } from '../../../canvas/canvasCommon/scope';
-import { INodeModel, NodeType } from '../../../common/node';
+import { IBlockNodeModel, IFragmentNodeModel, INodeModel, IRootNodeModel, ITextNodeModel, NodeType } from '../../../common/node';
 import { IIdentifier } from '../../../common/common';
 import { ILocation } from './location';
 import { createDecorator } from '../../instantiation/common/instantiation';
 import { IDisposable } from '../../../base/common/lifecycle';
 import { UndoRedoSource } from '../../undoRedo/common/undoRedo';
-import * as Y from "yjs";
+import * as Y from 'yjs';
 
 export const IModelService = createDecorator<IModelService>('modelService');
 
@@ -22,13 +22,17 @@ export enum UpdateMode {
   Add,
 }
 
-export type INodeInit = Omit<INodeModel, 'id'>
+type AttrsShouldBeBlank = 'id' | 'from' | 'order'
+export type IBlockNodeInit = Omit<IBlockNodeModel, AttrsShouldBeBlank>
+export type ITextNodeInit = Omit<ITextNodeModel, AttrsShouldBeBlank>
+export type IFragmentNodeInit = Omit<IFragmentNodeModel, AttrsShouldBeBlank>
+export type INodeInit = IBlockNodeInit | ITextNodeInit | IFragmentNodeInit
 
 export interface IModelBase<T extends IDocumentModel> extends IDisposable {
   readonly uri: URI;
   readonly onDidChangeContent: Event<IModelContentChangedEvent>;
   undoManager: Y.UndoManager;
-  yModel: IYDocumentModel
+  yModel: IYDocumentModel;
   getValue(): T;
 
   /**

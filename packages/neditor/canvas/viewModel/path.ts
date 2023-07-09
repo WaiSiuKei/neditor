@@ -6,10 +6,10 @@ export enum ComponentTypes {
   TrailingBreak = 'TrailingBreak'
 }
 
-export const AttrNameOfId = 'x-id' as const;
-export const AttrNameOfScope = 'x-scope' as const;
-export const AttrNameOfRoot = 'x-root' as const;
-export const AttrNameOfComponentType = 'x-type' as const;
+export const AttrNameOfId = 'id' as const;
+export const AttrNameOfScope = 'data-scope' as const;
+export const AttrNameOfRoot = 'data-root' as const;
+export const AttrNameOfComponentType = 'data-com-type' as const;
 
 export interface IElementPathData {
   id: string;

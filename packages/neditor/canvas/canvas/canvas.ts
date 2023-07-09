@@ -11,7 +11,7 @@ import { IScopedLocation } from '../../platform/model/common/location';
 import { IBlockNodeModel, INodeModel, IRootNodeModel, ITextNodeModel } from '../../common/node';
 import { ICanvasViewModel } from '../viewModel/viewModel';
 import { URI } from '../../base/common/uri';
-import { IModelContentChangedEvent } from "../../platform/model/common/modelEvents";
+import { IModelContentChangedEvent } from '../../platform/model/common/modelEvents';
 
 export interface GitHistory {
   /**
@@ -41,7 +41,7 @@ export interface GitHistory {
 }
 
 export interface IMVVMStatus {
-  maybeWaitForReLayout(): Promise<void>
+  maybeWaitForReLayout(): Promise<void>;
 }
 
 export interface ICanvas extends GitHistory {
@@ -51,18 +51,11 @@ export interface ICanvas extends GitHistory {
   readonly model: ICanvasModel;
   readonly viewModel: ICanvasViewModel;
   readonly view: ICanvasView;
+  readonly mvvm: IMVVMStatus;
 
   onDidChangeModel: Event<IModelChangedEvent>;
   onDidChangeModelContent: Event<IModelContentChangedEvent>;
 
-  /**
-   * Sets the current model attached to this editor.
-   * If the previous model was created by the editor via the value key in the options
-   * literal object, it will be destroyed. Otherwise, if the previous model was set
-   * via setModel, or the model key in the options literal object, the previous model
-   * will not be destroyed.
-   * It is safe to call setModel(null) to simply detach the current model from the editor.
-   */
   setModel(model: Optional<ICanvasModel>): void;
   updateModel(val: IDocumentModel): void;
   getScopedModel(scope: Scope): ICanvasModel;

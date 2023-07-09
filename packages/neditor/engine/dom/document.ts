@@ -64,9 +64,8 @@ export class Document extends ContainerNode {
   private synchronous_layout_callback_?: Function;
   private synchronous_layout_and_produce_render_tree_callback_?: () => RenderTreeNode;
 
-  private _onDidLayout = new Emitter<void>();
-  public get onDidLayout() {return this._onDidLayout.event;}
   private lifecycle_ = new DocumentLifecycle();
+  private elements_by_id = new Map<string, Element>();
 
   constructor(
     html_element_context: HTMLElementContext,
@@ -251,22 +250,6 @@ export class Document extends ContainerNode {
     this.synchronous_layout_and_produce_render_tree_callback_ =
       synchronous_layout_and_produce_render_tree_callback;
   }
-  DoSynchronousLayout() {
-    TRACE_EVENT0('cobalt::dom', 'Document::DoSynchronousLayout()');
-    if (this.synchronous_layout_callback_) {
-      this.synchronous_layout_callback_();
-    }
-  }
-  DoSynchronousLayoutAndGetRenderTree(): RenderTreeNode | null {
-    TRACE_EVENT0('cobalt::dom',
-      'Document::DoSynchronousLayoutAndGetRenderTree()');
-
-    if (this.synchronous_layout_and_produce_render_tree_callback_) {
-      return this.synchronous_layout_and_produce_render_tree_callback_();
-    }
-    return null;
-  }
-
   UpdateComputedStyles() {
     TRACE_EVENT0('cobalt::dom', 'Document::UpdateComputedStyles()');
 
@@ -384,5 +367,28 @@ export class Document extends ContainerNode {
   }
   Duplicate(): Node {
     NOTREACHED();
+  }
+
+  onNodeInserted(n: Node) {
+    if (n.IsElement()) {
+      const id = n.id;
+      if (!id) return;
+      DCHECK(!this.elements_by_id.has(id));
+      this.elements_by_id.set(id, n);
+    }
+  }
+
+  onNodeRemoved(n: Node) {
+    if (n.IsElement()) {
+      const id = n.id;
+      if (!id) return;
+      const record = this.elements_by_id.get(id);
+      DCHECK(record);
+      this.elements_by_id.delete(id);
+    }
+  }
+
+  getElementById(id: string) {
+    return this.elements_by_id.get(id);
   }
 }

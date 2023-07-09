@@ -290,7 +290,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
       DCHECK(vm);
       return vm;
     });
-    return coalesce(vmChildren);
+    return coalesce(vmChildren.filter(Boolean));
   }
 
   private updateChildren(id: IIdentifier, resourceStr: string) {

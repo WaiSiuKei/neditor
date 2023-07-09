@@ -1,30 +1,38 @@
 import { ICanvas } from '@neditor/core/canvas/canvas/canvas';
 import { CursorStyle } from '@neditor/core/canvas/view/view';
-import { InputEventType, IMouseInputEvent, InputEvents } from '@neditor/core/platform/input/browser/event';
+import { IMouseInputEvent, InputEvents, InputEventType } from '@neditor/core/platform/input/browser/event';
 import { BaseTool } from '@neditor/core/platform/tool/browser/baseTool';
 import { ITool, IToolFactory, IToolService, ToolActivationShortcut } from '@neditor/core/platform/tool/common/tool';
+import { toPX } from '../../../../base/browser/css';
 import { DCHECK } from '../../../../base/check';
 import { tail } from '../../../../base/common/array';
 import { NOTREACHED } from '../../../../base/common/notreached';
+import { deepClone } from '../../../../base/common/objects';
 import { assertValue } from '../../../../base/common/type';
 import { Optional } from '../../../../base/common/typescript';
 import { ScopedIdentifier } from '../../../../canvas/canvasCommon/scope';
 import { AttrNameOfId, getScope } from '../../../../canvas/viewModel/path';
+import { IIdentifier } from '../../../../common/common';
+import { getNodeId } from '../../../../common/model';
+import { IInlineStyle, NodeType } from '../../../../common/node';
 import { HTMLParagraphElement } from '../../../../engine/dom/html_paragraph_element';
 import { Node } from '../../../../engine/dom/node';
 import { NodeTraversal } from '../../../../engine/dom/node_traversal';
 import { ITextBoxRTreeItem } from '../../../../engine/layout/r_tree';
 import { HitTestLevel } from '../../../../platform/input/common/input';
+import { DirectionType } from '../../../../platform/model/common/location';
+import { INodeInit, RootNodeId } from '../../../../platform/model/common/model';
 import { CanvasUpdater } from './canvasUpdaterImpl';
 import { baseKeymap } from './commands';
 import { TextAreaHandler } from './controller/textAreaHandler';
-import { ViewController } from './view/viewController';
 import { keymapPlugin } from './keymap';
-import { EditorState } from './state/state';
-import { defaultSchema } from './model/defaultSchema';
 import { Node as EditorNode } from './model';
+import { defaultSchema } from './model/defaultSchema';
+import { EditorState } from './state/state';
 import { IEditorView } from './view/view';
+import { ViewController } from './view/viewController';
 import { EditorView } from './view/viewImpl';
+import randomColor from 'randomcolor';
 
 function isInlineText(n: Node) {
   if (n.IsText()) return true;
@@ -93,7 +101,7 @@ export class TextTool extends BaseTool {
     }
   }
   handleDBClick(e: IMouseInputEvent) {
-    this._handleClick(e);
+    this._handleClick(e, { startOnEmpty: true });
   }
   handleMouseEnter(e: IMouseInputEvent) {
     const { node } = tail(e.targetPath);
@@ -105,13 +113,7 @@ export class TextTool extends BaseTool {
     }
   }
   handleMouseDown(e: IMouseInputEvent) {
-    const shouldExit = this._handleClick(e);
-    if (shouldExit) {
-      this.canvas.invokeWithinContext(accessor => {
-        const toolService = accessor.get<IToolService>(IToolService);
-        toolService.switchDefault();
-      });
-    }
+    this._handleClick(e, { exitOnEmpty: true });
   }
   handleDrag(e: IMouseInputEvent) {
     this._updateSelection(e);
@@ -119,7 +121,7 @@ export class TextTool extends BaseTool {
   handleDrop(e: IMouseInputEvent) {
   }
 
-  private _handleClick(e: IMouseInputEvent): boolean {
+  private _handleClick(e: IMouseInputEvent, opts: { exitOnEmpty?: boolean, startOnEmpty?: boolean }): void {
     this.anchorX = e.clientX;
     this.anchorY = e.clientY;
     let prevAnchor = this.canvas.view.document.getSelection().anchorNode;
@@ -128,35 +130,53 @@ export class TextTool extends BaseTool {
     this._editorView?.domObserver.start();
     let curAnchor = this.canvas.view.document.getSelection().anchorNode;
 
-    if (this._editorView && !curAnchor) {
-      DCHECK(prevAnchor);
+    if (!prevAnchor && !curAnchor) {
+      if (opts.startOnEmpty) {
+        this._addTextBlock(e);
+      }
+      return;
+    }
+
+    if (prevAnchor && !curAnchor) {
+      DCHECK(this._editorView);
       this._disposeEditor();
-      return true;
+      if (opts.exitOnEmpty) {
+        this.canvas.invokeWithinContext(accessor => {
+          const toolService = accessor.get<IToolService>(IToolService);
+          toolService.switchDefault();
+        });
+      }
+      return;
     }
 
-    if (!this._editorView && curAnchor) {
-      DCHECK(!prevAnchor);
+    if (!prevAnchor && curAnchor) {
+      DCHECK(!this._editorView);
       this._initEditor(curAnchor);
-      return false;
+      return;
     }
 
-    DCHECK(prevAnchor);
-    DCHECK(curAnchor);
+    if (prevAnchor && curAnchor) {
+      DCHECK(this._editorView);
+      if (prevAnchor === curAnchor) {
+        this._editorView.domObserver.flush();
+        return;
+      }
+      const ancestor = NodeTraversal.CommonAncestor(prevAnchor, curAnchor);
+      DCHECK(ancestor);
+      if (ancestor === prevAnchor) {
+        this._editorView.domObserver.flush();
+        return;
+      }
+      if (isParagraphContainer(ancestor)) {
+        this._editorView.domObserver.flush();
+        return;
+      }
+      this._disposeEditor();
+      this._initEditor(curAnchor);
+      return;
+    }
 
-    const ancestor = NodeTraversal.CommonAncestor(prevAnchor, curAnchor);
-    DCHECK(ancestor);
-    DCHECK(this._editorView);
-    if (ancestor === prevAnchor) {
-      this._editorView.domObserver.flush();
-      return false;
-    }
-    if (isParagraphContainer(ancestor)) {
-      this._editorView.domObserver.flush();
-      return false;
-    }
-    this._disposeEditor();
-    this._initEditor(curAnchor);
-    return false;
+    NOTREACHED();
   }
 
   private _disposeEditor() {
@@ -282,11 +302,11 @@ export class TextTool extends BaseTool {
     let endX = clientX;
     if (targetNode.IsElement()) {
       const targetEl = targetNode.AsElement();
-      if (targetEl.tagName !== HTMLParagraphElement.kTagName) debugger
-      DCHECK(targetEl.tagName === HTMLParagraphElement.kTagName);
-      const rect = targetEl.getBoundingClientRects();
-      startX = Math.min(rect.left, clientX);
-      endX = Math.max(rect.right, clientX);
+      if (targetEl.tagName === HTMLParagraphElement.kTagName) {
+        const rect = targetEl.getBoundingClientRects();
+        startX = Math.min(rect.left, clientX);
+        endX = Math.max(rect.right, clientX);
+      }
     }
     const selection = this.canvas.view.document.getSelection();
     const startItems = this.canvas.view.layoutManager.hitTestRTree(startX, clientY, endX, clientY);
@@ -355,7 +375,73 @@ export class TextTool extends BaseTool {
     );
     this._textAreaHandler.focusTextArea();
   }
+
+  sessionContainerId: Optional<IIdentifier>;
+  private async _addTextBlock(e: IMouseInputEvent) {
+    const { clientX, clientY } = e;
+    let paragraphContainerId = '';
+    let paragraphId = '';
+    this.canvas.transform(() => {
+      let divToCreate = deepClone(emptyDivInit);
+      Object.assign(divToCreate.style, {
+        borderColor: randomColor(),
+        marginTop: toPX(clientY
+          - 10 // padding
+          - 10 // half lineHeight
+        ),
+        marginLeft: toPX(clientX - 10)
+      } as IInlineStyle);
+      const divNode = this.canvas.model.addNode({ ref: RootNodeId, direction: DirectionType.inward }, divToCreate);
+      this.sessionContainerId = getNodeId(divNode);
+      paragraphContainerId = this.sessionContainerId;
+      const pNode = this.canvas.model.addNode({ ref: this.sessionContainerId, direction: DirectionType.inward }, deepClone(emptyTextInit));
+      paragraphId = getNodeId(pNode);
+    });
+    await this.canvas.mvvm.maybeWaitForReLayout();
+    DCHECK(this.sessionContainerId === paragraphContainerId);
+    const { document } = this.canvas.view;
+    const p = document.getElementById(paragraphId);
+    const selection = document.getSelection();
+    DCHECK(p);
+    const text = p.firstChild;
+    DCHECK(text);
+    const range = document.createRange();
+    range.setStart(text, 0);
+    range.setEnd(text, 0);
+    selection.addRange(range);
+    DCHECK(!this._editorView);
+    this._initEditor(text);
+  }
 }
+
+const emptyDivInit: INodeInit = {
+  type: NodeType.Block,
+  style: {
+    width: 'auto',
+    height: 'auto',
+    marginLeft: '50px',
+    marginTop: '100px',
+    position: 'absolute',
+    backgroundColor: 'white',
+    padding: '10px',
+    borderStyle: 'solid',
+    borderWidth: '1px',
+  },
+};
+
+const emptyTextInit: INodeInit = {
+  type: NodeType.Text,
+  style: {
+    display: 'block',
+    fontFamily: '"source han sans"',
+    fontSize: '14px',
+    color: 'black',
+    lineHeight: '20px',
+    overflowWrap: 'break-word',
+    whiteSpace: 'pre-wrap'
+  },
+  content: '',
+};
 
 export const TextToolID = 'tool.text';
 

@@ -387,17 +387,17 @@ export abstract class Node {
       if (child.IsElement()) {
         return child as Element;
       }
-      child = child.nextSibling
+      child = child.nextSibling;
     }
     return undefined;
   }
   get lastElementChild(): Optional<Element> {
-    let child = this.lastChild
+    let child = this.lastChild;
     while (child) {
       if (child.IsElement()) {
         return child as Element;
       }
-      child = child.previousSibling
+      child = child.previousSibling;
     }
     return undefined;
   }
@@ -758,6 +758,8 @@ export abstract class Node {
     DCHECK(!this.inserted_into_document_);
     this.inserted_into_document_ = true;
 
+    this.GetDocument()!.onNodeInserted(this)
+
     let child = this.first_child_;
     while (child) {
       child.OnInsertedIntoDocument();
@@ -769,12 +771,15 @@ export abstract class Node {
     DCHECK(this.inserted_into_document_);
     this.inserted_into_document_ = false;
 
+    this.GetDocument()!.onNodeRemoved(this)
+
     let child = this.first_child_;
     while (child) {
       child.OnRemovedFromDocument();
       child = child.next_sibling_;
     }
   }
+
   OnMutation() {
   }
 

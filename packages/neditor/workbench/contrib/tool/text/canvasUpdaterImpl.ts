@@ -44,7 +44,7 @@ export class CanvasUpdater implements ICanvasUpdater {
       const nodeModel = m.getNodeById(id);
       DCHECK(nodeModel);
       DCHECK(nodeModel.get('type') === NodeType.Text);
-      nodeModel.set('content', value)
+      nodeModel.set('content', value);
     });
 
     this._queueUpdate();
@@ -61,13 +61,14 @@ export class CanvasUpdater implements ICanvasUpdater {
         const nodeModel = m.getNodeById(id);
         DCHECK(nodeModel);
         DCHECK(nodeModel.get('type') === NodeType.Text);
-        nodeModel.set('content', '')
+        nodeModel.set('content', '');
       });
     });
   }
 
   removeNodes(nodes: DOMNode[]): void {
     if (!nodes.length) return;
+    debugger;
     this.canvas.transform(() => {
       nodes.forEach(node => {
         const el = node.AsElement()!.AsHTMLElement()!;

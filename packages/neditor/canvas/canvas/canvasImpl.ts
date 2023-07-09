@@ -16,7 +16,6 @@ import { NOTIMPLEMENTED, NOTREACHED } from '../../base/common/notreached';
 import { ICanvasModel, IModelService, IOperationCallback } from '../../platform/model/common/model';
 import { RootScope, Scope } from '../canvasCommon/scope';
 import { ICanvasViewModel } from '../viewModel/viewModel';
-import { ISelectionChangedEvent } from '../viewModel/viewModelEvents';
 import { Emitter, Event } from '../../base/common/event';
 import { isNil } from '../../base/common/type';
 import { IDocumentModel } from '../../common/model';
@@ -25,7 +24,7 @@ import { HistoryHelper } from './historyHelper';
 import { IContextKeyService } from '../../platform/contextkey/common/contextkey';
 import { IInputService } from '../../platform/input/common/inputService';
 import { CanvasContextKeys } from './canvasContextKeys';
-import { IModelContentChangedEvent } from "../../platform/model/common/modelEvents";
+import { IModelContentChangedEvent } from '../../platform/model/common/modelEvents';
 
 class MVVMStatus extends Disposable implements IMVVMStatus {
   protected _pendingReLayout = true;
@@ -49,9 +48,9 @@ class MVVMStatus extends Disposable implements IMVVMStatus {
       return;
     }
     if (!this._waiting) {
-      this._waiting = new DeferredPromise<void>()
+      this._waiting = new DeferredPromise<void>();
     }
-    await this._waiting
+    await this._waiting;
   }
 }
 
@@ -119,11 +118,6 @@ export class Canvas extends Disposable implements ICanvas {
 
     Reflect.set(window, 'canvas', this);
   }
-
-  get model() {
-    return this._modelData?.model!;
-  }
-
   protected _attachModel(model: Optional<ICanvasModel>): void {
     if (!model) {
       this._modelData = undefined;
@@ -131,7 +125,7 @@ export class Canvas extends Disposable implements ICanvas {
     }
 
     const listenersToRemove: IDisposable[] = [];
-    listenersToRemove.push(model.onDidChangeContent((e) => this._onDidChangeModelContent.fire(e)))
+    listenersToRemove.push(model.onDidChangeContent((e) => this._onDidChangeModelContent.fire(e)));
 
     const viewModel = new CanvasViewModel(model, this._instantiationService, this.modelService, this);
     // Someone might destroy the model from under the editor, so prevent any exceptions by setting a null model
@@ -190,12 +184,17 @@ export class Canvas extends Disposable implements ICanvas {
     return false;
   }
 
+  get model() {
+    return this._modelData?.model!;
+  }
   get viewModel() {
     return this._modelData?.viewModel!;
   }
-
   get view() {
     return this._modelData?.view!;
+  }
+  get mvvm() {
+    return this._modelData?.mvvm!;
   }
 
   private _detachModel(): ICanvasModel | null {

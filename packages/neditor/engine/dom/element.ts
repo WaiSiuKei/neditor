@@ -7,7 +7,7 @@ import type { HTMLElement } from './html_element';
 import { deepClone } from '@neditor/core/base/common/objects';
 import { NOTIMPLEMENTED } from '@neditor/core/base/common/notreached';
 import { Nullable, Optional, Ptr } from '@neditor/core/base/common/typescript';
-import { isNil, isString } from '@neditor/core/base/common/type';
+import { isNil, isString, withUndefinedAsNull } from '@neditor/core/base/common/type';
 import { ContainerNode } from './container_node';
 
 export const kStyleAttributeName = 'style';
@@ -59,6 +59,12 @@ export abstract class Element extends ContainerNode {
   get className(): string {
     return this.getAttribute('class') || '';
   }
+  get id(): string {
+    return this.getAttribute('id') || '';
+  }
+  set id(val: string) {
+    this.setAttribute('id', val);
+  }
   AsElement() {
     return this;
   }
@@ -102,19 +108,17 @@ export abstract class Element extends ContainerNode {
     // MutationReporter mutation_reporter(this, GatherInclusiveAncestorsObservers());
     // mutation_reporter.ReportAttributesMutation(attr_name, old_value);
 
-    switch (attr_name.length) {
-      case 5:
-        if (attr_name == kStyleAttributeName) {
-          throw new Error('500');
-          // SetStyleAttribute(value);
-          // if (named_node_map_) {
-          //   named_node_map_.SetAttributeInternal(attr_name, value);
-          // }
-          // OnSetAttribute(name, value);
-          // // Return now as SetStyleAttribute() will call OnDOMMutation() when
-          // // necessary.
-          // return;
-        }
+    switch (attr_name) {
+      case kStyleAttributeName:
+        NOTIMPLEMENTED();
+      // SetStyleAttribute(value);
+      // if (named_node_map_) {
+      //   named_node_map_.SetAttributeInternal(attr_name, value);
+      // }
+      // OnSetAttribute(name, value);
+      // // Return now as SetStyleAttribute() will call OnDOMMutation() when
+      // // necessary.
+      // return;
       // fall-through if not style attribute name
       default: {
         let val = this.attribute_map_.get(attr_name);
@@ -127,19 +131,11 @@ export abstract class Element extends ContainerNode {
     // Custom, not in any spec.
     // Check for specific attributes that require additional caching and update
     // logic.
-    switch (attr_name.length) {
-      case 2:
-        if (attr_name == 'id') {
-          NOTIMPLEMENTED();
-          // id_attribute_ = attr_name
-        }
-        break;
-      case 5:
-        if (attr_name == 'class') {
-          // Changing the class name may affect the contents of proxy objects.
-          // UpdateGenerationForNodeAndAncestors();
-          NOTIMPLEMENTED();
-        }
+    switch (attr_name) {
+      case 'class':
+        // Changing the class name may affect the contents of proxy objects.
+        // UpdateGenerationForNodeAndAncestors();
+        NOTIMPLEMENTED();
         break;
     }
     // if (named_node_map_) {
@@ -266,7 +262,7 @@ export abstract class Element extends ContainerNode {
       attr_name = attr_name.toLowerCase();
     }
 
-// 2. Return true if the context object has an attribute whose name is name,
+    // 2. Return true if the context object has an attribute whose name is name,
 //    and false otherwise.
     return this.attribute_map_.has(attr_name);
   }
