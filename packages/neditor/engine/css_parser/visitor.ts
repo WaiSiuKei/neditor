@@ -120,51 +120,9 @@ export class Visitor implements inlineVisitor<void> {
       const key = GetPropertyKey(this.currentKey);
       DCHECK(key);
       const data = this.style.data();
-      switch (key) {
-        case PropertyKey.kBorderColorProperty: {
-          unpack(data,
-            PropertyKey.kBorderColorProperty,
-            [
-              PropertyKey.kBorderTopColorProperty,
-              PropertyKey.kBorderRightColorProperty,
-              PropertyKey.kBorderBottomColorProperty,
-              PropertyKey.kBorderLeftColorProperty,
-            ],
-            this.currentValue);
-          break;
-        }
-        case PropertyKey.kBorderStyleProperty: {
-          unpack(
-            data,
-            PropertyKey.kBorderStyleProperty,
-            [
-              PropertyKey.kBorderTopStyleProperty,
-              PropertyKey.kBorderRightStyleProperty,
-              PropertyKey.kBorderBottomStyleProperty,
-              PropertyKey.kBorderLeftStyleProperty,
-            ],
-            this.currentValue,
-          );
-          break;
-        }
-        case PropertyKey.kBorderWidthProperty: {
-          unpack(
-            data,
-            PropertyKey.kBorderWidthProperty,
-            [
-              PropertyKey.kBorderTopWidthProperty,
-              PropertyKey.kBorderRightWidthProperty,
-              PropertyKey.kBorderBottomWidthProperty,
-              PropertyKey.kBorderLeftWidthProperty,
-            ],
-            this.currentValue,
-          );
-          break;
-        }
-        default: {
-          data.SetPropertyValue(key, this.currentValue);
-          break;
-        }
+
+      if (!unpack(data, key, this.currentValue)) {
+        data.SetPropertyValue(key, this.currentValue);
       }
 
       this.currentKey = null;

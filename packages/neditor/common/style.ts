@@ -78,6 +78,7 @@ export const CSSStyleDeclarationSample = {
   paddingLeft: '',
   paddingRight: '',
   paddingTop: '',
+  padding: '',
 
   position: '',
 
