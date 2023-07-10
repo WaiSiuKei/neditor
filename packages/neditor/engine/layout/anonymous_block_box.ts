@@ -197,6 +197,7 @@ export class AnonymousBlockBox extends BlockContainerBox {
         // of the first box to add the next time through the loop.
         while (child_box != child_box_before_wrap) {
           --child_box_iterator;
+          child_box = this.child_boxes()[child_box_iterator];
         }
 
         // If |child_box_before_wrap| has a split sibling, then this potentially
@@ -215,8 +216,7 @@ export class AnonymousBlockBox extends BlockContainerBox {
         if (split_child_after_wrap &&
           (next_child_box_iterator == this.child_boxes().length - 1 ||
             this.child_boxes()[next_child_box_iterator] != split_child_after_wrap)) {
-          child_box_iterator =
-            this.InsertSplitSiblingOfDirectChild(child_box_iterator);
+          child_box_iterator = this.InsertSplitSiblingOfDirectChild(child_box_iterator);
           continue;
         }
       }
