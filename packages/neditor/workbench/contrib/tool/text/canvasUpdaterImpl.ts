@@ -68,7 +68,6 @@ export class CanvasUpdater implements ICanvasUpdater {
 
   removeNodes(nodes: DOMNode[]): void {
     if (!nodes.length) return;
-    debugger;
     this.canvas.transform(() => {
       nodes.forEach(node => {
         const el = node.AsElement()!.AsHTMLElement()!;

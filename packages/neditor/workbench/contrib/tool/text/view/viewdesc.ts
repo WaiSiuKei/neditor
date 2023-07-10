@@ -555,6 +555,7 @@ export class NodeViewDesc extends ViewDesc {
         // fallback
         if (!dom) {
           dom = view.root.createTextNode(node.text!);
+          view.updater.updateText(parent.dom, node.text!);
           parent.dom.appendChild(dom);
         }
       }

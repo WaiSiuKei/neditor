@@ -363,7 +363,7 @@ export class TextTool extends BaseTool {
         ]
       });
     this._editorView.domObserver.flush();
-    Reflect.set(window, 'vv', this._editorView);
+    Reflect.set(window, 'pm', this._editorView);
 
     this._textAreaHandler = new TextAreaHandler(
       new ViewController(this._editorView, this._triggerEndEditing.bind(this)),
@@ -417,6 +417,7 @@ export class TextTool extends BaseTool {
 const emptyDivInit: INodeInit = {
   type: NodeType.Block,
   style: {
+    display: 'block',
     width: 'auto',
     height: 'auto',
     marginLeft: '50px',
@@ -438,7 +439,7 @@ const emptyTextInit: INodeInit = {
     color: 'black',
     lineHeight: '20px',
     overflowWrap: 'break-word',
-    whiteSpace: 'pre-wrap'
+    whiteSpace: 'nowrap'
   },
   content: '',
 };

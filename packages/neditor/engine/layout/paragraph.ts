@@ -744,10 +744,8 @@ export class Paragraph implements IDisposable {
       let run_end_position_ptr = _malloc(4);
       let run_ubidi_level_ptr = _malloc(4);
 
-      let count = 0;
       let text_end_position = this.GetTextEndPosition();
       while (run_start_position < text_end_position) {
-        count++;
         ubidi_getLogicalRun(ubidi, run_start_position, run_end_position_ptr, run_ubidi_level_ptr);
         let run_ubidi_level = getValue(run_ubidi_level_ptr, 'i32');
         let run_end_position = getValue(run_end_position_ptr, 'i32');

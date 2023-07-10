@@ -279,6 +279,8 @@ export class LayoutManager implements DocumentObserver {
   DoProduceRenderTree() {
     let document = this.window_.document();
 
+    document.SampleTimelineTime();
+
     let display_none_prevents_render = !this.produced_render_tree_ && !document.html()!.IsDisplayed();
     Reflect.set(window, 'dumpLayout', () => {
       console.log(this.initial_containing_block_?.DumpWithIndent());

@@ -187,13 +187,19 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
               break;
             }
             case 'add': {
-              const id = getNodeId(node);
-              if (id) debugger;
-              const nodeModel = target.parent;
-              const nodeId = getNodeId(nodeModel);
-              const vm = nodeViewModelMap.get(nodeId);
-              DCHECK(vm);
-              Reflect.set(vm.style!, key, target.get(key));
+              const nodeId = getNodeId(target);
+              if (nodeId) {
+                const vm = nodeViewModelMap.get(nodeId);
+                DCHECK(vm);
+                Reflect.set(vm, key, target.get(key));
+              } else {
+                const yNodeModel = target.parent;
+                const nodeId = getNodeId(yNodeModel);
+                DCHECK(nodeId)
+                const vm = nodeViewModelMap.get(nodeId);
+                DCHECK(vm);
+                Reflect.set(vm.style!, key, target.get(key));
+              }
               break;
             }
             case 'delete': {

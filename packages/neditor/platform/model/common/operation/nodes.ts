@@ -34,8 +34,6 @@ export function insertNodeOperation(at: ILocation, nodeInit: INodeInit): IOperat
       }
     })
 
-    DCHECK(nodeInit.type !== NodeType.Root);
-
     // 添加到子元素
     if (direction === DirectionType.inward) {
       // 默认添加到最后
