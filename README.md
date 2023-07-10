@@ -5,7 +5,7 @@ a rich text editor on a port of Cobalt to JavaScript aimed at running in Canvas.
 ## DEMO
 [waisiukei.github.io/neditor](https://waisiukei.github.io/neditor/)
 
-![preview](./preview.png)
+![preview](./preview_2.png)
 
 ## Goals
 
