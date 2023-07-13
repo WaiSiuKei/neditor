@@ -8,53 +8,53 @@ import { NOTIMPLEMENTED, NOTREACHED } from '../../../../base/common/notreached';
 import { IIdentifier } from '../../../../common/common';
 import { Optional } from '../../../../base/common/typescript';
 import { isNil, isObject, isString } from '../../../../base/common/type';
-import { IYNodeModel, IYNodeModelValue } from "../../../../common/model";
+import { getModelNodes, IYNodeModel, IYNodeModelValue } from '../../../../common/model';
 import * as Y from 'yjs';
-import { keys } from "../../../../base/common/objects";
+import { keys } from '../../../../base/common/objects';
 
 export function insertNodeOperation(at: ILocation, nodeInit: INodeInit): IOperationCallback<IYNodeModel> {
   return (model: ICanvasModelLike) => {
     const { ref, direction } = at;
     const nodeId = generateUuid();
-    const node = new Y.Map<IYNodeModelValue>()
-    node.set('id', nodeId)
+    const node = new Y.Map<IYNodeModelValue>();
+    node.set('id', nodeId);
     keys(nodeInit).forEach(key => {
-      const v = nodeInit[key]
+      const v = nodeInit[key];
       if (isString(v)) {
-        node.set(key, v)
+        node.set(key, v);
       } else if (isObject(v)) {
-        DCHECK(key === 'style')
+        DCHECK(key === 'style');
         const map = new Y.Map<string>();
         keys(v).forEach(k => {
-          map.set(k, v[k])
-        })
-        node.set(key, map)
+          map.set(k, v[k]);
+        });
+        node.set(key, map);
       } else {
-        NOTIMPLEMENTED()
+        NOTIMPLEMENTED();
       }
-    })
+    });
 
     // 添加到子元素
     if (direction === DirectionType.inward) {
       // 默认添加到最后
       const children = model.getChildrenNodesOfId(ref);
-      node.set('from', ref)
+      node.set('from', ref);
       if (children.length) {
         const sorted = children.sort((a, b) => cmp(b.get('order') as string, a.get('order') as string));
         node.set('order', devideBy2(plus('1', sorted[0].get('order') as string)));
       } else {
-        node.set('order', '0.5')
+        node.set('order', '0.5');
       }
     } else if (direction === DirectionType.backward || direction === DirectionType.forward) {
       const parent = model.getParentNodeOfId(ref);
       if (!parent) {
         throw new Error('404');
       }
-      node.set('from', parent.get('id') as string)
-      const refNode = model.getNodeById(ref)
-      DCHECK(refNode)
-      const order = refNode.get('order') as string
-      DCHECK(order)
+      node.set('from', parent.get('id') as string);
+      const refNode = model.getNodeById(ref);
+      DCHECK(refNode);
+      const order = refNode.get('order') as string;
+      DCHECK(order);
       if (direction === DirectionType.backward) {
         const next = model.getNextSiblingNodeOfId(ref);
         const nextOrder = next ? next.get('order') as string : '1';
@@ -63,15 +63,15 @@ export function insertNodeOperation(at: ILocation, nodeInit: INodeInit): IOperat
         const pre = model.getPreviousSiblingNodeOfId(ref);
         const preOrder = pre ? pre.get('order') as string : '0';
         if (preOrder === '0') {
-          node.set('order', devideBy2(order))
+          node.set('order', devideBy2(order));
         } else {
-          node.set('order', devideBy2(plus(order, preOrder)))
+          node.set('order', devideBy2(plus(order, preOrder)));
         }
       }
     } else {
-      NOTIMPLEMENTED()
+      NOTIMPLEMENTED();
     }
-    model.yModel.get('nodes')!.set(nodeId, node)
+    model.yModel.get('nodes')!.set(nodeId, node);
     return node;
   };
 }
@@ -99,9 +99,9 @@ export function removeNodeOperation(at: ILocation): IOperationCallback<void> {
 
 function deleteSibling(model: ICanvasModelLike, id: IIdentifier, direction: DirectionType): void {
   const node = model.getNodeById(id);
-  DCHECK(node)
-  const from = node.get('from') as string
-  DCHECK(from)
+  DCHECK(node);
+  const from = node.get('from') as string;
+  DCHECK(from);
 
   const siblings = model.getChildrenNodesOfId(from).sort((a, b) => cmp(a.get('order') as string, b.get('order') as string));
   const idxOfSelf = siblings.indexOf(node);
@@ -128,19 +128,18 @@ function deleteChildren(model: ICanvasModelLike, id: IIdentifier) {
 }
 
 function deleteIt(model: ICanvasModelLike, id: IIdentifier) {
-  const { nodes } = model.getValue();
-
   deleteChildren(model, id);
 
-  delete nodes[id];
+  const nodes = getModelNodes(model.yModel);
+  nodes.delete(id);
 }
 
 export function reparentNodeOperation(id: IIdentifier, newParent: IIdentifier, referenceNodeId: Optional<IIdentifier>) {
   return (model: ICanvasModelLike) => {
     const childrenOfNext = model.getChildrenNodesOfId(newParent).sort((a, b) => cmp(a.get('order') as string, b.get('order') as string));
     const node = model.getNodeById(id);
-    DCHECK(node)
-    node.set('from', newParent)
+    DCHECK(node);
+    node.set('from', newParent);
     if (isNil(referenceNodeId)) {
       if (childrenOfNext.length) {
         // 放到最后
@@ -153,7 +152,7 @@ export function reparentNodeOperation(id: IIdentifier, newParent: IIdentifier, r
       if (!nextSibling) NOTREACHED();
       const nextSiblingIndex = childrenOfNext.indexOf(nextSibling);
       if (nextSiblingIndex === 0) {
-        node.set('order', devideBy2(nextSibling.get('order') as string))
+        node.set('order', devideBy2(nextSibling.get('order') as string));
       } else {
         const prevSibling = childrenOfNext[nextSiblingIndex - 1];
         node.set('order', devideBy2(plus(prevSibling.get('order') as string, nextSibling.get('order') as string)));
@@ -167,14 +166,14 @@ export function reorderNodeOperation(id: IIdentifier, beforeSiblingNodeId: Optio
     const parent = model.getParentNodeOfId(id)!;
     const siblings = model.getChildrenNodesOfId(parent.get('id') as string).sort((a, b) => cmp(a.get('order') as string, b.get('order') as string));
     const node = model.getNodeById(id);
-    DCHECK(node)
-    DCHECK(node.get('from') === parent.get('id'))
+    DCHECK(node);
+    DCHECK(node.get('from') === parent.get('id'));
     if (isNil(beforeSiblingNodeId)) {
       if (siblings.length) {
         // 放到最后
         node.set('order', devideBy2(plus(siblings[siblings.length - 1].get('order') as string, '1')));
       } else {
-        node.set('order', '0.5')
+        node.set('order', '0.5');
       }
     } else {
       const nextSibling = model.getNodeById(beforeSiblingNodeId)!;
@@ -184,7 +183,7 @@ export function reorderNodeOperation(id: IIdentifier, beforeSiblingNodeId: Optio
       } else {
         const prevSibling = siblings[nextSiblingIndex - 1];
         if (prevSibling.get('id') !== id) {
-          node.set('order', devideBy2(plus(prevSibling.get('order') as string, nextSibling.get('order') as string)))
+          node.set('order', devideBy2(plus(prevSibling.get('order') as string, nextSibling.get('order') as string)));
         }
       }
     }

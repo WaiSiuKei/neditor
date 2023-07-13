@@ -3,6 +3,7 @@ import { CursorStyle } from '@neditor/core/canvas/view/view';
 import { IMouseInputEvent, InputEvents, InputEventType } from '@neditor/core/platform/input/browser/event';
 import { BaseTool } from '@neditor/core/platform/tool/browser/baseTool';
 import { ITool, IToolFactory, IToolService, ToolActivationShortcut } from '@neditor/core/platform/tool/common/tool';
+import randomColor from 'randomcolor';
 import { toPX } from '../../../../base/browser/css';
 import { DCHECK } from '../../../../base/check';
 import { tail } from '../../../../base/common/array';
@@ -13,7 +14,7 @@ import { Optional } from '../../../../base/common/typescript';
 import { ScopedIdentifier } from '../../../../canvas/canvasCommon/scope';
 import { AttrNameOfId, getScope } from '../../../../canvas/viewModel/path';
 import { IIdentifier } from '../../../../common/common';
-import { getNodeId } from '../../../../common/model';
+import { getNodeContent, getNodeId } from '../../../../common/model';
 import { IInlineStyle, NodeType } from '../../../../common/node';
 import { HTMLParagraphElement } from '../../../../engine/dom/html_paragraph_element';
 import { Node } from '../../../../engine/dom/node';
@@ -32,7 +33,6 @@ import { EditorState } from './state/state';
 import { IEditorView } from './view/view';
 import { ViewController } from './view/viewController';
 import { EditorView } from './view/viewImpl';
-import randomColor from 'randomcolor';
 
 function isInlineText(n: Node) {
   if (n.IsText()) return true;
@@ -188,6 +188,19 @@ export class TextTool extends BaseTool {
       this._textAreaHandler.dispose();
       this._textAreaHandler = undefined;
     }
+    if (this._paragraphId) {
+      const model = this.canvas.model.getNodeById(this._paragraphId);
+      DCHECK(model);
+      const content = getNodeContent(model);
+      if (!content) {
+        this.canvas.transform(m => {
+          m.removeNode({ ref: this._paragraphContainerId!, direction: DirectionType.self });
+        });
+      }
+      console.log(model.toJSON(), content);
+    }
+    this._paragraphId = undefined;
+    this._paragraphContainerId = undefined;
   }
 
   private _triggerEndEditing() {
@@ -376,7 +389,8 @@ export class TextTool extends BaseTool {
     this._textAreaHandler.focusTextArea();
   }
 
-  sessionContainerId: Optional<IIdentifier>;
+  _paragraphContainerId: Optional<IIdentifier>;
+  _paragraphId: Optional<IIdentifier>;
   private async _addTextBlock(e: IMouseInputEvent) {
     const { clientX, clientY } = e;
     let paragraphContainerId = '';
@@ -392,13 +406,14 @@ export class TextTool extends BaseTool {
         marginLeft: toPX(clientX - 10)
       } as IInlineStyle);
       const divNode = this.canvas.model.addNode({ ref: RootNodeId, direction: DirectionType.inward }, divToCreate);
-      this.sessionContainerId = getNodeId(divNode);
-      paragraphContainerId = this.sessionContainerId;
-      const pNode = this.canvas.model.addNode({ ref: this.sessionContainerId, direction: DirectionType.inward }, deepClone(emptyTextInit));
+      this._paragraphContainerId = getNodeId(divNode);
+      paragraphContainerId = this._paragraphContainerId;
+      const pNode = this.canvas.model.addNode({ ref: this._paragraphContainerId, direction: DirectionType.inward }, deepClone(emptyTextInit));
       paragraphId = getNodeId(pNode);
+      this._paragraphId = paragraphId;
     });
     await this.canvas.mvvm.maybeWaitForReLayout();
-    DCHECK(this.sessionContainerId === paragraphContainerId);
+    DCHECK(this._paragraphContainerId === paragraphContainerId);
     const { document } = this.canvas.view;
     const p = document.getElementById(paragraphId);
     const selection = document.getSelection();

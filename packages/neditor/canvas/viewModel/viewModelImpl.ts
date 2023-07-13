@@ -195,7 +195,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
               } else {
                 const yNodeModel = target.parent;
                 const nodeId = getNodeId(yNodeModel);
-                DCHECK(nodeId)
+                DCHECK(nodeId);
                 const vm = nodeViewModelMap.get(nodeId);
                 DCHECK(vm);
                 Reflect.set(vm.style!, key, target.get(key));
@@ -248,13 +248,15 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
   private removeNode(node: IYNodeModel, resourceStr: string) {
     const nodeViewModelMap = this.treeNodeViewModelMap.get(resourceStr)!;
     const observers = this.treeNodeObservers.get(resourceStr)!;
-    const id = getNodeId(node);
+    // 删除的只能这样处理
+    const id = node._map.get('id')!.content.getContent()[0];
     if (!nodeViewModelMap.has(id)) {
       NOTIMPLEMENTED();
       return;
     }
     nodeViewModelMap.delete(id);
-    this.updateChildren(getNodeFrom(node), resourceStr);
+    const from = node._map.get('from')!.content.getContent()[0];
+    this.updateChildren(from, resourceStr);
     const observer = observers.get(id);
     DCHECK(observer);
     observer.dispose();
