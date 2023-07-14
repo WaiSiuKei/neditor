@@ -184,6 +184,7 @@ export class AnonymousBlockBox extends BlockContainerBox {
     while (child_box_iterator !== this.child_boxes().length) {
       let child_box = this.child_boxes()[child_box_iterator];
       // Attempt to add the child box to the inline formatting context.
+      // if (child_box.node!.nodeName === 'br') debugger;
       let child_box_before_wrap = inline_formatting_context.TryAddChildAndMaybeWrap(child_box);
       // If |child_box_before_wrap| is non-NULL, then trying to add the child
       // box caused a line wrap to occur, and |child_box_before_wrap| is set to

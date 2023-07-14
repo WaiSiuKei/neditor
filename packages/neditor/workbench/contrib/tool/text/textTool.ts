@@ -197,7 +197,6 @@ export class TextTool extends BaseTool {
           m.removeNode({ ref: this._paragraphContainerId!, direction: DirectionType.self });
         });
       }
-      console.log(model.toJSON(), content);
     }
     this._paragraphId = undefined;
     this._paragraphContainerId = undefined;

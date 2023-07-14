@@ -1,3 +1,4 @@
+import { EnumAndLiteral } from '../base/common/typescript';
 import { IIdentifier } from './common';
 import { IStyleDeclaration } from './style';
 
@@ -62,7 +63,7 @@ export interface InlineLevelMarks {
 
 export interface ITextNodeModel {
   id: IIdentifier;
-  type: NodeType.Text;
+  type: EnumAndLiteral<NodeType.Text>;
   from: IIdentifier;
   order: string;
   style: Partial<InlineLevelMarks> & Partial<BlockLevelMarks> & IInlineStyle;
@@ -71,7 +72,7 @@ export interface ITextNodeModel {
 
 export interface IBlockNodeModel {
   id: IIdentifier;
-  type: NodeType.Block;
+  type: EnumAndLiteral<NodeType.Block>;
   from: IIdentifier;
   order: string;
   style: Partial<BlockLevelMarks> & IInlineStyle;
@@ -79,7 +80,7 @@ export interface IBlockNodeModel {
 
 export interface IFragmentNodeModel {
   id: IIdentifier;
-  type: NodeType.Fragment;
+  type: EnumAndLiteral<NodeType.Fragment>;
   from: IIdentifier;
   order: string;
   //
@@ -90,7 +91,7 @@ export interface IFragmentNodeModel {
 
 export interface IRootNodeModel {
   id: IIdentifier;
-  type: NodeType.Root;
+  type: EnumAndLiteral<NodeType.Root>;
   // ts-happy
   from?: any;
   order?: any;

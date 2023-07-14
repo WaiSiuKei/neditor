@@ -5,6 +5,7 @@ import { NOTREACHED } from '../../../../base/common/notreached';
 import { Optional } from '../../../../base/common/typescript';
 import { ICanvas } from '../../../../canvas/canvas/canvas';
 import { collect } from '../../../../canvas/viewModel/path';
+import { getNodeStyle } from '../../../../common/model';
 import { NodeType } from '../../../../common/node';
 import { HTMLParagraphElement } from '../../../../engine/dom/html_paragraph_element';
 import { Text } from '../../../../engine/dom/text';
@@ -84,8 +85,15 @@ export class CanvasUpdater implements ICanvasUpdater {
 
   insertBefore(parent: DOMNode, newNode: Node, referenceNode: Optional<DOMNode>): Attrs {
     const pathOfParent = collect(parent.AsElement()!);
+    const parentMeta = tail(pathOfParent);
     const pathOfRef = referenceNode ? collect(referenceNode.AsElement()!) : undefined;
+    const refMeta = pathOfRef ? tail(pathOfRef) : undefined;
+
     DCHECK(newNode.inlineContent);
+
+    const containerModel = this.canvas.getScopedModel(parentMeta.scope).getNodeById(parentMeta.id);
+    DCHECK(containerModel);
+    const width = getNodeStyle(containerModel).get('width');
     const nodeInit = {
       type: NodeType.Text as const,
       style: {
@@ -96,7 +104,7 @@ export class CanvasUpdater implements ICanvasUpdater {
         lineHeight: '20px',
         minHeight: '20px',
         overflowWrap: 'break-word',
-        whiteSpace: 'pre-wrap'
+        whiteSpace: width === 'auto' ? 'nowrap' : 'pre-wrap'
       },
       content: newNode.textContent || '',
     };
@@ -104,14 +112,11 @@ export class CanvasUpdater implements ICanvasUpdater {
     this._queueUpdate();
 
     return this.canvas.transform(() => {
-      const parentMeta = tail(pathOfParent);
-      const refMeta = pathOfRef ? tail(pathOfRef) : undefined;
-      const m = this.canvas.getScopedModel(parentMeta.scope);
       const at = refMeta ? { ref: refMeta.id, direction: DirectionType.forward } : {
         ref: parentMeta.id,
         direction: DirectionType.inward
       };
-      const node = m.addNode(at, nodeInit);
+      const node = this.canvas.getScopedModel(parentMeta.scope).addNode(at, nodeInit);
       return {
         id: node.get('id'),
         type: node.get('type'),

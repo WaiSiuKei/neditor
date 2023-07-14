@@ -71,7 +71,7 @@ export abstract class BlockContainerBox extends ContainerBox {
   // From |Box|.
   UpdateContentSizeAndMargins(layout_params: LayoutParams) {
     let maybe_height = GetUsedHeightIfNotAuto(this.computed_style()!, layout_params.containing_block_size!);
-    let widthCtxHolder: IDependsOnContainingBlockHolder = Object.create(null)
+    let widthCtxHolder: IDependsOnContainingBlockHolder = Object.create(null);
 
     let maybe_top = GetUsedTopIfNotAuto(
       this.computed_style()!, layout_params.containing_block_size!);
@@ -108,7 +108,7 @@ export abstract class BlockContainerBox extends ContainerBox {
       // are applied again, but this time using the computed value of 'max-width'
       // as the computed value for 'width'.
       //   https://www.w3.org/TR/CSS21/visudet.html#min-max-widths
-      let maxWidthCtxHolder: IDependsOnContainingBlockHolder = Object.create(null)
+      let maxWidthCtxHolder: IDependsOnContainingBlockHolder = Object.create(null);
       let maybe_max_width = GetUsedMaxWidthIfNotNone(this.computed_style()!, layout_params.containing_block_size!, maxWidthCtxHolder);
       if (maybe_max_width && this.width().GT(maybe_max_width)) {
         this.UpdateContentWidthAndMargins(
