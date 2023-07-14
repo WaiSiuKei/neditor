@@ -1,3 +1,4 @@
+import { Node } from './node';
 import { NodeSpec, Schema } from './schema';
 
 export const defaultSchema = new Schema({
@@ -9,20 +10,24 @@ export const defaultSchema = new Schema({
     paragraph: {
       content: 'inline*',
       group: 'block',
-      attrs: {},
-      toDOM() {
+      attrs: {
+        style: {
+          default: {
+            display: 'block',
+            fontFamily: '"source han sans"',
+            fontSize: '14px',
+            color: 'black',
+            lineHeight: '20px',
+            overflowWrap: 'break-word',
+            whiteSpace: 'pre-wrap',
+          }
+        },
+      },
+      toDOM(node: Node) {
         return [
           'p',
           {
-            style: {
-              display: 'block',
-              fontFamily: '"source han sans"',
-              fontSize: '14px',
-              color: 'black',
-              lineHeight: '20px',
-              overflowWrap: 'break-word',
-              whiteSpace: 'pre-wrap',
-            },
+            style: { ...node.attrs.style }
           },
           0,
         ];

@@ -102,7 +102,6 @@ export class CanvasUpdater implements ICanvasUpdater {
         fontSize: '14px',
         color: 'black',
         lineHeight: '20px',
-        minHeight: '20px',
         overflowWrap: 'break-word',
         whiteSpace: width === 'auto' ? 'nowrap' : 'pre-wrap'
       },

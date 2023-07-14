@@ -372,7 +372,8 @@ export function splitBlockAs(splitNode?: (node: Node, atEnd: boolean) => { type:
       if (state.selection instanceof TextSelection || state.selection instanceof AllSelection) tr.deleteSelection();
       let deflt = $from.depth == 0 ? null : defaultBlockAt($from.node(-1).contentMatchAt($from.indexAfter(-1)));
       let splitType = splitNode && splitNode($to.parent, atEnd);
-      let types = splitType ? [splitType] : atEnd && deflt ? [{ type: deflt }] : undefined;
+      let attrs = deflt?.name === 'paragraph' ? { ...$from.parent.attrs } : null;
+      let types = splitType ? [splitType] : atEnd && deflt ? [{ type: deflt, attrs }] : undefined;
       let can = canSplit(tr.doc, tr.mapping.map($from.pos), 1, types);
       if (!types && !can && canSplit(tr.doc, tr.mapping.map($from.pos), 1, deflt ? [{ type: deflt }] : undefined)) {
         if (deflt) types = [{ type: deflt }];

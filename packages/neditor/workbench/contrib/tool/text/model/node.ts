@@ -373,7 +373,7 @@ export class Node {
     }
     if (json.type === CanvasNodeType.Text) {
       const content: Fragment | null = json.content ? Fragment.fromJSON(schema, [{ type: 'inline-text', content: json.content }]) : null;
-      return schema.nodeType('paragraph').create(json.attrs, content, marks);
+      return schema.nodeType('paragraph').create({ style: { ...json.style } }, content, marks);
     }
     if (json.type !== CanvasNodeType.Block) NOTIMPLEMENTED();
     let content = Fragment.fromJSON(schema, json.children);
