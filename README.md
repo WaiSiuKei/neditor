@@ -5,7 +5,7 @@ a rich text editor on a port of Cobalt to JavaScript aimed at running in Canvas.
 ## DEMO
 [waisiukei.github.io/neditor](https://waisiukei.github.io/neditor/)
 
-![preview](./preview_2.png)
+![screenshot](./screenshot.png)
 
 ## Goals
 
@@ -23,7 +23,7 @@ a rich text editor on a port of Cobalt to JavaScript aimed at running in Canvas.
 * `/packages/neditor/workbench` User interface and functionality extensions..
 * `/third_party/css-parser` This is a simple parser of HTML inline style.
 * `/third_party/icu` This is a port of ICU to Web.
-* `/third_party/skia` Loader of Skia/CanvasKis and its Typescript definations.
+* `/third_party/skia` Loader of Skia/CanvasKit and its Typescript definations.
 
 ## Building
 
