@@ -9,13 +9,11 @@ import { ScopedIdentifier } from '../../../canvas/canvasCommon/scope';
 import { IIdentifier } from '../../../common/common';
 import {
   getModelNodes,
-  getNodeFrom,
   IDocumentModel,
   IYDocumentModel,
-  IYNodeModel,
-  IYNodeModels,
-  IYNodeModelValue
+  IYNodeModels
 } from '../../../common/model';
+import { getNodeFrom, YNodeBase, YNodeValue } from '../../../common/node';
 import { DirectionType, ILocation } from './location';
 import { IModelBase, IModelOperationContext, IModelService, INodeInit, UpdateMode } from './model';
 import {
@@ -186,11 +184,11 @@ export class ModelOperator<T extends IDocumentModel> extends Disposable implemen
 
   protected _processInput(input: T): IYDocumentModel {
     const model = this.doc.getMap<IYNodeModels>(this._associatedResource.toString());
-    const nodes = new Y.Map<IYNodeModel>();
+    const nodes = new Y.Map<YNodeBase>();
     model.set('nodes', nodes);
     keys(input.nodes).forEach(id => {
       const nodeModel = input.nodes[id];
-      const yNodeModel = new Y.Map<IYNodeModelValue>();
+      const yNodeModel = new Y.Map<YNodeValue>();
       nodes.set(id, yNodeModel);
       keys(nodeModel).forEach(nodeAttrName => {
         const val = nodeModel[nodeAttrName];
@@ -224,7 +222,7 @@ export class ModelOperator<T extends IDocumentModel> extends Disposable implemen
     if (!this.ctx.isUpdating()) throw new Error('method should not be called outside transform()');
   }
 
-  addNode(at: ILocation, init: INodeInit): IYNodeModel {
+  addNode(at: ILocation, init: INodeInit): YNodeBase {
     this._updateContextGuard();
     return insertNodeOperation(deepClone(at), init)(this);
   }
@@ -295,8 +293,8 @@ export class ModelOperator<T extends IDocumentModel> extends Disposable implemen
     return nextNode;
   }
 
-  getAncestorNodesOfId(id: IIdentifier): IYNodeModel[] {
-    const ret: IYNodeModel[] = [];
+  getAncestorNodesOfId(id: IIdentifier): YNodeBase[] {
+    const ret: YNodeBase[] = [];
     let p = this.getParentNodeOfId(id);
     while (p) {
       ret.unshift(p);
@@ -310,12 +308,12 @@ export class ModelOperator<T extends IDocumentModel> extends Disposable implemen
     return ancestors.some(cv => cv.get('id') === ancestorId);
   }
 
-  getChildrenNodesOfId(id: IIdentifier): IYNodeModel[] {
-    const nodeArr = Array.from(this._yModel.get('nodes')!.values() as IterableIterator<IYNodeModel>);
+  getChildrenNodesOfId(id: IIdentifier): YNodeBase[] {
+    const nodeArr = Array.from(this._yModel.get('nodes')!.values() as IterableIterator<YNodeBase>);
     return nodeArr.filter(n => n.get('from') === id).sort((a, b) => cmp(a.get('order') as string, b.get('order') as string));
   }
 
-  queryNodes(condition: (n: IYNodeModel) => boolean): IYNodeModel[] {
+  queryNodes(condition: (n: YNodeBase) => boolean): YNodeBase[] {
     const nodes = this._yModel.get('nodes');
     DCHECK(nodes);
     const result = [];

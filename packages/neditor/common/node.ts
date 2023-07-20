@@ -1,3 +1,4 @@
+import * as Y from 'yjs';
 import { EnumAndLiteral } from '../base/common/typescript';
 import { IIdentifier } from './common';
 import { IStyleDeclaration } from './style';
@@ -100,18 +101,66 @@ export interface IRootNodeModel {
 
 export type INodeModel = ITextNodeModel | IBlockNodeModel | IRootNodeModel | IFragmentNodeModel
 
-export function isIBlockNodeModel(n: INodeModel): n is IBlockNodeModel {
-  return n.type === NodeType.Block;
+export type YNodeBase = Y.Map<YNodeValue>
+export type YNodeValue = string | Y.Map<string>;
+
+export interface YRootNode extends YNodeBase {
+  get(str: 'type'): NodeType.Root;
+  get(str: string): YNodeValue;
 }
 
-export function isIRootNodeModel(n: INodeModel): n is IRootNodeModel {
-  return n.type === NodeType.Root;
+export interface YImageNode extends YNodeBase {
+  get(str: 'type'): NodeType.Image;
+  get(str: string): YNodeValue;
 }
 
-export function isITextNodeModel(n: INodeModel): n is ITextNodeModel {
-  return n.type === NodeType.Text;
+export interface YTextNode extends YNodeBase {
+  get(str: 'type'): NodeType.Text;
+  get(str: string): YNodeValue;
 }
 
-export function isFragmentNode(node: INodeModel): boolean {
-  return node.type === NodeType.Fragment;
+export interface YBlockNode extends YNodeBase {
+  get(str: 'type'): NodeType.Block;
+  get(str: string): YNodeValue;
+}
+
+export interface YFragmentNode extends YNodeBase {
+  get(str: 'type'): NodeType.Fragment;
+  get(str: string): YNodeValue;
+}
+
+export type YNode = YRootNode | YImageNode | YTextNode | YBlockNode | YFragmentNode
+
+export function getNodeId(n: YNodeBase): string {
+  return n.get('id') as string;
+}
+export function getNodeFrom(n: YNodeBase): string {
+  return n.get('from') as string;
+}
+export function getNodeOrder(n: YNodeBase): string {
+  return n.get('order') as string;
+}
+export function getNodeType(n: YNodeBase) {
+  return n.get('type') as NodeType;
+}
+export function getNodeContent(n: YNodeBase) {
+  return n.get('content') as NodeType;
+}
+export function getNodeStyle(n: YNodeBase) {
+  return n.get('style') as Y.Map<string>;
+}
+export function isRootNode(n: YNode): n is YRootNode {
+  return getNodeType(n) === NodeType.Root;
+}
+export function isImageNode(n: YNode): n is YImageNode {
+  return getNodeType(n) === NodeType.Image;
+}
+export function isTextNode(n: YNode): n is YTextNode {
+  return getNodeType(n) === NodeType.Text;
+}
+export function isBlockNode(n: YNode): n is YBlockNode {
+  return getNodeType(n) === NodeType.Block;
+}
+export function isFragmentNode(n: YNode): n is YFragmentNode {
+  return getNodeType(n) === NodeType.Fragment;
 }

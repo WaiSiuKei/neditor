@@ -5,6 +5,7 @@ import { Optional } from '../../base/common/typescript';
 import { Document } from '../../engine/dom/document';
 import { HitTestLevel } from '../../platform/input/common/input';
 import { LayoutManager } from '../../engine/layout/layout_manager';
+import { ICanvasState } from '../canvas/canvas';
 
 export enum CursorStyle {
   none = 'none',
@@ -25,6 +26,7 @@ export interface IPhysicalCursorPosition {
 export interface ICanvasView extends IDisposable {
   domNode: HTMLElement;
   mx: IMatrix;
+  zoom: number;
   document: Document;
   layoutManager: LayoutManager;
   onCursorMoved: Event<Optional<IPhysicalCursorPosition>>;
@@ -33,10 +35,11 @@ export interface ICanvasView extends IDisposable {
   setCursor(s: CursorStyle): void;
   drawCursor(position: Optional<IPhysicalCursorPosition>): void;
   currentCursor(): CursorStyle;
-  setOutlines(outlines: IOutlineInit[]): void;
   setHitTestLevel(level: HitTestLevel): void;
   internal_disconnect(): void;
   internal_connect(): void;
+
+  redraw(state: ICanvasState): void;
 
   focus(): void;
   isFocused(): boolean;

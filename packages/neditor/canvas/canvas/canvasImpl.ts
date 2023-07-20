@@ -1,7 +1,11 @@
+import { isArrayShallowEqual } from '../../base/common/array';
 import { DeferredPromise } from '../../base/common/async';
-import { TRACE_EVENT0 } from '../../base/trace_event/common/trace_event_common';
+import { getNodeId } from '../../common/node';
 import { TextToolID } from '../../workbench/contrib/tool/text/textTool';
-import { ICanvas, IModelChangedEvent, IMVVMStatus } from './canvas';
+import { hitTest } from '../element/collision';
+import { CanvasElement } from '../element/types';
+import { getElementsAtPosition } from '../scene/comparisons';
+import { ICanvas, ICanvasState, IModelChangedEvent, IMVVMStatus } from './canvas';
 import { Disposable, dispose, IDisposable } from '@neditor/core/base/common/lifecycle';
 import { ICanvasView } from '../view/view';
 import { ServiceCollection } from '@neditor/core/platform/instantiation/common/serviceCollection';
@@ -13,7 +17,7 @@ import { IEventFilter, InputEvents, } from '@neditor/core/platform/input/browser
 import { IToolService } from '@neditor/core/platform/tool/common/tool';
 import { ICanvasService } from '../../platform/canvas/common/canvas';
 import { NOTIMPLEMENTED, NOTREACHED } from '../../base/common/notreached';
-import { ICanvasModel, IModelService, IOperationCallback } from '../../platform/model/common/model';
+import { ICanvasModel, IModelService, IOperationCallback, RootNodeId } from '../../platform/model/common/model';
 import { RootScope, Scope } from '../canvasCommon/scope';
 import { ICanvasViewModel } from '../viewModel/viewModel';
 import { Emitter, Event } from '../../base/common/event';
@@ -298,6 +302,72 @@ export class Canvas extends Disposable implements ICanvas {
     this.viewModel!.internal_connect(this.model!.uri.toString(), true);
     this.view!.internal_connect();
   }
+
+  getElementAtPosition(
+    x: number,
+    y: number,
+    // opts?: {
+    //   /** if true, returns the first selected element (with highest z-index)
+    //    of all hit elements */
+    //   preferSelected?: boolean;
+    // },
+  ): CanvasElement | null {
+    const allHitElements = this.getElementsAtPosition(
+      x,
+      y,
+    );
+    if (allHitElements.length > 1) {
+      NOTIMPLEMENTED();
+      // if (opts?.preferSelected) {
+      //   for (let index = allHitElements.length - 1; index > -1; index--) {
+      //     if (this.state.selectedElementIds[allHitElements[index].id]) {
+      //       return allHitElements[index];
+      //     }
+      //   }
+      // }
+      // const elementWithHighestZIndex =
+      //   allHitElements[allHitElements.length - 1];
+      // // If we're hitting element with highest z-index only on its bounding box
+      // // while also hitting other element figure, the latter should be considered.
+      // return isHittingElementBoundingBoxWithoutHittingElement(
+      //   elementWithHighestZIndex,
+      //   this.state,
+      //   this.frameNameBoundsCache,
+      //   x,
+      //   y,
+      // )
+      //   ? allHitElements[allHitElements.length - 2]
+      //   : elementWithHighestZIndex;
+    }
+    if (allHitElements.length === 1) {
+      return allHitElements[0];
+    }
+    return null;
+  }
+
+  private getElementsAtPosition(
+    x: number,
+    y: number,
+  ): CanvasElement[] {
+    const tier1Nodes = this.model.getChildrenNodesOfId(RootNodeId);
+    const elements = tier1Nodes.map(n => this.view.document.getElementById(getNodeId(n))!);
+
+    return getElementsAtPosition(elements, (element) => hitTest(element, this, x, y,),);
+  }
+  setSelectedElements(els: CanvasElement[]) {
+    let prev = this.selectedElements;
+    this.selectedElements = els;
+    if (!isArrayShallowEqual(prev, this.selectedElements)) {
+      this.view.redraw(this);
+    }
+  }
+
+  //#region canvasState
+  selectedElements: CanvasElement[] = [];
+  get zoom() {
+    return this.view.zoom;
+  }
+  //#endregion
 }
 
 class CanvasContextKeysManager extends Disposable {

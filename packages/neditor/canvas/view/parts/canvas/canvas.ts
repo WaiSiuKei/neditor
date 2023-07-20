@@ -50,7 +50,8 @@ export class Canvas extends Disposable {
     Object.assign(canvas.style, {
       width: toPX(innerWidth),
       height: toPX(innerHeight),
-    });
+      position: 'absolute',
+    } as CSSStyleDeclaration);
     let render_target = new RenderTarget(canvas);
     let resource_provider = new SkResourceProvider();
     this._resource_provider = resource_provider;

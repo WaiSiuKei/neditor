@@ -287,7 +287,7 @@ export abstract class Element extends ContainerNode {
     return isNil(this.element_flags_) ? false : !!(this.element_flags_ & mask);
   }
 
-  getBoundingClientRects() {
+  getBoundingClientRect() {
     const layoutObject = this.GetLayoutObject();
     DCHECK(layoutObject);
     const rect = layoutObject.box.GetClientRect();

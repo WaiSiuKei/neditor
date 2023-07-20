@@ -1,7 +1,6 @@
 import { IScopedLocation } from '../../platform/model/common/location';
 import { ICanvas, IModelFacade, IScopedNodeModel } from './canvas';
 import { INodeInit } from '../../platform/model/common/model';
-import { INodeModel, isIBlockNodeModel } from '../../common/node';
 import { RootScope, Scope, ScopedIdentifier } from '../canvasCommon/scope';
 import { Optional } from '../../base/common/typescript';
 import { NOTIMPLEMENTED, NOTREACHED } from '../../base/common/notreached';

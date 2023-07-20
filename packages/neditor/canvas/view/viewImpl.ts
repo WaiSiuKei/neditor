@@ -10,7 +10,7 @@ import { IContextKeyService } from '../../platform/contextkey/common/contextkey'
 import { TInputEventType } from '../../platform/input/browser/event';
 import { HitTestLevel } from '../../platform/input/common/input';
 import { IKeybindingService } from '../../platform/keybinding/common/keybinding';
-import { IMVVMStatus } from '../canvas/canvas';
+import { ICanvasState, IMVVMStatus } from '../canvas/canvas';
 import { CanvasContextKeys } from '../canvas/canvasContextKeys';
 import { ICanvasViewModel } from '../viewModel/viewModel';
 import { IPointerHandlerHelper } from './controller/mouseHandler';
@@ -29,6 +29,7 @@ export class View extends Disposable implements ICanvasView {
   private _overlay: Overlay;
   private _selection!: Selection;
   mx = Matrix.Identity;
+  get zoom() {return this.mx.a;}
 
   private _onCameraChagned = new Emitter<void>();
   public onCameraChagned = this._onCameraChagned.event;
@@ -112,10 +113,6 @@ export class View extends Disposable implements ICanvasView {
     this._onCursorMoved.fire(position);
   }
 
-  setOutlines(outlines: IOutlineInit[]) {
-    this._overlay.outlines.length = 0;
-    this._overlay.outlines.push(...outlines);
-  }
   setHitTestLevel(level: HitTestLevel) {
     this._contextKeyService.setContext(CanvasContextKeys.hitTestLevel.key, level);
   }
@@ -124,6 +121,10 @@ export class View extends Disposable implements ICanvasView {
     this.mx.tx = tx;
     this.mx.ty = ty;
     this._onCameraChagned.fire();
+  }
+
+  redraw(state: ICanvasState) {
+    this._overlay.redraw(state);
   }
 
   internal_disconnect() {

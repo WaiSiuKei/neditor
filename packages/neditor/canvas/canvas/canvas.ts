@@ -1,4 +1,5 @@
 import { ServicesAccessor } from '@neditor/core/platform/instantiation/common/instantiation';
+import { CanvasElement } from '../element/types';
 import { ICanvasView } from '../view/view';
 import { IEventFilter } from '@neditor/core/platform/input/browser/event';
 import { ICanvasModel, INodeInit, IOperationCallback } from '../../platform/model/common/model';
@@ -6,7 +7,6 @@ import { Event } from '../../base/common/event';
 import { Optional } from '../../base/common/typescript';
 import { Scope, ScopedIdentifier } from '../canvasCommon/scope';
 import { IDocumentModel } from '../../common/model';
-import { ISelectionChangedEvent } from '../viewModel/viewModelEvents';
 import { IScopedLocation } from '../../platform/model/common/location';
 import { IBlockNodeModel, INodeModel, IRootNodeModel, ITextNodeModel } from '../../common/node';
 import { ICanvasViewModel } from '../viewModel/viewModel';
@@ -44,7 +44,13 @@ export interface IMVVMStatus {
   maybeWaitForReLayout(): Promise<void>;
 }
 
-export interface ICanvas extends GitHistory {
+export interface ICanvasState {
+  readonly selectedElements: readonly CanvasElement[];
+  setSelectedElements(els: readonly  CanvasElement[]): void;
+  zoom: number;
+}
+
+export interface ICanvas extends GitHistory, ICanvasState {
   readonly _serviceBrand: undefined;
 
   id: string;
@@ -71,6 +77,11 @@ export interface ICanvas extends GitHistory {
   undo(): void;
   canRedo(): boolean;
   redo(): void;
+
+  getElementAtPosition(
+    x: number,
+    y: number,
+  ): CanvasElement | null;
 }
 
 interface IScopedTextNodeModel extends ITextNodeModel, IScopedMixin {
@@ -148,7 +159,7 @@ export interface IModelFacade {
   /**
    * 获取符合条件的节点列表
    */
-  queryNodes(condition: (s: Scope, n: INodeModel) => boolean): IScopedNodeModel[];
+  // queryNodes(condition: (s: Scope, n: INodeModel) => boolean): IScopedNodeModel[];
 }
 
 /**

@@ -3,8 +3,8 @@ import {
   IBlockNodeViewModel,
   ICanvasViewModel,
   INodeViewModel, IRootNodeViewModel,
-  isIBlockNodeViewModel,
-  isITextNodeViewModel,
+  isBlockNodeViewModel,
+  isTextNodeViewModel,
   ITextNodeViewModel
 } from '../../../viewModel/viewModel';
 import { createApp } from './adapter/app';
@@ -36,10 +36,10 @@ export function mountAPP(vm: ICanvasViewModel, document: Document) {
   });
 
   const getComponent = (node: INodeViewModel, scopeChain: string = '') => {
-    if (isIBlockNodeViewModel(node)) {
+    if (isBlockNodeViewModel(node)) {
       return createBlock(node, scopeChain);
     }
-    if (isITextNodeViewModel(node)) {
+    if (isTextNodeViewModel(node)) {
       return createParagraph(node, scopeChain);
     }
     NOTIMPLEMENTED();

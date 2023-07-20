@@ -2,13 +2,12 @@ import {
   ICanvasViewModel,
   INodeViewModel,
   IRootNodeViewModel,
-  isIBlockNodeViewModel,
-  isIRootNodeViewModel,
+  isBlockNodeViewModel,
+  isRootNodeViewModel,
   ITextNodeViewModel
 } from './viewModel';
 import { Disposable, IDisposable, toDisposable } from '../../base/common/lifecycle';
 import { Emitter, Event } from '../../base/common/event';
-import { ISelectionChangedEvent } from './viewModelEvents';
 import { ScopedIdentifier } from '../canvasCommon/scope';
 import { IIdentifier } from '../../common/common';
 import { reactive } from '@vue/reactivity';
@@ -19,9 +18,9 @@ import { ICanvas } from '../canvas/canvas';
 import { isString } from '../../base/common/type';
 import { NOTIMPLEMENTED, NOTREACHED } from '../../base/common/notreached';
 import { coalesce, isArrayShallowEqual } from '../../base/common/array';
-import { NodeType } from '../../common/node';
+import { getNodeContent, getNodeFrom, getNodeId, getNodeStyle, getNodeType, YNodeBase, NodeType } from '../../common/node';
 import { DCHECK } from '../../base/check';
-import { getModelNodes, getNodeContent, getNodeFrom, getNodeId, getNodeStyle, getNodeType, IYNodeModel, IYNodeModels } from '../../common/model';
+import { getModelNodes, IYNodeModels } from '../../common/model';
 import * as Y from 'yjs';
 
 export class CanvasViewModel extends Disposable implements ICanvasViewModel {
@@ -37,8 +36,6 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
   private treeNodeObservers = new Map<string, Map<IIdentifier, IDisposable>>();
   private treeNodesObservers = new Map<string, IDisposable>();
   private treeRoots = new Map<string, INodeViewModel>();
-
-  private _selectTimer = 0;
 
   private _root: { value: IRootNodeViewModel };
 
@@ -120,7 +117,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
     const model = this.getModel(resourceStr).yModel;
     const nodes = getModelNodes(model);
     DCHECK(nodes);
-    const nodeArr = nodes.values() as IterableIterator<IYNodeModel>;
+    const nodeArr = nodes.values() as IterableIterator<YNodeBase>;
     let root: Optional<INodeViewModel>;
     for (const node of nodeArr) {
       const style = getNodeStyle(node) as Y.Map<string>;
@@ -147,7 +144,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
     this.treeRoots.set(resourceStr, root);
 
     for (const vm of nodeViewModelMap.values()) {
-      if (isIBlockNodeViewModel(vm) || isIRootNodeViewModel(vm)) {
+      if (isBlockNodeViewModel(vm) || isRootNodeViewModel(vm)) {
         vm.children = this.getChildren(vm.id, resourceStr);
       }
     }
@@ -155,7 +152,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
     this.watchNodes(nodes, resourceStr);
   }
 
-  private watchNode(node: IYNodeModel, resourceStr: string) {
+  private watchNode(node: YNodeBase, resourceStr: string) {
     const nodeViewModelMap = this.treeNodeViewModelMap.get(resourceStr)!;
     const observer = (events: Array<Y.YEvent<any>>) => {
       events.forEach(event => {
@@ -224,7 +221,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
     }));
   }
 
-  private addNode(node: IYNodeModel, resourceStr: string) {
+  private addNode(node: YNodeBase, resourceStr: string) {
     const nodeViewModelMap = this.treeNodeViewModelMap.get(resourceStr)!;
     const id = getNodeId(node);
     nodeViewModelMap.delete(id);
@@ -245,7 +242,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
     this.watchNode(node, resourceStr);
   }
 
-  private removeNode(node: IYNodeModel, resourceStr: string) {
+  private removeNode(node: YNodeBase, resourceStr: string) {
     const nodeViewModelMap = this.treeNodeViewModelMap.get(resourceStr)!;
     const observers = this.treeNodeObservers.get(resourceStr)!;
     // 删除的只能这样处理
@@ -264,7 +261,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
   }
 
   private watchNodes(nodes: IYNodeModels, resourceStr: string) {
-    const observer = (event: Y.YMapEvent<IYNodeModel>) => {
+    const observer = (event: Y.YMapEvent<YNodeBase>) => {
       const { target } = event;
       event.changes.keys.forEach((change, key) => {
         const { action, oldValue } = change;
@@ -304,7 +301,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
   private updateChildren(id: IIdentifier, resourceStr: string) {
     const vm = this.getViewModelNodeOfResourceById(id, resourceStr);
     DCHECK(vm);
-    if (!isIBlockNodeViewModel(vm) && !isIRootNodeViewModel(vm)) NOTREACHED();
+    if (!isBlockNodeViewModel(vm) && !isRootNodeViewModel(vm)) NOTREACHED();
     vm.children = this.getChildren(id, resourceStr);
   }
   // #endregion

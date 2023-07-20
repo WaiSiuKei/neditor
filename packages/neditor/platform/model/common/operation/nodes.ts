@@ -1,22 +1,22 @@
 import { DCHECK } from '../../../../base/check';
 import { ICanvasModelLike, INodeInit, IOperationCallback, } from '../model';
 import { DirectionType, ILocation } from '../location';
-import { NodeType } from '../../../../common/node';
+import { YNodeBase, YNodeValue, NodeType } from '../../../../common/node';
 import { generateUuid } from '../../../../base/common/uuid';
 import { cmp, devideBy2, plus } from '../../../../base/common/bignumber';
 import { NOTIMPLEMENTED, NOTREACHED } from '../../../../base/common/notreached';
 import { IIdentifier } from '../../../../common/common';
 import { Optional } from '../../../../base/common/typescript';
 import { isNil, isObject, isString } from '../../../../base/common/type';
-import { getModelNodes, IYNodeModel, IYNodeModelValue } from '../../../../common/model';
+import { getModelNodes} from '../../../../common/model';
 import * as Y from 'yjs';
 import { keys } from '../../../../base/common/objects';
 
-export function insertNodeOperation(at: ILocation, nodeInit: INodeInit): IOperationCallback<IYNodeModel> {
+export function insertNodeOperation(at: ILocation, nodeInit: INodeInit): IOperationCallback<YNodeBase> {
   return (model: ICanvasModelLike) => {
     const { ref, direction } = at;
     const nodeId = generateUuid();
-    const node = new Y.Map<IYNodeModelValue>();
+    const node = new Y.Map<YNodeValue>();
     node.set('id', nodeId);
     keys(nodeInit).forEach(key => {
       const v = nodeInit[key];

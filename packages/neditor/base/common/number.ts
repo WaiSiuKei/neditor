@@ -27,7 +27,3 @@ export function clamp(min: number, val: number, max: number): number {
 export function castInt(val: number): number {
   return Math.round(val);
 }
-
-export function qFuzzyCompare(p1: number, p2: number) {
-  return Math.abs(p1 - p2) < Number.EPSILON;
-}

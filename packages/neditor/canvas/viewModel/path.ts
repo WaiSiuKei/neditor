@@ -1,3 +1,5 @@
+import { DCHECK } from '../../base/check';
+import { NodeType } from '../../common/node';
 import { Element } from '../../engine/dom/element';
 import { Scope } from '../canvasCommon/scope';
 import { Optional } from '../../base/common/typescript';
@@ -22,6 +24,12 @@ export function getScopeAttr(e: Element) {
 
 export function getRootAttr(e: Element): string {
   return e.getAttribute(AttrNameOfRoot) || '';
+}
+
+export function getTypeAttr(e: Element): NodeType {
+  const t = e.getAttribute(AttrNameOfComponentType);
+  DCHECK(t);
+  return t as unknown as NodeType;
 }
 
 export function isFragmentRoot(e: Element) {

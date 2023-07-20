@@ -1,6 +1,5 @@
 import { Registry } from '@neditor/core/platform/registry/common/platform';
 import { IToolRegistry, IToolService, Tool } from '@neditor/core/platform/tool/common/tool';
-import { SelectToolFactory, SelectToolID } from './select/selectTool';
 import { PanToolFactory, PanToolID } from './pan/panTool';
 import { BrushToolFactory, BrushToolID } from './brush/brushTool';
 import { LineToolFactory, LineToolID } from './line/lineTool';
@@ -16,7 +15,6 @@ import { KeyCode } from "../../../base/common/keyCodes";
 
 const toolRegistry = Registry.as<IToolRegistry>(Tool);
 
-toolRegistry.registerWithShortcut(new SelectToolFactory());
 toolRegistry.registerWithShortcut(new HoverToolFactory(), true);
 toolRegistry.registerWithShortcut(new PanToolFactory());
 toolRegistry.registerWithShortcut(new LineToolFactory());
@@ -37,7 +35,6 @@ function registerToolKeybinding(id: string, keybinding: IKeybindings) {
   })
 }
 
-registerToolKeybinding(SelectToolID, { primary: KeyCode.KEY_S })
 registerToolKeybinding(HoverToolID, { primary: KeyCode.KEY_H })
 registerToolKeybinding(PanToolID, { primary: KeyCode.KEY_P })
 registerToolKeybinding(LineToolID, { primary: KeyCode.KEY_L })

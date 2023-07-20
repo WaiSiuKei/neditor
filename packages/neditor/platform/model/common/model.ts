@@ -1,10 +1,10 @@
 import { Optional } from '../../../base/common/typescript';
-import { IDocumentModel, IYDocumentModel, IYNodeModel } from '../../../common/model';
+import { IDocumentModel, IYDocumentModel} from '../../../common/model';
 import { URI } from '../../../base/common/uri';
 import { Event } from '../../../base/common/event';
 import { IModelContentChangedEvent } from './modelEvents';
 import { ScopedIdentifier } from '../../../canvas/canvasCommon/scope';
-import { IBlockNodeModel, IFragmentNodeModel, INodeModel, IRootNodeModel, ITextNodeModel, NodeType } from '../../../common/node';
+import { IBlockNodeModel, IFragmentNodeModel, INodeModel, IRootNodeModel, ITextNodeModel, YNodeBase, NodeType } from '../../../common/node';
 import { IIdentifier } from '../../../common/common';
 import { ILocation } from './location';
 import { createDecorator } from '../../instantiation/common/instantiation';
@@ -62,7 +62,7 @@ export interface IModelBase<T extends IDocumentModel> extends IDisposable {
   /**
    * 添加节点，待定
    */
-  addNode(at: ILocation, nodeInit: INodeInit): IYNodeModel;
+  addNode(at: ILocation, nodeInit: INodeInit): YNodeBase;
   /**
    * 删除节点
    * @param at - 位置
@@ -89,32 +89,32 @@ export interface IModelBase<T extends IDocumentModel> extends IDisposable {
   /**
    * 根据 id 获取节点数据
    */
-  getNodeById(id: IIdentifier): Optional<IYNodeModel>;
+  getNodeById(id: IIdentifier): Optional<YNodeBase>;
   /**
    * 获取父节点
    */
-  getParentNodeOfId(id: IIdentifier): Optional<IYNodeModel>;
+  getParentNodeOfId(id: IIdentifier): Optional<YNodeBase>;
   /**
    * 获取相邻前节点
    */
-  getPreviousSiblingNodeOfId(id: IIdentifier): Optional<IYNodeModel>;
+  getPreviousSiblingNodeOfId(id: IIdentifier): Optional<YNodeBase>;
   /**
    * 获取相邻后节点
    */
-  getNextSiblingNodeOfId(id: IIdentifier): Optional<IYNodeModel>;
+  getNextSiblingNodeOfId(id: IIdentifier): Optional<YNodeBase>;
   /**
    * 获取祖先节点列表，根节点在前
    * @param id - 查询的节点的 id
    */
-  getAncestorNodesOfId(id: IIdentifier): IYNodeModel[]; // root 在最前
+  getAncestorNodesOfId(id: IIdentifier): YNodeBase[]; // root 在最前
   /**
    * 是否为祖先节点
    * @param ancestorId - 查询的节点的 id
    * @param id - 被查询的节点的 id
    */
   isAncestorNodeOfId(ancestorId: IIdentifier, id: IIdentifier): boolean;
-  getChildrenNodesOfId(ID: IIdentifier): IYNodeModel[];
-  queryNodes(condition: (n: IYNodeModel) => boolean): IYNodeModel[];
+  getChildrenNodesOfId(ID: IIdentifier): YNodeBase[];
+  queryNodes(condition: (n: YNodeBase) => boolean): YNodeBase[];
 }
 
 export interface ICanvasModel extends IModelBase<IDocumentModel> {

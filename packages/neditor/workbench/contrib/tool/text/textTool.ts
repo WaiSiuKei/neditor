@@ -14,8 +14,7 @@ import { Optional } from '../../../../base/common/typescript';
 import { ScopedIdentifier } from '../../../../canvas/canvasCommon/scope';
 import { AttrNameOfId, getScope } from '../../../../canvas/viewModel/path';
 import { IIdentifier } from '../../../../common/common';
-import { getNodeContent, getNodeId } from '../../../../common/model';
-import { IInlineStyle, NodeType } from '../../../../common/node';
+import { getNodeContent, getNodeId, IInlineStyle, NodeType } from '../../../../common/node';
 import { HTMLParagraphElement } from '../../../../engine/dom/html_paragraph_element';
 import { Node } from '../../../../engine/dom/node';
 import { NodeTraversal } from '../../../../engine/dom/node_traversal';
@@ -315,7 +314,7 @@ export class TextTool extends BaseTool {
     if (targetNode.IsElement()) {
       const targetEl = targetNode.AsElement();
       if (targetEl.tagName === HTMLParagraphElement.kTagName) {
-        const rect = targetEl.getBoundingClientRects();
+        const rect = targetEl.getBoundingClientRect();
         startX = Math.min(rect.left, clientX);
         endX = Math.max(rect.right, clientX);
       }
@@ -347,6 +346,7 @@ export class TextTool extends BaseTool {
 
   private _initEditor(anchor: Node) {
     DCHECK(anchor.IsText());
+    this.canvas.setSelectedElements([]);
     const paragraphContainer = anchor.parentElement!.parentElement!;
     const id = paragraphContainer.getAttribute(AttrNameOfId);
     const scope = getScope(paragraphContainer);

@@ -4,7 +4,6 @@ import { IDisposable } from '../../base/common/lifecycle';
 import { Event } from '../../base/common/event';
 import { ScopedIdentifier } from '../canvasCommon/scope';
 import { Optional } from '../../base/common/typescript';
-import { DCHECK } from '../../base/check';
 import { NodeType } from '../../common/node';
 
 export interface IRootNodeViewModel {
@@ -12,7 +11,7 @@ export interface IRootNodeViewModel {
   id: IIdentifier;
   children: INodeViewModel[];
   style?: IStyleDeclaration;
-  attrs: Record<string, any>
+  attrs: Record<string, any>;
 }
 
 export interface IBlockNodeViewModel {
@@ -20,7 +19,7 @@ export interface IBlockNodeViewModel {
   id: IIdentifier;
   children: INodeViewModel[];
   style: IStyleDeclaration;
-  attrs: Record<string, any>
+  attrs: Record<string, any>;
   fragment?: INodeViewModel;
   isFragmentPlaceholder?: boolean;
 }
@@ -30,27 +29,28 @@ export interface ITextNodeViewModel {
   id: IIdentifier;
   style: IStyleDeclaration;
   content: string;
-  attrs: Record<string, any>
+  attrs: Record<string, any>;
 }
 
-export function assertIsIBlockNodeViewModel(n: INodeViewModel): asserts n is IBlockNodeViewModel {
-  DCHECK(isIBlockNodeViewModel(n));
-}
-export function assertIsIRootNodeViewModel(n: INodeViewModel): asserts n is IRootNodeViewModel {
-  DCHECK(isIRootNodeViewModel(n));
+export interface IImageNodeViewModel {
+  type: NodeType.Image;
+  id: IIdentifier;
+  style: IStyleDeclaration;
+  // content: string;
+  attrs: Record<string, any>;
 }
 
-export function isIBlockNodeViewModel(n: INodeViewModel): n is IBlockNodeViewModel {
+export function isBlockNodeViewModel(n: INodeViewModel): n is IBlockNodeViewModel {
   return n.type === NodeType.Block;
 }
-export function isIRootNodeViewModel(n: INodeViewModel): n is IRootNodeViewModel {
+export function isRootNodeViewModel(n: INodeViewModel): n is IRootNodeViewModel {
   return n.type === NodeType.Root;
 }
-export function isITextNodeViewModel(n: INodeViewModel): n is ITextNodeViewModel {
+export function isTextNodeViewModel(n: INodeViewModel): n is ITextNodeViewModel {
   return n.type === NodeType.Text;
 }
 
-export type INodeViewModel = IBlockNodeViewModel | ITextNodeViewModel | IRootNodeViewModel
+export type INodeViewModel = IBlockNodeViewModel | ITextNodeViewModel | IRootNodeViewModel | IImageNodeViewModel
 
 export interface ICanvasViewModel extends IDisposable {
   onReconnected: Event<void>;
