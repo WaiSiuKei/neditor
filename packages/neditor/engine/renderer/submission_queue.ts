@@ -97,8 +97,6 @@ export class SubmissionQueue {
   ) {
     this.max_queue_size_ = max_queue_size;
     this.dispose_function_ = dispose_function;
-    this.to_submission_time_in_ms_ = new SmoothedValue(time_to_converge, kMaxSlopeMagnitude);
-    this.to_submission_time_cval_ = new TimeDelta(0);
     this.allow_latency_reduction_ = allow_latency_reduction;
   }
 
@@ -107,61 +105,14 @@ export class SubmissionQueue {
   PushSubmission(submission: Submission, now: TimeTicks) {
     TRACE_EVENT0('cobalt::renderer', 'SubmissionQueue::PushSubmission()');
 
-    if (this.submission_queue_.length > 0) {
-      this.CheckThatNowIsMonotonicallyIncreasing(now);
-    }
-
     if (this.submission_queue_.length >= this.max_queue_size_) {
       // If we are at capacity, then make room for the new submission by erasing
       // our first element.
       this.submission_queue_.shift();
-
-      // Ensure that the next oldest item in the queue is older than the current
-      // time.  If this is not the case, snap time forward so that it is.
-      let to_front_submission_time_in_ms =
-        (this.submission_queue_[0].time_offset.SUB(this.render_time(now)))
-          .InMilliseconds();
-      if (this.to_submission_time_in_ms_.GetValueAtTime(now) <
-        to_front_submission_time_in_ms) {
-        this.to_submission_time_in_ms_.SetTarget(to_front_submission_time_in_ms, now);
-        this.to_submission_time_in_ms_.SnapToTarget();
-      }
     }
-
-    let latest_to_submission_time =
-      submission.time_offset.SUB(this.render_time(now));
-
-    let latest_to_submission_time_in_ms =
-      latest_to_submission_time.InMilliseconds();
-
-    // Update our mapping from render time to submission time.
-    if (this.allow_latency_reduction_ || this.submission_queue_.length === 0 ||
-      this.to_submission_time_in_ms_.GetValueAtTime(now) >
-      latest_to_submission_time_in_ms) {
-      this.to_submission_time_in_ms_.SetTarget(latest_to_submission_time_in_ms, now);
-    }
-
-    // Snap time to the new submission if no existing animations are playing both
-    // currently and during the time that we are snapping to.
-    // if (this.submission_queue_.length == 1 &&
-    //   this.submission_queue_[0].render_tree.GetTypeId() ==
-    // base::GetTypeId<render_tree::animations::AnimateNode>()) {
-    //   render_tree::animations::AnimateNode* animate_node =
-    //     base::polymorphic_downcast<render_tree::animations::AnimateNode*>(
-    //       submission_queue_.front().render_tree.get());
-    //
-    //   // Check the expiration of only animations that depend on the time
-    //   // parameter, since they are the only ones that will be affected by snapping
-    //   // time.
-    //   if (animate_node.depends_on_time_expiry() <= submission_time(now) &&
-    //     animate_node.depends_on_time_expiry() <=
-    //   latest_to_submission_time + render_time(now)) {
-    //     to_submission_time_in_ms_.SnapToTarget();
-    //   }
-    // }
 
     // Save the new submission.
-    this.submission_queue_.push(submission);
+    this.submission_queue_.unshift(submission);
 
     // Possibly purge old stale submissions.
     this.PurgeStaleSubmissionsFromQueue(now);
@@ -172,8 +123,6 @@ export class SubmissionQueue {
   GetCurrentSubmission(now: TimeTicks): Submission {
     TRACE_EVENT0('cobalt::renderer', 'SubmissionQueue::GetCurrentSubmission()');
 
-    this.CheckThatNowIsMonotonicallyIncreasing(now);
-
     DCHECK(this.submission_queue_.length > 0);
 
     // First get rid of any stale submissions from our queue.
@@ -183,99 +132,15 @@ export class SubmissionQueue {
     // fact that time has passed since it was submitted.
     let updated_time_submission = this.submission_queue_[0];
 
-    // Our current clock should always be setup (via PushSubmission()) such
-    // that it is always larger than the front of the queue.
-    DCHECK_GE(this.to_submission_time_in_ms_.GetValueAtTime(now),
-      (this.submission_queue_[0].time_offset.SUB(this.render_time(now)))
-        .InMilliseconds());
-
-    let updated_time = this.submission_time(now);
-
-    // This if statement is very similar to the DCHECK above, but not exactly
-    // the same because of rounding issues.
-    if (updated_time > updated_time_submission.time_offset) {
-      updated_time_submission.time_offset = updated_time;
-    }
-
     return updated_time_submission;
-
-  }
-
-// Returns the corresponding submission time for a given TimeTicks
-  // "real world" system value.
-  submission_time(time: TimeTicks): TimeDelta {
-    return TimeDelta.FromMilliseconds(
-      this.to_submission_time_in_ms_.GetValueAtTime(time)).ADD(this.render_time(time));
-  }
-
-  // Returns the corresponding renderer time for a given TimeTicks value
-  // (e.g. base::TimeTicks::Now()).
-  render_time(time: TimeTicks): TimeDelta {
-    if (!this.renderer_time_origin_) {
-      this.renderer_time_origin_ = time;
-    }
-
-    return time.SUB(this.renderer_time_origin_);
   }
 
   private PurgeStaleSubmissionsFromQueue(time: TimeTicks): void {
     TRACE_EVENT0('cobalt::renderer',
       'SubmissionQueue::PurgeStaleSubmissionsFromQueue()');
-    let current_to_submission_time_in_ms =
-      this.to_submission_time_in_ms_.GetValueAtTime(time);
-
-    let iterator = this.submission_queue_.length - 1;
-
-    // If there is more than one element in the queue...
-    if (iterator != 0) {
-      // Skip past the submissions that are in the future.  This means we start
-      // from the back because the queue is sorted in ascending order of time.
-      while (current_to_submission_time_in_ms <
-      (this.submission_queue_[iterator].time_offset.SUB(this.render_time(time))).InMilliseconds()) {
-        if (iterator == 0) {
-          // It is an invariant of this class that the oldest submission in the
-          // queue is older than the current render time.  This should be
-          // managed within PushSubmission().
-          // NOTREACHED();
-          break;
-        }
-        --iterator;
-      }
-    }
-
     if (this.submission_queue_.length > 1) {
-      iterator = 1
+      this.submission_queue_.length = 1;
     }
-    let ite = this.submission_queue_[iterator]
-
-    // Delete all previous, old render trees.
-    while (this.submission_queue_[0] !== ite) {
-      TRACE_EVENT0('cobalt::renderer', 'Delete Render Tree Submission');
-      if (this.dispose_function_) {
-        // Package the submission for sending to the disposal callback function.
-        // We erase it from our queue before calling the callback in order to
-        // ensure that the callback disposes of the Submission object after we
-        // do.
-        let submission: Submission = this.submission_queue_.shift()!;
-        this.dispose_function_(submission);
-      } else {
-        // If no callback is passed in to dispose of submissions for us, just
-        // delete it immediately.
-        this.submission_queue_.shift();
-      }
-    }
-
-    // Update our CVal tracking the current (smoothed) to_submission_time value
-    // and the one tracking submission queue size.
-    this.to_submission_time_cval_ = TimeDelta.FromMilliseconds(
-      this.to_submission_time_in_ms_.GetValueAtTime(time));
-  }
-
-  private CheckThatNowIsMonotonicallyIncreasing(now: TimeTicks): void {
-    if (this.last_now_) {
-      DCHECK(now.GE(this.last_now_));
-    }
-    this.last_now_ = now;
   }
 
   // The maximum size of the queue.  If we go over this, we snap time forward.
@@ -304,13 +169,11 @@ export class SubmissionQueue {
   //       base::TimeDelta::FromMillisecondsD(
   //           to_submission_time_in_ms_.GetCurrentValue(now))
   // is true.
-  private to_submission_time_in_ms_: SmoothedValue;
-
   // Debug value to help DCHECK that input |now| values are monotonically
   // increasing.
-  private last_now_?: TimeTicks;
+  // private last_now_?: TimeTicks;
 
-  private to_submission_time_cval_: TimeDelta;
+  // private to_submission_time_cval_: TimeDelta;
 
   // If false, we will only ever allow to_submission_time_cval_ to move
   // backwards ensuring that animations never speed up during playback (at the

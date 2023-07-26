@@ -7,10 +7,10 @@ import { Disposable } from "../../base/common/lifecycle";
 export class Submission extends Disposable {
   // Convenience constructor that assumes there are no animations and sets up
   // an empty animation map.
-  constructor(render_tree: Node, time_offset: TimeDelta = new TimeDelta(0)) {
+  constructor(render_tree: Node) {
     super()
     this.render_tree = render_tree;
-    this.time_offset = time_offset;
+    // this.time_offset = time_offset;
   }
 
   // Submit a render tree as well as associated animations.  The
@@ -28,7 +28,7 @@ export class Submission extends Disposable {
   // to the same origin when updating the animations, as well as hinting
   // at the latency between animation creation and submission to render
   // thread.
-  time_offset: TimeDelta;
+  // time_offset: TimeDelta;
 
   // All callbacks within the vector will be called every time this submission
   // is rasterized.

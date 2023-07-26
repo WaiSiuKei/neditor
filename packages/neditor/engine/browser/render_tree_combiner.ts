@@ -35,9 +35,9 @@ export class Layer {
       return undefined;
     }
 
-    let current_time_offset = this.CurrentTimeOffset();
-    DCHECK(current_time_offset);
-    let submission = new Submission(render_tree_.render_tree, current_time_offset);
+    // let current_time_offset = this.CurrentTimeOffset();
+    // DCHECK(current_time_offset);
+    let submission = new Submission(render_tree_.render_tree/*, current_time_offset*/);
     submission.timeline_info = render_tree_.timeline_info;
     submission.on_rasterized_callbacks = render_tree_.on_rasterized_callbacks.slice();
 
@@ -51,14 +51,14 @@ export class Layer {
   // Returns the current submission time for this particular layer.  This is
   // called by the RenderTreeCombiner on the |timeline_layer_| to determine
   // which value to pass in as the submission time for the renderer.
-  CurrentTimeOffset(): Optional<TimeDelta> {
-    if (!this.receipt_time_) {
-      return undefined;
-    } else {
-      DCHECK(this.render_tree_);
-      return this.render_tree_!.time_offset.ADD((TimeTicks.Now().SUB(this.receipt_time_)));
-    }
-  }
+  // CurrentTimeOffset(): Optional<TimeDelta> {
+  //   if (!this.receipt_time_) {
+  //     return undefined;
+  //   } else {
+  //     DCHECK(this.render_tree_);
+  //     return this.render_tree_!.time_offset.ADD((TimeTicks.Now().SUB(this.receipt_time_)));
+  //   }
+  // }
 
   private render_tree_combiner_: RenderTreeCombiner;
 
@@ -109,7 +109,7 @@ export class RenderTreeCombiner {
       ? this.timeline_layer_
       : first_layer_with_render_tree;
 
-    let submission = new Submission(new CompositionNode(builder), timeline_layer.CurrentTimeOffset());
+    let submission = new Submission(new CompositionNode(builder)/*, timeline_layer.CurrentTimeOffset()*/);
     submission.timeline_info = timeline_layer.render_tree_!.timeline_info;
     submission.on_rasterized_callbacks = on_rasterized_callbacks;
 

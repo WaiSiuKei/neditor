@@ -11,21 +11,11 @@ import { NOTIMPLEMENTED } from '@neditor/core/base/common/notreached';
 import { ResourceProvider } from '../render_tree/resource_provider';
 import { Surface } from '@neditor/skia';
 
-const kCobaltMinimumFrameTimeInMilliseconds = 16.0;
-
 // How quickly the renderer time adjusts to changing submission times.
 // 500ms is chosen as a default because it is fast enough that the user will not
 // usually notice input lag from a slow timeline renderer, but slow enough that
 // quick updates while a quick animation is playing should not jank.
 const kTimeToConvergeInMS = 500.0;
-
-// How many entries the rasterize periodic timer will contain before updating.
-const kRasterizePeriodicTimerEntriesPerUpdate = 60;
-
-// The maximum number of entries that the rasterize animations timer can contain
-// before automatically updating. In the typical use case, the update will
-// occur manually when the animations expire.
-const kRasterizeAnimationsTimerMaxEntries = 60;
 
 // Pipeline is a thread-safe class that setups up a rendering pipeline
 // for processing render trees through a rasterizer.  New render trees are
@@ -52,9 +42,6 @@ export class Pipeline {
     this.render_target_ = render_target;
     this.submit_even_if_render_tree_is_unchanged_ = submit_even_if_render_tree_is_unchanged;
     this.last_did_rasterize_ = false;
-    this.last_animations_expired_ = true;
-    this.last_stat_tracked_animations_expired_ = true;
-    // this.rasterize_animations_timer_
     this.new_render_tree_rasterize_count_ = 0;
     this.new_render_tree_rasterize_time_ = 0;
     this.has_active_animations_c_val_ = false;
@@ -72,7 +59,7 @@ export class Pipeline {
     TRACE_EVENT0('cobalt::renderer', 'Pipeline::Submit()');
 
     // Execute the actual set of the new render tree on the rasterizer tree.
-    this.SetNewRenderTree(this.CollectAnimations(render_tree_submission));
+    this.SetNewRenderTree(render_tree_submission);
   }
 
   // Clears the currently submitted render tree submission and waits for the
@@ -89,16 +76,6 @@ export class Pipeline {
   //     const scoped_refptr<render_tree::Node>& render_tree_root,
   //     const base::Optional<math::Rect>& clip_rect,
   //     const RasterizationCompleteCallback& complete);
-
-  // Inserts a fence that ensures the rasterizer rasterizes up until the
-  // submission time proceeding queuing additional submissions.  This is useful
-  // when switching timelines in order to ensure that an old timeline plays out
-  // completely before resetting the submission queue for a timeline change.
-  // Upon passing the fence, we will immediately queue the latest submission
-  // submitted after TimeFence() was called.  If a time fence is set while
-  // an existing time fence already exists, the new time fence is ignored (and
-  // an error is logged).
-  // void TimeFence(base::TimeDelta time_fence);
 
   // Returns a thread-safe object from which one can produce renderer resources
   // like images and fonts which can be referenced by render trees that are
@@ -118,41 +95,16 @@ export class Pipeline {
 
     TRACE_EVENT0('cobalt::renderer', 'Pipeline::SetNewRenderTree()');
 
-    // If a time fence is active, save the submission to be queued only after
-    // we pass the time fence.  Overwrite any existing waiting submission in this
-    // case.
-    if (this.time_fence_) {
-      this.post_fence_submission_ = render_tree_submission;
-      this.post_fence_receipt_time_ = TimeTicks.Now();
-      render_tree_submission.dispose();
-      return;
-    }
-
     this.QueueSubmission(render_tree_submission, TimeTicks.Now());
 
-    // Start the rasterization timer if it is not yet started.
-    // if (!this.rasterize_timer_) {
-    //   // Artificially limit the period between submissions. This is useful for
-    //   // platforms which do not rate limit themselves during swaps. Be careful
-    //   // to use a non-zero interval time even if throttling occurs during frame
-    //   // swaps. It is possible that a submission is not rendered (this can
-    //   // happen if the render tree has not changed between submissions), so no
-    //   // frame swap occurs, and the minimum frame time is the only throttle.
-    //   let minimum_frame_interval_milliseconds = kCobaltMinimumFrameTimeInMilliseconds;
-    //   DCHECK(minimum_frame_interval_milliseconds > 0.0);
-    //   this.rasterize_timer_ = new RepeatingTimer(
-    //     TimeDelta.FromMilliseconds(minimum_frame_interval_milliseconds),
-    //     this.RasterizeCurrentTree.bind(this));
-    //   // this.rasterize_timer_.Reset();
-    // }
-    this.RasterizeCurrentTree()
+    this.RasterizeCurrentTree();
   }
 
   // Clears the current render tree and calls the callback when this is done.
   private ClearCurrentRenderTree() {
-    TRACE_EVENT0("cobalt::renderer", "Pipeline::ClearCurrentRenderTree()");
+    TRACE_EVENT0('cobalt::renderer', 'Pipeline::ClearCurrentRenderTree()');
     this.ResetSubmissionQueue();
-    this.rasterize_timer_ = undefined
+    this.rasterize_timer_ = undefined;
   }
 
   // Called repeatedly (the rate is limited by the rasterizer, so likely it
@@ -163,12 +115,10 @@ export class Pipeline {
     TRACE_EVENT0('cobalt::renderer', 'Pipeline::RasterizeCurrentTree()');
 
     let start_rasterize_time = TimeTicks.Now();
-    let submission =
-      this.submission_queue_!.GetCurrentSubmission(start_rasterize_time);
+    let submission = this.submission_queue_!.GetCurrentSubmission(start_rasterize_time);
 
     let is_new_render_tree = submission.render_tree != this.last_render_tree_;
-    let has_render_tree_changed =
-      !this.last_animations_expired_ || is_new_render_tree;
+    let has_render_tree_changed = is_new_render_tree;
     let force_rasterize =
       this.submit_even_if_render_tree_is_unchanged_;
 
@@ -203,31 +153,7 @@ export class Pipeline {
       let animations_expired = true;
       let stat_tracked_animations_expired = true;
 
-      this.UpdateRasterizeStats(
-        did_rasterize,
-        stat_tracked_animations_expired,
-        is_new_render_tree,
-        start_rasterize_time,
-        TimeTicks.Now());
-
       this.last_did_rasterize_ = did_rasterize;
-      this.last_animations_expired_ = animations_expired;
-      this.last_stat_tracked_animations_expired_ = stat_tracked_animations_expired;
-    }
-
-    if (this.time_fence_ && this.submission_queue_!.submission_time(
-      TimeTicks.Now()).GE(this.time_fence_)) {
-      NOTIMPLEMENTED();
-      // // A time fence was active and we just crossed it, so reset it.
-      // this.time_fence_ = undefined;
-      //
-      // if (this.post_fence_submission_) {
-      //   // A submission was waiting to be queued once we passed the time fence,
-      //   // so go ahead and queue it now.
-      //   this.QueueSubmission(this.post_fence_submission_, this.post_fence_receipt_time_!);
-      //   this.post_fence_submission_ = undefined;
-      //   this.post_fence_receipt_time_ = undefined;
-      // }
     }
   }
 
@@ -248,7 +174,7 @@ export class Pipeline {
       this.last_render_tree_ = submission.render_tree;
       // this.last_animated_render_tree_ = undefined
       // this.previous_animated_area_ = undefined
-      this.last_render_time_ = undefined;
+      // this.last_render_time_ = undefined;
     }
 
     // Animate the render tree using the submitted animations.
@@ -296,20 +222,9 @@ export class Pipeline {
       callback();
     }
 
-    this.last_render_time_ = submission.time_offset;
     submit_tree.dispose();
 
     return true;
-  }
-
-  // Updates the rasterizer timer stats according to the |start_time| and
-  // |end_time| of the most recent rasterize call.
-  private UpdateRasterizeStats(
-    did_rasterize: boolean,
-    are_stat_tracked_animations_expired: boolean,
-    is_new_render_tree: boolean,
-    start_time: TimeTicks,
-    end_time: TimeTicks) {
   }
 
   // This method is executed on the rasterizer thread and is responsible for
@@ -347,15 +262,6 @@ export class Pipeline {
   OnDumpCurrentRenderTree(str: string): void {
   }
 
-  // Render trees may contain a number of AnimateNodes (or none).  In order
-  // to optimize for applying the animations on the rasterizer thread, this
-  // function searches the tree for AnimateNodes and collects all of their
-  // information into a single AnimateNode at the root of the returned
-  // render tree.
-  CollectAnimations(submission: Submission): Submission {
-    return submission;
-  }
-
   FrameStatsOnFlushCallback(): void {
 
   }
@@ -383,10 +289,10 @@ export class Pipeline {
     // Upon each submission, check if the timeline has changed.  If it has,
     // reset our submission queue (possibly with a new configuration specified
     // within |timeline_info|.
-    if (submission.timeline_info.id != this.current_timeline_info_.id) {
-      this.current_timeline_info_ = submission.timeline_info;
-      this.ResetSubmissionQueue();
-    }
+    // if (submission.timeline_info.id != this.current_timeline_info_.id) {
+    //   this.current_timeline_info_ = submission.timeline_info;
+    //   this.ResetSubmissionQueue();
+    // }
 
     DCHECK(this.submission_queue_);
     this.submission_queue_!.PushSubmission(submission, receipt_time);
@@ -433,19 +339,8 @@ export class Pipeline {
   // scoped_refptr<render_tree::animations::AnimateNode>
   //     last_animated_render_tree_;
 
-  // Keeps track of the area of the screen that animations previously existed
-  // within, so that we can know which regions of the screens would be dirty
-  // next frame.
-  private previous_animated_area_?: Rect;
   // The submission time used during the last render tree render.
-  private last_render_time_?: TimeDelta;
-  // Keep track of whether the last rendered tree had active animations. This
-  // allows us to skip rasterizing that render tree if we see it again and it
-  // did have expired animations.
-  private last_animations_expired_: boolean;
-  // Keep track of whether the last rendered tree had animations that we're
-  // tracking stats on.
-  private last_stat_tracked_animations_expired_: boolean;
+  // private last_render_time_?: TimeDelta;
 
   // Did a rasterization take place in the last frame?
   private last_did_rasterize_: boolean;
@@ -482,9 +377,6 @@ export class Pipeline {
   // The most recent time animations ended playing.
   private animations_end_time_: number;
 
-  // Time fence data that records if a time fence is active, at what time, and
-  // what submission if any is waiting to be queued once we pass the time fence.
-  private time_fence_?: TimeDelta;
   private post_fence_submission_?: Submission;
   private post_fence_receipt_time_?: TimeTicks;
 
