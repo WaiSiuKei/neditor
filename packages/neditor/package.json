@@ -8,7 +8,6 @@
   },
   "dependencies": {
     "@types/big.js": "6.1.6",
-    "@vue/reactivity": "3.2.47",
     "@vue/shared": "3.2.47",
     "big.js": "6.2.1",
     "jpeg-js": "0.4.4",
