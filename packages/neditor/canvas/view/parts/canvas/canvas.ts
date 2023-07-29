@@ -150,15 +150,14 @@ export class Canvas extends Disposable {
     this.SetApplicationStartOrPreloadTimestamp(false /*is_preload*/, Date.now());
     this.SubmitCurrentRenderTreeToRenderer();
     let doc = this.document;
-    doc.onCreated(() => {
-      let html = doc.createElement('html');
-      Object.assign(html.style, {
-        display: 'block',
-        position: 'relative'
-      } as CSSStyleDeclaration);
-      doc.appendChild(html);
-      this._register(mountAPP(this.vm, doc));
-    });
+    let html = doc.createElement('html');
+    Object.assign(html.style, {
+      display: 'block',
+      position: 'relative'
+    } as CSSStyleDeclaration);
+    doc.appendChild(html);
+    this._register(mountAPP(this.vm, doc));
+    doc.DispatchOnLoadEvent();
     this._onMounted.fire();
   }
 

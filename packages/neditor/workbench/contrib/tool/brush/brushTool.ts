@@ -8,7 +8,7 @@ import { Optional } from '../../../../base/common/typescript';
 import { getStroke } from 'perfect-freehand';
 import { getSvgPathFromStroke } from './utils';
 import { DCHECK } from '../../../../base/check';
-import { Buttons } from "../../../../base/browser/mouseEvent";
+import { Buttons } from '../../../../base/browser/mouseEvent';
 
 const options = {
   size: 5,
@@ -39,7 +39,7 @@ export class FreehandTool extends StrokeTool {
   _node: Optional<FreehandElement>;
   beginPrimaryAction(e: InputEvents) {
     this._history.length = 0;
-    let doc = this.canvas.view.document
+    let doc = this.canvas.view.document;
     let node = doc.createElement<FreehandElement>(FreehandElement.kTagName);
     Object.assign(node.style, {
       position: 'absolute',
@@ -50,7 +50,7 @@ export class FreehandTool extends StrokeTool {
       height: '1px'
     });
     node.setAttribute('fill', '#000');
-    doc.body()?.appendChild(node);
+    doc.body!.appendChild(node);
     this._node = node;
     const pos = this.convertToPixelCoord(e.asMouseInputEvent()!);
     this._history.push([pos.x, pos.y, 1]);
@@ -77,5 +77,5 @@ export class BrushToolFactory implements IToolFactory {
   createTool(canvas: ICanvas): ITool {
     return new FreehandTool(canvas, CursorStyle.arrow);
   }
-  shortcut = new MouseButtonShortcut(Buttons.Primary)
+  shortcut = new MouseButtonShortcut(Buttons.Primary);
 }

@@ -155,6 +155,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
   private watchNode(node: YNode, resourceStr: string) {
     const nodeViewModelMap = this.treeNodeViewModelMap.get(resourceStr)!;
     const observer = (events: Array<Y.YEvent<any>>) => {
+      console.log('before vm update', performance.now());
       events.forEach(event => {
         const { target } = event;
         event.changes.keys.forEach((change, key) => {
@@ -215,6 +216,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
           }
         });
       });
+      console.log('after vm update', performance.now());
     };
     node.observeDeep(observer);
     this.treeNodeObservers.get(resourceStr)!.set(getNodeId(node), toDisposable(() => {

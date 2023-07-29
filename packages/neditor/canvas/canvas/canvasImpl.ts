@@ -238,7 +238,12 @@ export class Canvas extends Disposable implements ICanvas {
 
   transform<T>(cb: IOperationCallback<T>) {
     if (!this._historyHelper) NOTREACHED();
-    return this._historyHelper.transform(cb);
+    try {
+      console.log('before transform', performance.now());
+      return this._historyHelper.transform(cb);
+    } finally {
+      console.log('after transform', performance.now());
+    }
   }
 
   getScopedModel(scope: Scope): ICanvasModel {

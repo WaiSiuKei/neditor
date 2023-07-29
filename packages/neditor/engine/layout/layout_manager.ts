@@ -207,7 +207,7 @@ export class LayoutManager implements DocumentObserver {
 
     let document = this.window_.document();
 
-    if (!document.html()) {
+    if (!document.documentElement) {
       return;
     }
 
@@ -248,7 +248,7 @@ export class LayoutManager implements DocumentObserver {
 
       // If no render tree has been produced yet, check if html display
       // should prevent the first render tree.
-      let display_none_prevents_render = !this.produced_render_tree_ && !document.html()!.IsDisplayed();
+      let display_none_prevents_render = !this.produced_render_tree_ && !document.documentElement!.IsDisplayed();
       Reflect.set(window, 'dumpLayout', () => {
         console.log(this.initial_containing_block_?.DumpWithIndent());
       });
@@ -282,7 +282,7 @@ export class LayoutManager implements DocumentObserver {
 
     document.SampleTimelineTime();
 
-    let display_none_prevents_render = !this.produced_render_tree_ && !document.html()!.IsDisplayed();
+    let display_none_prevents_render = !this.produced_render_tree_ && !document.documentElement!.IsDisplayed();
     Reflect.set(window, 'dumpLayout', () => {
       console.log(this.initial_containing_block_?.DumpWithIndent());
     });

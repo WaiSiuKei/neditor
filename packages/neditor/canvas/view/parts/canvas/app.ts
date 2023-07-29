@@ -13,9 +13,9 @@ import { Document } from '../../../../engine/dom/document';
 import { NodeType } from '../../../../common/node';
 import { HTMLParagraphElement } from '../../../../engine/dom/html_paragraph_element';
 import { AttrNameOfComponentType, AttrNameOfId, AttrNameOfRoot, AttrNameOfScope } from '../../../viewModel/path';
-import { Optional } from "../../../../base/common/typescript";
-import { HTMLElement } from "../../../../engine/dom/html_element";
-import { DCHECK_EQ } from "../../../../base/check_op";
+import { Optional } from '../../../../base/common/typescript';
+import { HTMLElement } from '../../../../engine/dom/html_element';
+import { DCHECK_EQ } from '../../../../base/check_op';
 
 export function mountAPP(vm: ICanvasViewModel, document: Document) {
   const body = document.createElement('body');
@@ -29,10 +29,10 @@ export function mountAPP(vm: ICanvasViewModel, document: Document) {
   component.setAttribute('v-bind:key', 'child.id');
   body.appendChild(component);
   body.setAttribute(AttrNameOfId, vm.root.value.id);
-  document.html()?.appendChild(body);
+  document.documentElement!.appendChild(body);
 
   Reflect.set(window, 'dumpHTML', () => {
-    console.log(document.html()?.inner_html());
+    console.log(document.documentElement!.innerHTML);
   });
 
   const getComponent = (node: INodeViewModel, scopeChain: string = '') => {
@@ -83,7 +83,7 @@ export function mountAPP(vm: ICanvasViewModel, document: Document) {
       nodeType: NodeType.Text,
       $template: (reuse: Optional<HTMLElement>) => {
         if (reuse) {
-          DCHECK_EQ(reuse.tagName, HTMLParagraphElement.kTagName)
+          DCHECK_EQ(reuse.tagName, HTMLParagraphElement.kTagName);
         }
         const p = reuse || document.createElement(HTMLParagraphElement.kTagName);
         // p.setAttribute(AttrNameOfId, vm.id);
@@ -99,6 +99,6 @@ export function mountAPP(vm: ICanvasViewModel, document: Document) {
     };
   };
 
-  let app = createApp(createRoot(vm.root.value)).mount(document.body()!);
+  let app = createApp(createRoot(vm.root.value)).mount(document.body!);
   return toDisposable(() => app.unmount());
 }

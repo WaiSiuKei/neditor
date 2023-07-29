@@ -1,4 +1,3 @@
-import { Emitter } from '../../base/common/event';
 import { ConstructionType, Node, NodeType, NodeVisitor } from './node';
 import { Node as RenderTreeNode } from '../render_tree/node';
 import { ElementFactory } from './element_factory';
@@ -20,9 +19,8 @@ import { DocumentTimeline } from './document_timeline';
 import type { HTMLHtmlElement } from './html_html_element';
 import type { HTMLBodyElement } from './html_body_element';
 import { kBenchmarkStatUpdateComputedStyles } from './benchmark_stat_names';
-import { NOTIMPLEMENTED, NOTREACHED } from '@neditor/core/base/common/notreached';
-import { Optional, Ptr } from '@neditor/core/base/common/typescript';
-import { DocumentLifecycle } from './document_lifecycle';
+import { NOTREACHED } from '@neditor/core/base/common/notreached';
+import { Optional } from '@neditor/core/base/common/typescript';
 import { ContainerNode } from './container_node';
 import { Selection } from '../editing/selection';
 import { Range } from './range';
@@ -60,11 +58,9 @@ export class Document extends ContainerNode {
   private loading_counter_: number = 0;
   // Whether the load event should be dispatched when loading counter hits zero.
   private should_dispatch_load_event_ = true;
-  private finishedFirstLoad = false;
   private synchronous_layout_callback_?: Function;
   private synchronous_layout_and_produce_render_tree_callback_?: () => RenderTreeNode;
 
-  private lifecycle_ = new DocumentLifecycle();
   private elements_by_id = new Map<string, Element>();
 
   constructor(
@@ -103,9 +99,6 @@ export class Document extends ContainerNode {
   get nodeName() {
     return '#document';
   }
-  Lifecycle() {
-    return this.lifecycle_;
-  }
   OnDOMMutation(): void {
     TRACE_EVENT0('cobalt.dom', 'Document.OnDOMMutation()');
     // Something in the document's DOM has been modified, but we don't know what,
@@ -113,15 +106,9 @@ export class Document extends ContainerNode {
     this.is_computed_style_dirty_ = true;
 
     this.RecordMutation();
-    if (this.finishedFirstLoad) {
-      this.DispatchOnLoadEvent();
-    }
   }
   OnTypefaceLoadEvent() {
-    let current_html = this.html();
-    if (current_html) {
-      current_html.InvalidateLayoutBoxesOfNodeAndDescendants();
-    }
+    this.documentElement?.InvalidateLayoutBoxesOfNodeAndDescendants();
     this.RecordMutation();
   }
   createElement<T extends HTMLElement>(local_name: string) {
@@ -131,8 +118,11 @@ export class Document extends ContainerNode {
   createTextNode(data: string): Text {
     return new Text(this, data);
   }
-  documentElement(): Optional<Element> {
-    return this.first_element_child();
+  get documentElement(): Optional<HTMLHtmlElement> {
+    // The html element of a document is the document's root element, if there is
+    // one and it's an html element, or null otherwise.
+    //   https://www.w3.org/TR/html50/dom.html#the-html-element-0
+    return this.first_element_child()! as HTMLHtmlElement;
   }
 
   private _selection: Optional<Selection>;
@@ -145,21 +135,12 @@ export class Document extends ContainerNode {
   createRange(): Range {
     return new Range(this, this, 0, this, 0);
   }
-  html(): HTMLHtmlElement | null {
-    // The html element of a document is the document's root element, if there is
-    // one and it's an html element, or null otherwise.
-    //   https://www.w3.org/TR/html50/dom.html#the-html-element-0
-    let root = this.documentElement() as HTMLHtmlElement;
-    return root || null;
-  }
-  // Algorithm for body:
-//   https://www.w3.org/TR/html50/dom.html#dom-document-body
-  body(): HTMLBodyElement | null {
+  get body(): HTMLBodyElement | null {
     // The body element of a document is the first child of the html element that
     // is either a body element or a frameset element. If there is no such
     // element, it is null.
-    //   https://www.w3.org/TR/html50/dom.html#the-body-element-0
-    let html_element = this.html();
+    // https://www.w3.org/TR/html50/dom.html#the-body-element-0
+    let html_element = this.documentElement;
     if (!html_element) {
       return null;
     }
@@ -191,11 +172,9 @@ export class Document extends ContainerNode {
 
     this.is_computed_style_dirty_ = true;
 
-    let current_html = this.html();
-    if (current_html) {
-      current_html.InvalidateComputedStylesOfNodeAndDescendants();
+    if (this.documentElement) {
+      this.documentElement.InvalidateComputedStylesOfNodeAndDescendants();
     }
-
     this.RecordMutation();
   }
   navigation_start_clock() {
@@ -271,7 +250,7 @@ export class Document extends ContainerNode {
       //   https://www.w3.org/TR/css3-transitions/#starting
       // let style_change_event_time = TimeDelta.FromMilliseconds(this.default_timeline_.current_time());
 
-      let root = this.html() as HTMLElement;
+      let root = this.documentElement as HTMLElement;
       if (root) {
         DCHECK_EQ(this, root.parentNode);
         // First, update the matching rules for all elements.
@@ -354,12 +333,6 @@ export class Document extends ContainerNode {
     // After all JavaScript OnLoad event handlers have executed, signal to let
     // any Document observers know that a load event has occurred.
     this.SignalOnLoadToObservers();
-  }
-
-  onCreated(cb: () => void): void {
-    cb();
-    this.finishedFirstLoad = true;
-    this.DispatchOnLoadEvent();
   }
 
   private SignalOnLoadToObservers() {

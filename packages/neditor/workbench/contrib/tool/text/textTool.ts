@@ -356,8 +356,7 @@ export class TextTool extends BaseTool {
     const vm = this.canvas.viewModel.getViewModelNodeById(ScopedIdentifier.create(id, scope));
     DCHECK(vm);
     const doc = this.canvas.view.document;
-    // const dom = this.canvas.view.document.get
-    const dom = Array.from(doc.body()!.childNodes).find(e => e && e.IsElement() && e.getAttribute(AttrNameOfId) === id);
+    const dom = Array.from(doc.body!.childNodes).find(e => e && e.IsElement() && e.getAttribute(AttrNameOfId) === id);
     DCHECK(dom);
     this._editorView = new EditorView(
       dom.AsElement()!.AsHTMLElement()!,

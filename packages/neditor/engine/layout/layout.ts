@@ -63,7 +63,7 @@ export function UpdateComputedStylesAndLayoutBoxTree(
 
   // Generate boxes.
   const textBoxes = new Set<TextBox>();
-  if (document.html()) {
+  if (document.documentElement) {
     TRACE_EVENT0('cobalt::layout', kBenchmarkStatBoxGeneration);
     // base::StopWatch stop_watch_box_generation(
     //   LayoutStatTracker::kStopWatchTypeBoxGeneration,
@@ -111,7 +111,7 @@ export function UpdateComputedStylesAndLayoutBoxTree(
       1 /* dom_element_depth */,
       context
     );
-    document.html()!.Accept(root_box_generator);
+    document.documentElement.Accept(root_box_generator);
     let root_boxes = root_box_generator.boxes();
     for (let box of root_boxes) {
       initial_containing_block.AddChild(box);

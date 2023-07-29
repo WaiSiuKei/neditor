@@ -47,13 +47,13 @@ export function CreateInitialContainingBlock(
   // to the given style for the initial containing block.
   //   https://www.w3.org/TR/css3-background/#body-background
   if (!PropagateBackgroundStyleAndTestIfChanged(
-    document.html()! as HTMLElement, initial_containing_block_style)) {
+    document.documentElement! as HTMLElement, initial_containing_block_style)) {
     if (PropagateBackgroundStyleAndTestIfChanged(
-      document.body()!, initial_containing_block_style)) {
-      results.background_style_source = document.body()!;
+      document.body!, initial_containing_block_style)) {
+      results.background_style_source = document.body!;
     }
   } else {
-    results.background_style_source = document.html()! as HTMLElement;
+    results.background_style_source = document.documentElement! as HTMLElement;
   }
 
   let initial_style_state =
@@ -62,7 +62,7 @@ export function CreateInitialContainingBlock(
 //  initial_style_state.set_animations(new web_animations::AnimationSet());
 
   let base_direction = BaseDirection.kLeftToRightBaseDirection;
-  let html = document.html();
+  let html = document.documentElement;
   // if (html && html.GetUsedDirState() == dom::HTMLElement::kDirRightToLeft) {
   //   base_direction = kRightToLeftBaseDirection;
   // }

@@ -269,7 +269,7 @@ export abstract class Element extends ContainerNode {
 
   // Algorithm for inner_html:
 //   https://www.w3.org/TR/DOM-Parsing/#widl-Element-innerHTML
-  inner_html(): string {
+  get innerHTML(): string {
     // TRACK_MEMORY_SCOPE("DOM");
     let serializer = new Serializer();
     serializer.SerializeDescendantsOnly(this);
