@@ -1,21 +1,21 @@
-let queued = false
-const queue: Function[] = []
-const p = Promise.resolve()
+import { setOnEnd } from '../../../../../base/common/reactivity';
 
-export const nextTick = (fn: () => void) => p.then(fn)
+let queued = false;
+const queue: Function[] = [];
 
 export const queueJob = (job: Function) => {
-  if (!queue.includes(job)) queue.push(job)
+  if (!queue.includes(job)) queue.push(job);
   if (!queued) {
-    queued = true
-    nextTick(flushJobs)
+    queued = true;
   }
-}
+};
 
 const flushJobs = () => {
   for (const job of queue) {
-    job()
+    job();
   }
-  queue.length = 0
-  queued = false
-}
+  queue.length = 0;
+  queued = false;
+};
+
+setOnEnd(flushJobs)

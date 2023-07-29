@@ -1,3 +1,4 @@
+import { begin, end, reactive } from '../../base/common/reactivity';
 import {
   ICanvasViewModel,
   INodeViewModel,
@@ -10,7 +11,6 @@ import { Disposable, IDisposable, toDisposable } from '../../base/common/lifecyc
 import { Emitter, Event } from '../../base/common/event';
 import { ScopedIdentifier } from '../canvasCommon/scope';
 import { IIdentifier } from '../../common/common';
-import { reactive } from '@vue/reactivity';
 import { Optional } from '../../base/common/typescript';
 import { ICanvasModel, IModelService, RootNodeId } from '../../platform/model/common/model';
 import { IInstantiationService } from '../../platform/instantiation/common/instantiation';
@@ -71,11 +71,13 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
     this.treeNodeViewModelMap.set(resourceStr, new Map<IIdentifier, INodeViewModel>());
     this.treeNodeObservers.set(resourceStr, new Map<IIdentifier, IDisposable>());
 
+    begin();
     this.processNodes(resourceStr);
     if (resourceStr === this.topResource) {
       this.updateRootOfDefaultTree();
       if (emitEvent) this._onReconnected.fire();
     }
+    end();
   }
 
   dispose() {
@@ -155,7 +157,6 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
   private watchNode(node: YNode, resourceStr: string) {
     const nodeViewModelMap = this.treeNodeViewModelMap.get(resourceStr)!;
     const observer = (events: Array<Y.YEvent<any>>) => {
-      console.log('before vm update', performance.now());
       events.forEach(event => {
         const { target } = event;
         event.changes.keys.forEach((change, key) => {
@@ -216,7 +217,6 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
           }
         });
       });
-      console.log('after vm update', performance.now());
     };
     node.observeDeep(observer);
     this.treeNodeObservers.get(resourceStr)!.set(getNodeId(node), toDisposable(() => {

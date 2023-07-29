@@ -1,7 +1,7 @@
 import { Context, createContext } from './context';
 import { walk } from './walk';
 import { remove } from '@vue/shared';
-import { stop } from '@vue/reactivity';
+import { stop } from '../../../../../base/common/reactivity';
 import { Element } from '../../../../../engine/dom/element';
 import { Text } from '../../../../../engine/dom/text';
 import { Node } from '../../../../../engine/dom/node';

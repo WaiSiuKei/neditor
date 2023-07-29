@@ -2,7 +2,7 @@ import {
   effect as rawEffect,
   reactive,
   ReactiveEffectRunner
-} from '@vue/reactivity';
+} from '../../../../../base/common/reactivity';
 import { hasOwn } from '@vue/shared';
 import { Block } from './block';
 import { Directive } from './directives';
@@ -50,7 +50,6 @@ export const createScopedContext = (ctx: Context, data = {}): Context => {
   const parentScope = ctx.scope;
   const mergedScope = Object.create(parentScope);
   Object.defineProperties(mergedScope, Object.getOwnPropertyDescriptors(data));
-  mergedScope.$refs = Object.create(parentScope.$refs);
   const reactiveProxy = reactive(
     new Proxy(mergedScope, {
       set(target, key, val, receiver) {

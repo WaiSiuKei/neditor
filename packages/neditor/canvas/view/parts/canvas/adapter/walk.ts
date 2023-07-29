@@ -1,3 +1,4 @@
+import { NOTIMPLEMENTED } from '../../../../../base/common/notreached';
 import { DLOG, ERROR } from '../../../../../base/logging';
 import { Element } from '../../../../../engine/dom/element';
 import { Node, NodeType } from '../../../../../engine/dom/node';
@@ -7,7 +8,6 @@ import { builtInDirectives, Directive } from './directives';
 import { bind } from './directives/bind';
 import { _for } from './directives/for';
 import { _if } from './directives/if';
-import { ref } from './directives/ref';
 import { text } from './directives/text';
 import { evaluate } from './eval';
 import { checkAttr } from './utils';
@@ -122,7 +122,9 @@ const processDirective = (
     arg = argIndex > 0 ? raw.slice(argIndex + 1) : undefined;
   }
   if (dir) {
-    if (dir === bind && arg === 'ref') dir = ref;
+    if (dir === bind && arg === 'ref') {
+      NOTIMPLEMENTED();
+    }
     applyDirective(el, dir, exp, ctx, arg, modifiers);
     el.removeAttribute(raw);
   } else {

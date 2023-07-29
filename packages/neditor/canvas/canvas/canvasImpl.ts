@@ -1,6 +1,6 @@
 import { isArrayShallowEqual } from '../../base/common/array';
 import { DeferredPromise } from '../../base/common/async';
-import { getNodeId } from '../../common/node';
+import { begin, end } from '../../base/common/reactivity';
 import { TextToolID } from '../../workbench/contrib/tool/text/textTool';
 import { hitTest } from '../element/collision';
 import { CanvasElement } from '../element/types';
@@ -239,10 +239,10 @@ export class Canvas extends Disposable implements ICanvas {
   transform<T>(cb: IOperationCallback<T>) {
     if (!this._historyHelper) NOTREACHED();
     try {
-      console.log('before transform', performance.now());
+      begin();
       return this._historyHelper.transform(cb);
     } finally {
-      console.log('after transform', performance.now());
+      end();
     }
   }
 
