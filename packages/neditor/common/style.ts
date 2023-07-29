@@ -1,4 +1,4 @@
-export const CSSStyleDeclarationSample = {
+export const CommonStyleDeclarationSample = {
   'align-content': '',
   'align-items': '',
   'align-self': '',
@@ -63,10 +63,10 @@ export const CSSStyleDeclarationSample = {
   // 'list-style-image':'',
   // 'list-style-position': '',
   // 'list-style-type': '',
-  'marginBottom': '',
-  'marginLeft': '',
-  'marginRight': '',
-  'marginTop': '',
+  marginBottom: '',
+  marginLeft: '',
+  marginRight: '',
+  marginTop: '',
 
   maxHeight: '',
   maxWidth: '',
@@ -109,8 +109,74 @@ export const CSSStyleDeclarationSample = {
   'z-index': '',
 } as const;
 
-export type IStyleDeclarationKeys = keyof typeof CSSStyleDeclarationSample;
+const BlockLevelStyleDeclarationSample = {
+  // textAlign: '',
+  // 'text-align': '',
+  // 'text-align-last': '',
+  // 'text-anchor': '',
+  // 'text-combine-upright': '',
+  // 'text-decoration': '',
+  // 'text-decoration-color': '',
+  // 'text-decoration-line': '',
+  // 'text-decoration-style': '',
+  // 'text-emphasis': '',
+  // 'text-emphasis-color': '',
+  // 'text-emphasis-position': '',
+  // 'text-emphasis-style': '',
+  // 'text-indent': '',
+  // 'text-justify': '',
+  // 'text-orientation': '',
+  // 'text-overflow': '',
+  // 'text-rendering': '',
+  // 'text-shadow': '',
+  // 'text-transform': '',
+  // 'text-underline-position': '',
+  // fontSize: '',
+  // fontFamily: '',
+  // fontWeight: '',
+} as const;
+
+const InlineLevelStyleDeclarationSample = {
+  display: 'block' as const,
+  color: '',
+  overflowWrap: '',
+  whiteSpace: '',
+
+  fontSize: '',
+  fontFamily: '',
+  fontWeight: '',
+  // 'font-family': '',
+  // 'font-feature-settings': '',
+  // 'font-kerning': '',
+  // 'font-size': '',
+  // 'font-size-adjust': '',
+  // 'font-stretch': '',
+  // 'font-style': '',
+  // 'font-synthesis': '',
+  // 'font-variant': '',
+  // 'font-variant-caps': '',
+  // 'font-variant-east-asian': '',
+  // 'font-variant-ligatures': '',
+  // 'font-variant-numeric': '',
+  // 'font-variant-position': '',
+  // 'font-weight': '',
+  lineHeight: '',
+} as const;
+
+type CommonStyleDeclarationKeys = keyof typeof CommonStyleDeclarationSample;
+type BlockLevelOnlyStyleDeclarationKeys = keyof typeof BlockLevelStyleDeclarationSample;
+type InlineLevelStyleDeclarationKeys = keyof typeof InlineLevelStyleDeclarationSample;
+
+export type BlockLevelDeclarationKeys = CommonStyleDeclarationKeys | BlockLevelOnlyStyleDeclarationKeys
 
 export type IStyleDeclaration = {
-  [k in IStyleDeclarationKeys]: string;
+  [k in BlockLevelDeclarationKeys | InlineLevelStyleDeclarationKeys]: string;
 };
+
+export type IBlockStyleDeclaration = Partial<{
+  [k in CommonStyleDeclarationKeys | BlockLevelOnlyStyleDeclarationKeys]: string;
+}>;
+
+export type IInlineStyleDeclaration = Partial<{
+  [k in InlineLevelStyleDeclarationKeys]: string;
+}>;

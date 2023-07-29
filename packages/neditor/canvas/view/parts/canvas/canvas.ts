@@ -170,7 +170,7 @@ export class Canvas extends Disposable {
 }
 
 function CreateSubmissionFromLayoutResults(layout_results: LayoutResults): Submission {
-  let renderer_submission = new Submission(layout_results.render_tree, layout_results.layout_time);
+  let renderer_submission = new Submission(layout_results.render_tree/*, layout_results.layout_time*/);
   if (!!layout_results.on_rasterized_callback) {
     renderer_submission.on_rasterized_callbacks.push(layout_results.on_rasterized_callback);
   }

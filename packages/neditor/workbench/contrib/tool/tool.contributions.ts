@@ -6,7 +6,7 @@ import { LineToolFactory, LineToolID } from './line/lineTool';
 import { TextToolFactory, TextToolID } from './text/textTool';
 import { EraserToolFactory, EraserToolID } from './eraser/eraserTool';
 import { RectToolFactory, RectToolID } from './rect/rectTool';
-import { HoverToolFactory, HoverToolID } from './hover/hoverTool';
+import { PointerToolFactory, PointerToolID } from './pointer/pointerTool';
 import {
   IKeybindings,
   KeybindingsRegistry, KeybindingWeight
@@ -15,7 +15,7 @@ import { KeyCode } from "../../../base/common/keyCodes";
 
 const toolRegistry = Registry.as<IToolRegistry>(Tool);
 
-toolRegistry.registerWithShortcut(new HoverToolFactory(), true);
+toolRegistry.registerWithShortcut(new PointerToolFactory(), true);
 toolRegistry.registerWithShortcut(new PanToolFactory());
 toolRegistry.registerWithShortcut(new LineToolFactory());
 toolRegistry.registerWithShortcut(new BrushToolFactory());
@@ -35,7 +35,7 @@ function registerToolKeybinding(id: string, keybinding: IKeybindings) {
   })
 }
 
-registerToolKeybinding(HoverToolID, { primary: KeyCode.KEY_H })
+registerToolKeybinding(PointerToolID, { primary: KeyCode.KEY_H })
 registerToolKeybinding(PanToolID, { primary: KeyCode.KEY_P })
 registerToolKeybinding(LineToolID, { primary: KeyCode.KEY_L })
 registerToolKeybinding(BrushToolID, { primary: KeyCode.KEY_B })

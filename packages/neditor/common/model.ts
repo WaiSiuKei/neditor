@@ -1,5 +1,5 @@
 import * as Y from 'yjs';
-import { INodeModel, YNodeBase } from './node';
+import { INodeModel, YNode } from './node';
 
 export interface IDocumentModel {
   nodes: Record<string, INodeModel>;
@@ -7,7 +7,7 @@ export interface IDocumentModel {
 
 export type IYDocumentModel = Y.Map<IYNodeModels>
 
-export type IYNodeModels = Y.Map<YNodeBase>
+export type IYNodeModels = Y.Map<YNode>
 
 export function getModelNodes(m: IYDocumentModel) {
   return m.get('nodes') as IYNodeModels;

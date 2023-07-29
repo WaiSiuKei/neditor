@@ -96,7 +96,7 @@ export class MouseHandler extends Disposable {
     // See https://github.com/microsoft/vscode/issues/146486 for repro steps.
     // To compensate for that, we simply register here a `pointerup` listener and just communicate it.
     this._register(addDisposableListener(this.viewHelper.viewDomNode, DOMEventType.POINTER_UP, (e: PointerEvent) => {
-      this._mouseDownOperation.onPointerUp();
+      this._mouseDownOperation.onPointerUp(e);
     }));
     this._register(mouseEvents.onMouseDown(this.viewHelper.viewDomNode, (e) => this._onMouseDown(e, mousePointerId)));
     this._register(addStandardDisposableListener(this.viewHelper.viewDomNode, DOMEventType.KEY_DOWN, this._onKeyDown.bind(this)));
@@ -366,8 +366,8 @@ class MouseDownOperation extends Disposable {
     this._isActive = false;
   }
 
-  public onPointerUp(): void {
-    this._mouseMoveMonitor.stopMonitoring();
+  public onPointerUp(e: PointerEvent): void {
+    this._mouseMoveMonitor.stopMonitoring(e);
   }
 }
 

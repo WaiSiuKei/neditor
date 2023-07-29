@@ -1,12 +1,16 @@
-export type Values<T> = T[keyof T];
+export type ValueOf<T> = T[keyof T];
 export type EnumToString<T> = T extends `${infer S & string}` ? S : never;
-export type EnumValues<T extends string> = Values<{ [K in T]: EnumToString<K> }>;
+export type EnumValues<T extends string> = ValueOf<{ [K in T]: EnumToString<K> }>;
 export type EnumAndLiteral<T extends string> = T | EnumValues<T>;
 
 export type RequiredKeys<T> = {
   [K in keyof T]-?:
   ({} extends { [P in K]: T[K] } ? never : K)
 }[keyof T]
+
+// export type Required<T> = {
+//   [P in keyof T]-?: T[P]
+// }
 
 export type OptionalKeys<T> = {
   [K in keyof T]-?:

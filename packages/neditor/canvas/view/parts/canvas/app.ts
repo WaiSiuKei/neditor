@@ -31,7 +31,7 @@ export function mountAPP(vm: ICanvasViewModel, document: Document) {
   body.setAttribute(AttrNameOfId, vm.root.value.id);
   document.html()?.appendChild(body);
 
-  Reflect.set(window, 'test', () => {
+  Reflect.set(window, 'dumpHTML', () => {
     console.log(document.html()?.inner_html());
   });
 

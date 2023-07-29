@@ -233,9 +233,9 @@ export abstract class Element extends ContainerNode {
         }
         break;
     }
-// if (this.named_node_map_) {
-//   named_node_map_.RemoveAttributeInternal(attr_name);
-// }
+    // if (this.named_node_map_) {
+    //   named_node_map_.RemoveAttributeInternal(attr_name);
+    // }
 
     if (document && this.GetRootNode() == document) {
       document.OnDOMMutation();

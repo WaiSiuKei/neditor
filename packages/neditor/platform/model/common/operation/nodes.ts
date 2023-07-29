@@ -1,18 +1,18 @@
 import { DCHECK } from '../../../../base/check';
 import { ICanvasModelLike, INodeInit, IOperationCallback, } from '../model';
 import { DirectionType, ILocation } from '../location';
-import { YNodeBase, YNodeValue, NodeType } from '../../../../common/node';
+import { YNode, YNodeValue, NodeType } from '../../../../common/node';
 import { generateUuid } from '../../../../base/common/uuid';
 import { cmp, devideBy2, plus } from '../../../../base/common/bignumber';
 import { NOTIMPLEMENTED, NOTREACHED } from '../../../../base/common/notreached';
 import { IIdentifier } from '../../../../common/common';
 import { Optional } from '../../../../base/common/typescript';
 import { isNil, isObject, isString } from '../../../../base/common/type';
-import { getModelNodes} from '../../../../common/model';
+import { getModelNodes } from '../../../../common/model';
 import * as Y from 'yjs';
 import { keys } from '../../../../base/common/objects';
 
-export function insertNodeOperation(at: ILocation, nodeInit: INodeInit): IOperationCallback<YNodeBase> {
+export function insertNodeOperation(at: ILocation, nodeInit: INodeInit): IOperationCallback<YNode> {
   return (model: ICanvasModelLike) => {
     const { ref, direction } = at;
     const nodeId = generateUuid();
@@ -37,7 +37,7 @@ export function insertNodeOperation(at: ILocation, nodeInit: INodeInit): IOperat
     // 添加到子元素
     if (direction === DirectionType.inward) {
       // 默认添加到最后
-      const children = model.getChildrenNodesOfId(ref);
+      const children = model._internal_getChildrenNodesOfId(ref);
       node.set('from', ref);
       if (children.length) {
         const sorted = children.sort((a, b) => cmp(b.get('order') as string, a.get('order') as string));
@@ -46,21 +46,21 @@ export function insertNodeOperation(at: ILocation, nodeInit: INodeInit): IOperat
         node.set('order', '0.5');
       }
     } else if (direction === DirectionType.backward || direction === DirectionType.forward) {
-      const parent = model.getParentNodeOfId(ref);
+      const parent = model._internal_getParentNodeOfId(ref);
       if (!parent) {
         throw new Error('404');
       }
       node.set('from', parent.get('id') as string);
-      const refNode = model.getNodeById(ref);
+      const refNode = model._internal_getNodeById(ref);
       DCHECK(refNode);
       const order = refNode.get('order') as string;
       DCHECK(order);
       if (direction === DirectionType.backward) {
-        const next = model.getNextSiblingNodeOfId(ref);
+        const next = model._internal_getNextSiblingNodeOfId(ref);
         const nextOrder = next ? next.get('order') as string : '1';
         node.set('order', devideBy2(plus(order!, nextOrder)));
       } else {
-        const pre = model.getPreviousSiblingNodeOfId(ref);
+        const pre = model._internal_getPreviousSiblingNodeOfId(ref);
         const preOrder = pre ? pre.get('order') as string : '0';
         if (preOrder === '0') {
           node.set('order', devideBy2(order));
@@ -98,12 +98,12 @@ export function removeNodeOperation(at: ILocation): IOperationCallback<void> {
 }
 
 function deleteSibling(model: ICanvasModelLike, id: IIdentifier, direction: DirectionType): void {
-  const node = model.getNodeById(id);
+  const node = model._internal_getNodeById(id);
   DCHECK(node);
   const from = node.get('from') as string;
   DCHECK(from);
 
-  const siblings = model.getChildrenNodesOfId(from).sort((a, b) => cmp(a.get('order') as string, b.get('order') as string));
+  const siblings = model._internal_getChildrenNodesOfId(from).sort((a, b) => cmp(a.get('order') as string, b.get('order') as string));
   const idxOfSelf = siblings.indexOf(node);
   if (direction === DirectionType.forward) {
     if (idxOfSelf === 0) {
@@ -121,7 +121,7 @@ function deleteSibling(model: ICanvasModelLike, id: IIdentifier, direction: Dire
 }
 
 function deleteChildren(model: ICanvasModelLike, id: IIdentifier) {
-  const children = model.getChildrenNodesOfId(id);
+  const children = model._internal_getChildrenNodesOfId(id);
   for (let i = 0, len = children.length; i < len; i++) {
     deleteIt(model, children[i].get('id') as string);
   }
@@ -136,8 +136,8 @@ function deleteIt(model: ICanvasModelLike, id: IIdentifier) {
 
 export function reparentNodeOperation(id: IIdentifier, newParent: IIdentifier, referenceNodeId: Optional<IIdentifier>) {
   return (model: ICanvasModelLike) => {
-    const childrenOfNext = model.getChildrenNodesOfId(newParent).sort((a, b) => cmp(a.get('order') as string, b.get('order') as string));
-    const node = model.getNodeById(id);
+    const childrenOfNext = model._internal_getChildrenNodesOfId(newParent).sort((a, b) => cmp(a.get('order') as string, b.get('order') as string));
+    const node = model._internal_getNodeById(id);
     DCHECK(node);
     node.set('from', newParent);
     if (isNil(referenceNodeId)) {
@@ -148,7 +148,7 @@ export function reparentNodeOperation(id: IIdentifier, newParent: IIdentifier, r
         node.set('order', '0.5');
       }
     } else {
-      const nextSibling = model.getNodeById(referenceNodeId);
+      const nextSibling = model._internal_getNodeById(referenceNodeId);
       if (!nextSibling) NOTREACHED();
       const nextSiblingIndex = childrenOfNext.indexOf(nextSibling);
       if (nextSiblingIndex === 0) {
@@ -163,9 +163,9 @@ export function reparentNodeOperation(id: IIdentifier, newParent: IIdentifier, r
 
 export function reorderNodeOperation(id: IIdentifier, beforeSiblingNodeId: Optional<IIdentifier>) {
   return (model: ICanvasModelLike) => {
-    const parent = model.getParentNodeOfId(id)!;
-    const siblings = model.getChildrenNodesOfId(parent.get('id') as string).sort((a, b) => cmp(a.get('order') as string, b.get('order') as string));
-    const node = model.getNodeById(id);
+    const parent = model._internal_getParentNodeOfId(id)!;
+    const siblings = model._internal_getChildrenNodesOfId(parent.get('id') as string).sort((a, b) => cmp(a.get('order') as string, b.get('order') as string));
+    const node = model._internal_getNodeById(id);
     DCHECK(node);
     DCHECK(node.get('from') === parent.get('id'));
     if (isNil(beforeSiblingNodeId)) {
@@ -176,7 +176,7 @@ export function reorderNodeOperation(id: IIdentifier, beforeSiblingNodeId: Optio
         node.set('order', '0.5');
       }
     } else {
-      const nextSibling = model.getNodeById(beforeSiblingNodeId)!;
+      const nextSibling = model._internal_getNodeById(beforeSiblingNodeId)!;
       const nextSiblingIndex = siblings.indexOf(nextSibling);
       if (nextSiblingIndex === 0) {
         node.set('order', devideBy2(nextSibling.get('order') as string));

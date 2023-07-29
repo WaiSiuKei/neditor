@@ -39,7 +39,8 @@ export interface ICanvasView extends IDisposable {
   internal_disconnect(): void;
   internal_connect(): void;
 
-  redraw(state: ICanvasState): void;
+  reflowOverlay(state: ICanvasState): void;
+  reflow(): void;
 
   focus(): void;
   isFocused(): boolean;

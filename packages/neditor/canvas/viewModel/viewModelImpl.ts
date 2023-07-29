@@ -17,8 +17,8 @@ import { IInstantiationService } from '../../platform/instantiation/common/insta
 import { ICanvas } from '../canvas/canvas';
 import { isString } from '../../base/common/type';
 import { NOTIMPLEMENTED, NOTREACHED } from '../../base/common/notreached';
-import { coalesce, isArrayShallowEqual } from '../../base/common/array';
-import { getNodeContent, getNodeFrom, getNodeId, getNodeStyle, getNodeType, YNodeBase, NodeType } from '../../common/node';
+import { coalesce } from '../../base/common/array';
+import { getNodeContent, getNodeFrom, getNodeId, getNodeStyle, getNodeType, YNode, NodeType, isYNode, isYNodeStyle } from '../../common/node';
 import { DCHECK } from '../../base/check';
 import { getModelNodes, IYNodeModels } from '../../common/model';
 import * as Y from 'yjs';
@@ -117,7 +117,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
     const model = this.getModel(resourceStr).yModel;
     const nodes = getModelNodes(model);
     DCHECK(nodes);
-    const nodeArr = nodes.values() as IterableIterator<YNodeBase>;
+    const nodeArr = nodes.values() as IterableIterator<YNode>;
     let root: Optional<INodeViewModel>;
     for (const node of nodeArr) {
       const style = getNodeStyle(node) as Y.Map<string>;
@@ -152,7 +152,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
     this.watchNodes(nodes, resourceStr);
   }
 
-  private watchNode(node: YNodeBase, resourceStr: string) {
+  private watchNode(node: YNode, resourceStr: string) {
     const nodeViewModelMap = this.treeNodeViewModelMap.get(resourceStr)!;
     const observer = (events: Array<Y.YEvent<any>>) => {
       events.forEach(event => {
@@ -168,17 +168,18 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
                 this.updateChildren(getNodeFrom(target), resourceStr);
               } else {
                 const id = getNodeId(node);
-                if (id) {
+                const vm = nodeViewModelMap.get(id);
+                DCHECK(vm);
+                if (isYNode(target)) {
                   // node
-                  const vm = nodeViewModelMap.get(id);
-                  DCHECK(vm);
                   if (key === 'id') {
                     NOTREACHED();
                   }
                   Reflect.set(vm, key, target.get(key));
-                } else {
-                  // style
-                  debugger;
+                } else if (isYNodeStyle(target)) {
+                  DCHECK(vm.style);
+                  // @ts-ignore
+                  vm.style[key] = target.get(key);
                 }
               }
               break;
@@ -221,7 +222,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
     }));
   }
 
-  private addNode(node: YNodeBase, resourceStr: string) {
+  private addNode(node: YNode, resourceStr: string) {
     const nodeViewModelMap = this.treeNodeViewModelMap.get(resourceStr)!;
     const id = getNodeId(node);
     nodeViewModelMap.delete(id);
@@ -242,7 +243,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
     this.watchNode(node, resourceStr);
   }
 
-  private removeNode(node: YNodeBase, resourceStr: string) {
+  private removeNode(node: YNode, resourceStr: string) {
     const nodeViewModelMap = this.treeNodeViewModelMap.get(resourceStr)!;
     const observers = this.treeNodeObservers.get(resourceStr)!;
     // 删除的只能这样处理
@@ -261,7 +262,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
   }
 
   private watchNodes(nodes: IYNodeModels, resourceStr: string) {
-    const observer = (event: Y.YMapEvent<YNodeBase>) => {
+    const observer = (event: Y.YMapEvent<YNode>) => {
       const { target } = event;
       event.changes.keys.forEach((change, key) => {
         const { action, oldValue } = change;
@@ -291,7 +292,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
     const nodeViewModelMap = this.treeNodeViewModelMap.get(resourceStr)!;
     const children = this.getModel(resourceStr).getChildrenNodesOfId(id);
     const vmChildren = children.map(node => {
-      const vm = nodeViewModelMap.get(getNodeId(node));
+      const vm = nodeViewModelMap.get(node.id);
       DCHECK(vm);
       return vm;
     });

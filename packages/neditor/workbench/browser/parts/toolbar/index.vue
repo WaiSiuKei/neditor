@@ -2,7 +2,7 @@
   <div class="tools_panel_container">
     <div class="tools_panel">
       <div class="tools_panel_section">
-        <SelectionButton :is-active="states[HoverToolID]" :on-click="handlers[HoverToolID]"/>
+        <SelectionButton :is-active="states[PointerToolID]" :on-click="handlers[PointerToolID]"/>
         <PanButton :is-active="states[PanToolID]" :on-click="handlers[PanToolID]"/>
         <PencilButton :is-active="states[BrushToolID]" :on-click="handlers[BrushToolID]"/>
 <!--        <EraserButton :is-active="states[EraserToolID]" :on-click="handlers[EraserToolID]"/>-->
@@ -36,7 +36,7 @@ import { LineToolID } from '../../../contrib/tool/line/lineTool';
 import { RectToolID } from '../../../contrib/tool/rect/rectTool';
 import { EraserToolID } from '../../../contrib/tool/eraser/eraserTool';
 import { TextToolID } from '../../../contrib/tool/text/textTool';
-import { HoverToolID } from '../../../contrib/tool/hover/hoverTool';
+import { PointerToolID } from '../../../contrib/tool/pointer/pointerTool';
 import { PanToolID } from '../../../contrib/tool/pan/panTool';
 import { ICanvasService } from "../../../../platform/canvas/common/canvas";
 
@@ -45,7 +45,7 @@ const toolService = instantiationService.invokeFunction(accessor => accessor.get
 const canvasService = instantiationService.invokeFunction(accessor => accessor.get(ICanvasService))
 
 const states: Record<string, boolean> = reactive({
-  [HoverToolID]: false,
+  [PointerToolID]: false,
   [PanToolID]: false,
   [BrushToolID]: false,
   [LineToolID]: false,

@@ -1,7 +1,8 @@
 import { DCHECK } from '../../base/check';
+import { IIdentifier } from '../../common/common';
 import { NodeType } from '../../common/node';
 import { Element } from '../../engine/dom/element';
-import { Scope } from '../canvasCommon/scope';
+import { Scope, ScopedIdentifier } from '../canvasCommon/scope';
 import { Optional } from '../../base/common/typescript';
 
 export enum ComponentTypes {
@@ -18,7 +19,7 @@ export interface IElementPathData {
   scope: Scope;
 }
 
-export function getScopeAttr(e: Element) {
+export function getScopeAttr(e: Element): string {
   return e.getAttribute(AttrNameOfScope) || '';
 }
 
@@ -32,15 +33,15 @@ export function getTypeAttr(e: Element): NodeType {
   return t as unknown as NodeType;
 }
 
-export function isFragmentRoot(e: Element) {
+export function isFragmentRoot(e: Element): boolean {
   return !!getRootAttr(e);
 }
 
-export function getIDAttr(e: Element) {
+export function getIDAttr(e: Element): IIdentifier {
   return e.getAttribute(AttrNameOfId) || '';
 }
 
-export function getScope(el: Element) {
+export function getScope(el: Element): Scope {
   const path = getScopeAttr(el).split('/');
   if (isFragmentRoot(el)) {
     const childScope = getIDAttr(el);
@@ -48,6 +49,10 @@ export function getScope(el: Element) {
   }
 
   return Scope.fromFullPath(path);
+}
+
+export function getScopedIdentifier(el: Element): ScopedIdentifier {
+  return ScopedIdentifier.create(getIDAttr(el), getScope(el));
 }
 
 export function collect(target: Element): IElementPathData[] {

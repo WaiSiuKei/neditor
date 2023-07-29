@@ -123,8 +123,12 @@ export class View extends Disposable implements ICanvasView {
     this._onCameraChagned.fire();
   }
 
-  redraw(state: ICanvasState) {
-    this._overlay.redraw(state);
+  reflowOverlay(state: ICanvasState) {
+    this._overlay.reflow(state);
+  }
+
+  reflow() {
+    this._canvas.layoutManager.DoLayoutAndProduceRenderTree();
   }
 
   internal_disconnect() {

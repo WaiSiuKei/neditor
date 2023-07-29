@@ -1,8 +1,8 @@
-import { Disposable, IDisposable } from "@neditor/core/base/common/lifecycle";
-import { CanvasMouseEvent, EditorMouseEventMerger } from "../view/controller/mouseEventFactory";
-import { GlobalPointerMoveMonitor } from "@neditor/core/base/browser/globalPointerMoveMonitor";
-import { addStandardDisposableListener, IEventMerger } from "@neditor/core/base/browser/dom";
-import { IPointerHandlerHelper } from "../view/controller/mouseHandler";
+import { Disposable, IDisposable } from '@neditor/core/base/common/lifecycle';
+import { CanvasMouseEvent, EditorMouseEventMerger } from '../view/controller/mouseEventFactory';
+import { GlobalPointerMoveMonitor } from '@neditor/core/base/browser/globalPointerMoveMonitor';
+import { addStandardDisposableListener, IEventMerger } from '@neditor/core/base/browser/dom';
+import { IPointerHandlerHelper } from '../view/controller/mouseHandler';
 
 export class GlobalEditorPointerMoveMonitor extends Disposable {
 
@@ -49,7 +49,7 @@ export class GlobalEditorPointerMoveMonitor extends Disposable {
     });
   }
 
-  public stopMonitoring(): void {
-    this._globalPointerMoveMonitor.stopMonitoring(true);
+  public stopMonitoring(e: PointerEvent): void {
+    this._globalPointerMoveMonitor.stopMonitoring(true, e);
   }
 }

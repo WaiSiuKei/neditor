@@ -48,9 +48,6 @@ export class DeclaredStyleData extends DeclarationData {
     this.important_properties_ = new Set<PropertyKey>(rhs.important_properties_);
   }
 
-  get align_content(): PropertyValue {return this.GetPropertyValue(PropertyKey.kAlignContentProperty);}
-  set align_content(val: PropertyValue | null) { this.SetPropertyValue(PropertyKey.kAlignContentProperty, val);}
-
   toString() {
     const keys = Array.from(this.declared_property_values_.keys());
     const sortedKeys = keys.sort();

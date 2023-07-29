@@ -388,6 +388,12 @@ export class Document extends ContainerNode {
     }
   }
 
+  OnElementInlineStyleMutation() {
+    this.is_computed_style_dirty_ = true;
+
+    this.RecordMutation();
+  }
+
   getElementById(id: string) {
     return this.elements_by_id.get(id);
   }

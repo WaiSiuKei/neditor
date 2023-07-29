@@ -1,4 +1,5 @@
 // The basic interface, from which all the HTML elements' interfaces inherit,
+import { StyleMutationObserver } from '../cssom/mutation_observer';
 // and which must be used by elements that have no additional requirements.
 //   https://www.w3.org/TR/html50/dom.html#htmlelement
 import { Element } from './element';
@@ -110,7 +111,7 @@ class NonTrivialStaticFields {
 
 const non_trivial_static_fields = new NonTrivialStaticFields();
 
-export class HTMLElement extends Element {
+export class HTMLElement extends Element implements StyleMutationObserver {
   protected computed_style_declaration_: ComputedStyleDeclaration;
   protected style_: DeclaredStyleDeclaration;
   // This contains information about the boxes generated from the element.
@@ -139,6 +140,7 @@ export class HTMLElement extends Element {
     }
     this.computed_style_declaration_ = new ComputedStyleDeclaration();
     this.style_ = new DeclaredStyleDeclaration();
+    this.style_.set_mutation_observer(this);
     this.layout_boxes_ = null;
     this.directionality_ = null;
   }
@@ -522,6 +524,18 @@ export class HTMLElement extends Element {
   AreComputedStylesValid() {
     return this.computed_style_valid_; /*&& pseudo_elements_computed_styles_valid_;*/
   }
+
+  OnCSSMutation() {
+    // Invalidate the computed style of this node.
+    this.computed_style_valid_ = false;
+    this.descendant_computed_styles_valid_ = false;
+
+    // Remove the style attribute value from the Element.
+    // this.RemoveStyleAttribute();
+    this.InvalidateLayoutBoxesOfNodeAndAncestors();
+
+    this.GetDocument()!.OnElementInlineStyleMutation();
+  }
 }
 
 class UpdateComputedStyleInvalidationFlags {
@@ -595,10 +609,10 @@ function PromoteMatchingRulesToComputedStyle(
   // into account rule specificity and location in the source file, as well as
   // property declaration importance.
   let computed_style = PromoteToCascadedStyle(
-      inline_style,
-      // matching_rules,
-      // property_key_to_base_url_map
-    );
+    inline_style,
+    // matching_rules,
+    // property_key_to_base_url_map
+  );
 
   // Lastly, absolutize the values, if possible. Start by resolving "initial"
   // and "inherit" keywords (which gives us what the specification refers to

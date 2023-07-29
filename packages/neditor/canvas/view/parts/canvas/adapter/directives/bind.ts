@@ -130,7 +130,7 @@ const setStyle = (
         //   'important'
         // )
       } else {
-        Reflect.set(style, name, val)
+        Reflect.set(style, name, val);
         // style.setProperty(name, val);
       }
     }

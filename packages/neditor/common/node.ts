@@ -1,7 +1,10 @@
 import * as Y from 'yjs';
-import { EnumAndLiteral } from '../base/common/typescript';
+import { DCHECK } from '../base/check';
+import { NOTIMPLEMENTED } from '../base/common/notreached';
+import { isString } from '../base/common/type';
+import { EnumAndLiteral, Optional, ValueOf } from '../base/common/typescript';
 import { IIdentifier } from './common';
-import { IStyleDeclaration } from './style';
+import { IBlockStyleDeclaration, IInlineStyleDeclaration, IStyleDeclaration } from './style';
 
 export enum NodeType {
   Root = 'root',
@@ -11,63 +14,12 @@ export enum NodeType {
   Fragment = 'fragment'
 }
 
-export type IInlineStyle = Partial<IStyleDeclaration>;
-
-export interface BlockLevelMarks {
-  textAlign: string
-  lineHeight: string
-  // 'text-align': '',
-  // 'text-align-last': '',
-  // 'text-anchor': '',
-  // 'text-combine-upright': '',
-  // 'text-decoration': '',
-  // 'text-decoration-color': '',
-  // 'text-decoration-line': '',
-  // 'text-decoration-style': '',
-  // 'text-emphasis': '',
-  // 'text-emphasis-color': '',
-  // 'text-emphasis-position': '',
-  // 'text-emphasis-style': '',
-  // 'text-indent': '',
-  // 'text-justify': '',
-  // 'text-orientation': '',
-  // 'text-overflow': '',
-  // 'text-rendering': '',
-  // 'text-shadow': '',
-  // 'text-transform': '',
-  // 'text-underline-position': '',
-  fontSize: string,
-  fontFamily: string,
-  fontWeight: string,
-}
-
-export interface InlineLevelMarks {
-  fontSize: string,
-  fontFamily: string,
-  fontWeight: string,
-  // 'font-family': '',
-  // 'font-feature-settings': '',
-  // 'font-kerning': '',
-  // 'font-size': '',
-  // 'font-size-adjust': '',
-  // 'font-stretch': '',
-  // 'font-style': '',
-  // 'font-synthesis': '',
-  // 'font-variant': '',
-  // 'font-variant-caps': '',
-  // 'font-variant-east-asian': '',
-  // 'font-variant-ligatures': '',
-  // 'font-variant-numeric': '',
-  // 'font-variant-position': '',
-  // 'font-weight': '',
-}
-
 export interface ITextNodeModel {
   id: IIdentifier;
   type: EnumAndLiteral<NodeType.Text>;
   from: IIdentifier;
   order: string;
-  style: Partial<InlineLevelMarks> & Partial<BlockLevelMarks> & IInlineStyle;
+  style: IInlineStyleDeclaration;
   content: string;
 }
 
@@ -76,7 +28,7 @@ export interface IBlockNodeModel {
   type: EnumAndLiteral<NodeType.Block>;
   from: IIdentifier;
   order: string;
-  style: Partial<BlockLevelMarks> & IInlineStyle;
+  style: IBlockStyleDeclaration;
 }
 
 export interface IFragmentNodeModel {
@@ -101,66 +53,149 @@ export interface IRootNodeModel {
 
 export type INodeModel = ITextNodeModel | IBlockNodeModel | IRootNodeModel | IFragmentNodeModel
 
-export type YNodeBase = Y.Map<YNodeValue>
+export type YNode = Y.Map<YNodeValue>
 export type YNodeValue = string | Y.Map<string>;
 
-export interface YRootNode extends YNodeBase {
-  get(str: 'type'): NodeType.Root;
-  get(str: string): YNodeValue;
-}
-
-export interface YImageNode extends YNodeBase {
-  get(str: 'type'): NodeType.Image;
-  get(str: string): YNodeValue;
-}
-
-export interface YTextNode extends YNodeBase {
-  get(str: 'type'): NodeType.Text;
-  get(str: string): YNodeValue;
-}
-
-export interface YBlockNode extends YNodeBase {
-  get(str: 'type'): NodeType.Block;
-  get(str: string): YNodeValue;
-}
-
-export interface YFragmentNode extends YNodeBase {
-  get(str: 'type'): NodeType.Fragment;
-  get(str: string): YNodeValue;
-}
-
-export type YNode = YRootNode | YImageNode | YTextNode | YBlockNode | YFragmentNode
-
-export function getNodeId(n: YNodeBase): string {
+export function getNodeId(n: YNode): string {
   return n.get('id') as string;
 }
-export function getNodeFrom(n: YNodeBase): string {
+export function getNodeFrom(n: YNode): string {
   return n.get('from') as string;
 }
-export function getNodeOrder(n: YNodeBase): string {
+export function getNodeOrder(n: YNode): string {
   return n.get('order') as string;
 }
-export function getNodeType(n: YNodeBase) {
+export function getNodeType(n: YNode): NodeType {
   return n.get('type') as NodeType;
 }
-export function getNodeContent(n: YNodeBase) {
-  return n.get('content') as NodeType;
+export function getNodeContent(n: YNode): string {
+  return n.get('content') as string;
 }
-export function getNodeStyle(n: YNodeBase) {
+export function getNodeStyle(n: YNode): Y.Map<string> {
   return n.get('style') as Y.Map<string>;
 }
-export function isRootNode(n: YNode): n is YRootNode {
-  return getNodeType(n) === NodeType.Root;
+
+export function isYNode(val: Y.Map<any>): val is YNode {
+  return val.get('id') && val.get('type');
 }
-export function isImageNode(n: YNode): n is YImageNode {
-  return getNodeType(n) === NodeType.Image;
+export function isYNodeStyle(val: Y.Map<any>): boolean {
+  const parent = val.parent;
+  return !!parent && val.parent instanceof Y.Map && isYNode(val.parent);
 }
-export function isTextNode(n: YNode): n is YTextNode {
-  return getNodeType(n) === NodeType.Text;
+
+const proxyHandler: ProxyHandler<ReturnType<typeof getNodeStyle>> = {
+  get(target: ReturnType<typeof getNodeStyle>, p: keyof IStyleDeclaration): any {
+    if (!isString(p)) NOTIMPLEMENTED();
+    return target.get(p);
+  },
+  set(target: ReturnType<typeof getNodeStyle>, p: keyof IStyleDeclaration, value: ValueOf<Required<IStyleDeclaration>>): boolean {
+    if (!isString(p)) NOTIMPLEMENTED();
+    target.set(p, value);
+    return true;
+  },
+  has(target: ReturnType<typeof getNodeStyle>, p: keyof IStyleDeclaration): boolean {
+    if (!isString(p)) NOTIMPLEMENTED();
+    return target.has(p);
+  },
+  deleteProperty(target: ReturnType<typeof getNodeStyle>, p: keyof IStyleDeclaration): boolean {
+    if (!isString(p)) NOTIMPLEMENTED();
+    target.delete(p);
+    return true;
+  },
+  ownKeys(target: ReturnType<typeof getNodeStyle>): ArrayLike<keyof IStyleDeclaration> {
+    return Array.from(target.keys()) as unknown as ArrayLike<keyof IStyleDeclaration>;
+  }
+};
+
+class ChildNodeProxy {
+  readonly id: IIdentifier;
+  constructor(
+    public y: YNode,
+  ) {
+    this.id = getNodeId(y);
+  }
+
+  get from(): IIdentifier {
+    return getNodeFrom(this.y);
+  }
+  set from(val) {
+    this.y.set('from', val);
+  }
+  get order(): string {
+    return getNodeOrder(this.y);
+  }
+  set order(val) {
+    this.y.set('order', val);
+  }
 }
-export function isBlockNode(n: YNode): n is YBlockNode {
-  return getNodeType(n) === NodeType.Block;
+
+export class RoolNodeModelProxy extends ChildNodeProxy implements IRootNodeModel {
+  type: EnumAndLiteral<NodeType.Root> = NodeType.Root;
+  constructor(
+    y: YNode,
+  ) {
+    super(y);
+    const type = getNodeType(y);
+    DCHECK(type === NodeType.Root);
+  }
 }
-export function isFragmentNode(n: YNode): n is YFragmentNode {
-  return getNodeType(n) === NodeType.Fragment;
+
+export class BlockNodeModelProxy extends ChildNodeProxy implements IBlockNodeModel {
+  readonly style: IBlockStyleDeclaration;
+  type: EnumAndLiteral<NodeType.Block> = NodeType.Block;
+  constructor(
+    y: YNode,
+  ) {
+    super(y);
+    const type = getNodeType(y);
+    DCHECK(type === NodeType.Block);
+    this.style = new Proxy(getNodeStyle(y), proxyHandler) as unknown as IBlockStyleDeclaration;
+  }
+}
+
+export function isBlockNodeModelProxy(val: any): val is BlockNodeModelProxy {
+  return val instanceof BlockNodeModelProxy;
+}
+
+export class TextNodeModelProxy extends ChildNodeProxy implements ITextNodeModel {
+  readonly style: IBlockStyleDeclaration;
+  type: EnumAndLiteral<NodeType.Text> = NodeType.Text;
+  constructor(
+    y: YNode,
+  ) {
+    super(y);
+    const type = getNodeType(y);
+    DCHECK(type === NodeType.Text);
+    this.style = new Proxy(getNodeStyle(y), proxyHandler) as unknown as IInlineStyleDeclaration;
+  }
+  get content(): string {
+    return getNodeContent(this.y);
+  }
+  set content(val) {
+    this.y.set('content', val);
+  }
+}
+
+export function isTextNodeModelProxy(val: any): val is TextNodeModelProxy {
+  return val instanceof TextNodeModelProxy;
+}
+
+export type NodeModelProxy = RoolNodeModelProxy | BlockNodeModelProxy | TextNodeModelProxy
+
+export function toProxy(y: YNode): NodeModelProxy {
+  const type = getNodeType(y);
+  if (type === NodeType.Root) {
+    return new RoolNodeModelProxy(y);
+  }
+  if (type === NodeType.Block) {
+    return new BlockNodeModelProxy(y);
+  }
+  if (type === NodeType.Text) {
+    return new TextNodeModelProxy(y);
+  }
+  NOTIMPLEMENTED();
+}
+export function toOptionalProxy(y: Optional<YNode>): Optional<NodeModelProxy> {
+  if (!y) return undefined;
+  return toProxy(y);
 }

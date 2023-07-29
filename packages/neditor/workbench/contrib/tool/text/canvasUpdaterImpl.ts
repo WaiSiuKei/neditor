@@ -5,7 +5,7 @@ import { NOTREACHED } from '../../../../base/common/notreached';
 import { Optional } from '../../../../base/common/typescript';
 import { ICanvas } from '../../../../canvas/canvas/canvas';
 import { collect } from '../../../../canvas/viewModel/path';
-import { getNodeStyle, NodeType } from '../../../../common/node';
+import { getNodeStyle, isBlockNodeModelProxy, NodeType } from '../../../../common/node';
 import { HTMLParagraphElement } from '../../../../engine/dom/html_paragraph_element';
 import { Text } from '../../../../engine/dom/text';
 import { DirectionType } from '../../../../platform/model/common/location';
@@ -43,8 +43,8 @@ export class CanvasUpdater implements ICanvasUpdater {
       const m = this.canvas.getScopedModel(scope);
       const nodeModel = m.getNodeById(id);
       DCHECK(nodeModel);
-      DCHECK(nodeModel.get('type') === NodeType.Text);
-      nodeModel.set('content', value);
+      DCHECK(nodeModel.type === NodeType.Text);
+      nodeModel.content = value;
     });
 
     this._queueUpdate();
@@ -60,8 +60,8 @@ export class CanvasUpdater implements ICanvasUpdater {
         const m = this.canvas.getScopedModel(scope);
         const nodeModel = m.getNodeById(id);
         DCHECK(nodeModel);
-        DCHECK(nodeModel.get('type') === NodeType.Text);
-        nodeModel.set('content', '');
+        DCHECK(nodeModel.type === NodeType.Text);
+        nodeModel.content = '';
       });
     });
   }
@@ -92,7 +92,8 @@ export class CanvasUpdater implements ICanvasUpdater {
 
     const containerModel = this.canvas.getScopedModel(parentMeta.scope).getNodeById(parentMeta.id);
     DCHECK(containerModel);
-    const width = getNodeStyle(containerModel).get('width');
+    DCHECK(isBlockNodeModelProxy(containerModel));
+    const width = containerModel.style.width;
     const nodeInit = {
       type: NodeType.Text as const,
       style: {
@@ -116,8 +117,8 @@ export class CanvasUpdater implements ICanvasUpdater {
       };
       const node = this.canvas.getScopedModel(parentMeta.scope).addNode(at, nodeInit);
       return {
-        id: node.get('id'),
-        type: node.get('type'),
+        id: node.id,
+        type: node.type,
         scope: parentMeta.scope.key,
         parent: parentMeta.id,
       };

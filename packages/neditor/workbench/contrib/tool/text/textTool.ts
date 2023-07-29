@@ -14,7 +14,8 @@ import { Optional } from '../../../../base/common/typescript';
 import { ScopedIdentifier } from '../../../../canvas/canvasCommon/scope';
 import { AttrNameOfId, getScope } from '../../../../canvas/viewModel/path';
 import { IIdentifier } from '../../../../common/common';
-import { getNodeContent, getNodeId, IInlineStyle, NodeType } from '../../../../common/node';
+import { getNodeContent, getNodeId, isTextNodeModelProxy, NodeType } from '../../../../common/node';
+import { IInlineStyleDeclaration } from '../../../../common/style';
 import { HTMLParagraphElement } from '../../../../engine/dom/html_paragraph_element';
 import { Node } from '../../../../engine/dom/node';
 import { NodeTraversal } from '../../../../engine/dom/node_traversal';
@@ -190,7 +191,8 @@ export class TextTool extends BaseTool {
     if (this._paragraphId) {
       const model = this.canvas.model.getNodeById(this._paragraphId);
       DCHECK(model);
-      const content = getNodeContent(model);
+      DCHECK(isTextNodeModelProxy(model));
+      const content = model.content;
       if (!content) {
         this.canvas.transform(m => {
           m.removeNode({ ref: this._paragraphContainerId!, direction: DirectionType.self });
@@ -403,12 +405,12 @@ export class TextTool extends BaseTool {
           - 10 // half lineHeight
         ),
         marginLeft: toPX(clientX - 10)
-      } as IInlineStyle);
+      } as IInlineStyleDeclaration);
       const divNode = this.canvas.model.addNode({ ref: RootNodeId, direction: DirectionType.inward }, divToCreate);
-      this._paragraphContainerId = getNodeId(divNode);
+      this._paragraphContainerId = divNode.id;
       paragraphContainerId = this._paragraphContainerId;
       const pNode = this.canvas.model.addNode({ ref: this._paragraphContainerId, direction: DirectionType.inward }, deepClone(emptyTextInit));
-      paragraphId = getNodeId(pNode);
+      paragraphId = pNode.id;
       this._paragraphId = paragraphId;
     });
     await this.canvas.mvvm.maybeWaitForReLayout();

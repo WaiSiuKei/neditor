@@ -13,7 +13,7 @@ import {
   IYDocumentModel,
   IYNodeModels
 } from '../../../common/model';
-import { getNodeFrom, YNodeBase, YNodeValue } from '../../../common/node';
+import { getNodeFrom, getNodeId, getNodeOrder, NodeModelProxy, toOptionalProxy, toProxy, YNode, YNodeValue } from '../../../common/node';
 import { DirectionType, ILocation } from './location';
 import { IModelBase, IModelOperationContext, IModelService, INodeInit, UpdateMode } from './model';
 import {
@@ -67,7 +67,7 @@ export class ModelOperator<T extends IDocumentModel> extends Disposable implemen
     }
     this._yModel = this._processInput(rawModel);
     this._undoManager = new Y.UndoManager(this._yModel);
-    this._registerUndoRedoListeners()
+    this._registerUndoRedoListeners();
 
     Reflect.set(window, 'model', this);
   }
@@ -81,47 +81,47 @@ export class ModelOperator<T extends IDocumentModel> extends Disposable implemen
   }
 
   _registerUndoRedoListeners() {
-    const keyVersion = 'version'
-    const keyVersionBefore = 'versionBefore'
+    const keyVersion = 'version';
+    const keyVersionBefore = 'versionBefore';
     const onStackItemAdded = (event: {
       stackItem: { meta: Map<any, any> },
       type: 'undo' | 'redo',
       origin: Y.UndoManager | null
     }) => {
-      const { meta } = event.stackItem
+      const { meta } = event.stackItem;
       if (event.type === 'redo') {
-        meta.set(keyVersion, this._versionId)
-        meta.set(keyVersionBefore, this._versionId - 1)
+        meta.set(keyVersion, this._versionId);
+        meta.set(keyVersionBefore, this._versionId - 1);
       }
       if (event.type === 'undo' && event.origin !== this._undoManager) {
-        const versionBefore = this.getVersionId()
+        const versionBefore = this.getVersionId();
         this._increaseVersionId();
-        meta.set(keyVersion, this.getVersionId())
-        meta.set(keyVersionBefore, versionBefore)
+        meta.set(keyVersion, this.getVersionId());
+        meta.set(keyVersionBefore, versionBefore);
         this._emitContentChangedEvent(new ModelContentChangedEvent(
           this._alternativeVersionId,
           false,
           false,
-        ))
+        ));
       }
-    }
+    };
     const onStackItemPoped = (event: { stackItem: { meta: Map<any, any>, }, type: 'undo' | 'redo' }) => {
-      const { meta } = event.stackItem
-      let versionBefore = meta.get(keyVersionBefore)
-      let versionAfter = meta.get(keyVersion)
-      const isUndoing = event.type === "undo"
-      const isRedoing = event.type === "redo"
-      this._overwriteAlternativeVersionId(isUndoing ? versionBefore : versionAfter)
+      const { meta } = event.stackItem;
+      let versionBefore = meta.get(keyVersionBefore);
+      let versionAfter = meta.get(keyVersion);
+      const isUndoing = event.type === 'undo';
+      const isRedoing = event.type === 'redo';
+      this._overwriteAlternativeVersionId(isUndoing ? versionBefore : versionAfter);
       this._emitContentChangedEvent(new ModelContentChangedEvent(
         this._alternativeVersionId,
         isUndoing,
         isRedoing,
-      ))
-    }
-    this._undoManager.on('stack-item-added', onStackItemAdded)
-    this._undoManager.on('stack-item-popped', onStackItemPoped)
-    this._register(toDisposable(() => this._undoManager.off('stack-item-added', onStackItemAdded)))
-    this._register(toDisposable(() => this._undoManager.off('stack-item-popped', onStackItemPoped)))
+      ));
+    };
+    this._undoManager.on('stack-item-added', onStackItemAdded);
+    this._undoManager.on('stack-item-popped', onStackItemPoped);
+    this._register(toDisposable(() => this._undoManager.off('stack-item-added', onStackItemAdded)));
+    this._register(toDisposable(() => this._undoManager.off('stack-item-popped', onStackItemPoped)));
   }
 
   get onWillDispose(): Event<void> {
@@ -166,16 +166,16 @@ export class ModelOperator<T extends IDocumentModel> extends Disposable implemen
   }
 
   undo() {
-    this.undoManager.undo()
+    this.undoManager.undo();
   }
   redo() {
-    this.undoManager.redo()
+    this.undoManager.redo();
   }
   canUndo(): boolean {
-    return this.undoManager.canUndo()
+    return this.undoManager.canUndo();
   }
   canRedo(): boolean {
-    return this.undoManager.canRedo()
+    return this.undoManager.canRedo();
   }
 
   get yModel() {
@@ -184,7 +184,7 @@ export class ModelOperator<T extends IDocumentModel> extends Disposable implemen
 
   protected _processInput(input: T): IYDocumentModel {
     const model = this.doc.getMap<IYNodeModels>(this._associatedResource.toString());
-    const nodes = new Y.Map<YNodeBase>();
+    const nodes = new Y.Map<YNode>();
     model.set('nodes', nodes);
     keys(input.nodes).forEach(id => {
       const nodeModel = input.nodes[id];
@@ -222,9 +222,13 @@ export class ModelOperator<T extends IDocumentModel> extends Disposable implemen
     if (!this.ctx.isUpdating()) throw new Error('method should not be called outside transform()');
   }
 
-  addNode(at: ILocation, init: INodeInit): YNodeBase {
+  _internal_addNode(at: ILocation, init: INodeInit): YNode {
     this._updateContextGuard();
     return insertNodeOperation(deepClone(at), init)(this);
+  }
+
+  addNode(at: ILocation, init: INodeInit): NodeModelProxy {
+    return toProxy(this._internal_addNode(at, init));
   }
 
   removeNode(at: ILocation) {
@@ -252,23 +256,29 @@ export class ModelOperator<T extends IDocumentModel> extends Disposable implemen
     reorderNodeOperation(id, beforeSiblingNodeId)(this);
   }
 
-  getNodeById(id: IIdentifier) {
+  _internal_getNodeById(id: IIdentifier) {
     return getModelNodes(this._yModel).get(id);
   }
 
-  getParentNodeOfId(id: IIdentifier) {
-    const node = this.getNodeById(id)!;
-    if (!node) return undefined;
-    const from = getNodeFrom(node);
-    return from ? this.getNodeById(from) : undefined;
+  getNodeById(id: IIdentifier) {
+    return toOptionalProxy(this._internal_getNodeById(id));
   }
 
-  getPreviousSiblingNodeOfId(id: string) {
-    const parent = this.getParentNodeOfId(id);
+  _internal_getParentNodeOfId(id: IIdentifier) {
+    const node = this._internal_getNodeById(id)!;
+    if (!node) return undefined;
+    const from = getNodeFrom(node);
+    return from ? this._internal_getNodeById(from) : undefined;
+  }
+  getParentNodeOfId(id: IIdentifier) {
+    return toOptionalProxy(this._internal_getParentNodeOfId(id));
+  }
+  _internal_getPreviousSiblingNodeOfId(id: string) {
+    const parent = this._internal_getParentNodeOfId(id);
     if (!parent) {
       throw new Error('404');
     }
-    const children = this.getChildrenNodesOfId(parent.get('id') as string);
+    const children = this._internal_getChildrenNodesOfId(getNodeId(parent));
     // 少于一个元素的情况下 肯定没有前后节点
     if (children.length <= 1) {
       return undefined;
@@ -277,52 +287,47 @@ export class ModelOperator<T extends IDocumentModel> extends Disposable implemen
     const preNode = children[index - 1] || null;
     return preNode;
   }
-
-  getNextSiblingNodeOfId(id: string) {
-    const parent = this.getParentNodeOfId(id);
+  _internal_getNextSiblingNodeOfId(id: string) {
+    const parent = this._internal_getParentNodeOfId(id);
     if (!parent) {
       throw new Error('404');
     }
-    const children = this.getChildrenNodesOfId(parent.get('id') as string);
+    const children = this._internal_getChildrenNodesOfId(getNodeId(parent));
     // 少于一个元素的情况下 肯定没有前后节点
     if (children.length <= 1) {
       return undefined;
     }
-    const index = children.findIndex(cv => cv.get('id') as string === id);
-    const nextNode = children[index + 1] || null;
-    return nextNode;
+    const index = children.findIndex(cv => getNodeId(cv) === id);
+    return children[index + 1];
   }
-
-  getAncestorNodesOfId(id: IIdentifier): YNodeBase[] {
-    const ret: YNodeBase[] = [];
-    let p = this.getParentNodeOfId(id);
+  _internal_getAncestorNodesOfId(id: IIdentifier): YNode[] {
+    const ret: YNode[] = [];
+    let p = this._internal_getParentNodeOfId(id);
     while (p) {
       ret.unshift(p);
-      p = this.getParentNodeOfId(p.get('id') as string);
+      p = this._internal_getParentNodeOfId(getNodeId(p));
     }
     return ret;
   }
-
   isAncestorNodeOfId(ancestorId: IIdentifier, id: IIdentifier): boolean {
-    const ancestors = this.getAncestorNodesOfId(id);
-    return ancestors.some(cv => cv.get('id') === ancestorId);
+    const ancestors = this._internal_getAncestorNodesOfId(id);
+    return ancestors.some(cv => getNodeId(cv) === ancestorId);
   }
-
-  getChildrenNodesOfId(id: IIdentifier): YNodeBase[] {
-    const nodeArr = Array.from(this._yModel.get('nodes')!.values() as IterableIterator<YNodeBase>);
-    return nodeArr.filter(n => n.get('from') === id).sort((a, b) => cmp(a.get('order') as string, b.get('order') as string));
+  _internal_getChildrenNodesOfId(id: IIdentifier): YNode[] {
+    const nodeArr = Array.from(this._yModel.get('nodes')!.values() as IterableIterator<YNode>);
+    return nodeArr.filter(n => getNodeFrom(n) === id).sort((a, b) => cmp(getNodeOrder(a), getNodeOrder(b)));
   }
-
-  queryNodes(condition: (n: YNodeBase) => boolean): YNodeBase[] {
-    const nodes = this._yModel.get('nodes');
-    DCHECK(nodes);
-    const result = [];
-    for (const n of nodes.values()) {
-      if (condition(n)) {
-        result.push(n);
-      }
-    }
-    return result;
+  getAncestorNodesOfId(id: IIdentifier): NodeModelProxy[] {
+    return this._internal_getAncestorNodesOfId(id).map(toProxy);
+  }
+  getChildrenNodesOfId(id: IIdentifier): NodeModelProxy[] {
+    return this._internal_getChildrenNodesOfId(id).map(toProxy);
+  }
+  getNextSiblingNodeOfId(id: IIdentifier): Optional<NodeModelProxy> {
+    return toOptionalProxy(this._internal_getNextSiblingNodeOfId(id));
+  }
+  getPreviousSiblingNodeOfId(id: IIdentifier): Optional<NodeModelProxy> {
+    return toOptionalProxy(this._internal_getPreviousSiblingNodeOfId(id));
   }
 }
 

@@ -5,7 +5,7 @@ import { TextToolID } from '../../workbench/contrib/tool/text/textTool';
 import { hitTest } from '../element/collision';
 import { CanvasElement } from '../element/types';
 import { getElementsAtPosition } from '../scene/comparisons';
-import { ICanvas, ICanvasState, IModelChangedEvent, IMVVMStatus } from './canvas';
+import { ICanvas, IModelChangedEvent, IMVVMStatus } from './canvas';
 import { Disposable, dispose, IDisposable } from '@neditor/core/base/common/lifecycle';
 import { ICanvasView } from '../view/view';
 import { ServiceCollection } from '@neditor/core/platform/instantiation/common/serviceCollection';
@@ -236,22 +236,6 @@ export class Canvas extends Disposable implements ICanvas {
     return this._historyHelper.redo();
   }
 
-  add(callback: IOperationCallback<unknown>): void {
-    if (!this._historyHelper) NOTREACHED();
-    this._historyHelper.add(callback);
-  }
-  checkout(): void {
-    if (!this._historyHelper) NOTREACHED();
-    this._historyHelper.checkout();
-  }
-  commitAndMerge(symbol?: symbol) {
-    if (!this._historyHelper) NOTREACHED();
-    this._historyHelper.commitAndMerge(symbol);
-  }
-  fork(symbol?: symbol): void {
-    if (!this._historyHelper) NOTREACHED();
-    this._historyHelper.fork(symbol);
-  }
   transform<T>(cb: IOperationCallback<T>) {
     if (!this._historyHelper) NOTREACHED();
     return this._historyHelper.transform(cb);
@@ -350,7 +334,7 @@ export class Canvas extends Disposable implements ICanvas {
     y: number,
   ): CanvasElement[] {
     const tier1Nodes = this.model.getChildrenNodesOfId(RootNodeId);
-    const elements = tier1Nodes.map(n => this.view.document.getElementById(getNodeId(n))!);
+    const elements = tier1Nodes.map(n => this.view.document.getElementById(n.id)!);
 
     return getElementsAtPosition(elements, (element) => hitTest(element, this, x, y,),);
   }
@@ -358,8 +342,13 @@ export class Canvas extends Disposable implements ICanvas {
     let prev = this.selectedElements;
     this.selectedElements = els;
     if (!isArrayShallowEqual(prev, this.selectedElements)) {
-      this.view.redraw(this);
+      this.view.reflowOverlay(this);
     }
+  }
+
+  reflow() {
+    this.view.reflow();
+    this.view.reflowOverlay(this);
   }
 
   //#region canvasState

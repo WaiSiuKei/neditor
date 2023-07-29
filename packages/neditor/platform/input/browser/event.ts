@@ -246,13 +246,6 @@ export class KeyboardInputEvent extends BaseEvent implements IKeyboardInputEvent
   }
 }
 
-export interface IDragInputEvent extends IEvent {
-  type: typeof InputEventType.DRAG_START
-    | typeof InputEventType.DRAG
-    | typeof InputEventType.DRAG_END
-    | typeof InputEventType.DROP;
-}
-
 export type InputEvents = IMouseInputEvent | IWheelInputEvent | IKeyboardInputEvent
 
 export interface IMouseTarget {

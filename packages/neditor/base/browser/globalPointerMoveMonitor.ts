@@ -7,112 +7,115 @@ import * as dom from '@neditor/core/base/browser/dom';
 import { DisposableStore, IDisposable, toDisposable } from '@neditor/core/base/common/lifecycle';
 
 export interface IPointerMoveEventData {
-	leftButton: boolean;
-	buttons: number;
-	pageX: number;
-	pageY: number;
+  leftButton: boolean;
+  buttons: number;
+  pageX: number;
+  pageY: number;
 }
 
 export interface IEventMerger<R> {
-	(lastEvent: R | null, currentEvent: PointerEvent): R;
+  (lastEvent: R | null, currentEvent: PointerEvent): R;
 }
 
 export interface IPointerMoveCallback<R> {
-	(pointerMoveData: R): void;
+  (pointerMoveData: R): void;
 }
 
 export interface IOnStopCallback {
-	(browserEvent?: PointerEvent | KeyboardEvent): void;
+  (browserEvent?: PointerEvent | KeyboardEvent): void;
 }
 
 export function standardPointerMoveMerger(lastEvent: IPointerMoveEventData | null, currentEvent: PointerEvent): IPointerMoveEventData {
-	currentEvent.preventDefault();
-	return {
-		leftButton: (currentEvent.button === 0),
-		buttons: currentEvent.buttons,
-		pageX: currentEvent.pageX,
-		pageY: currentEvent.pageY
-	};
+  currentEvent.preventDefault();
+  return {
+    leftButton: (currentEvent.button === 0),
+    buttons: currentEvent.buttons,
+    pageX: currentEvent.pageX,
+    pageY: currentEvent.pageY
+  };
 }
 
 export class GlobalPointerMoveMonitor<R extends { buttons: number } = IPointerMoveEventData> implements IDisposable {
 
-	private readonly _hooks = new DisposableStore();
-	private _pointerMoveEventMerger: IEventMerger<R> | null = null;
-	private _pointerMoveCallback: IPointerMoveCallback<R> | null = null;
-	private _onStopCallback: IOnStopCallback | null = null;
+  private readonly _hooks = new DisposableStore();
+  private _pointerMoveEventMerger: IEventMerger<R> | null = null;
+  private _pointerMoveCallback: IPointerMoveCallback<R> | null = null;
+  private _onStopCallback: IOnStopCallback | null = null;
 
-	public dispose(): void {
-		this.stopMonitoring(false);
-		this._hooks.dispose();
-	}
+  public dispose(): void {
+    this.stopMonitoring(false);
+    this._hooks.dispose();
+  }
 
-	public stopMonitoring(invokeStopCallback: boolean, browserEvent?: PointerEvent | KeyboardEvent): void {
-		if (!this.isMonitoring()) {
-			// Not monitoring
-			return;
-		}
+  public stopMonitoring(invokeStopCallback: boolean, browserEvent?: PointerEvent | KeyboardEvent): void {
+    if (!this.isMonitoring()) {
+      // Not monitoring
+      return;
+    }
 
-		// Unhook
-		this._hooks.clear();
-		this._pointerMoveEventMerger = null;
-		this._pointerMoveCallback = null;
-		const onStopCallback = this._onStopCallback;
-		this._onStopCallback = null;
+    // Unhook
+    this._hooks.clear();
+    this._pointerMoveEventMerger = null;
+    this._pointerMoveCallback = null;
+    const onStopCallback = this._onStopCallback;
+    this._onStopCallback = null;
 
-		if (invokeStopCallback && onStopCallback) {
-			onStopCallback(browserEvent);
-		}
-	}
+    if (invokeStopCallback && onStopCallback) {
+      onStopCallback(browserEvent);
+    }
+  }
 
-	public isMonitoring(): boolean {
-		return !!this._pointerMoveEventMerger;
-	}
+  public isMonitoring(): boolean {
+    return !!this._pointerMoveEventMerger;
+  }
 
-	public startMonitoring(
-		initialElement: Element,
-		pointerId: number,
-		initialButtons: number,
-		pointerMoveEventMerger: IEventMerger<R>,
-		pointerMoveCallback: IPointerMoveCallback<R>,
-		onStopCallback: IOnStopCallback
-	): void {
-		if (this.isMonitoring()) {
-			this.stopMonitoring(false);
-		}
-		this._pointerMoveEventMerger = pointerMoveEventMerger;
-		this._pointerMoveCallback = pointerMoveCallback;
-		this._onStopCallback = onStopCallback;
+  public startMonitoring(
+    initialElement: Element,
+    pointerId: number,
+    initialButtons: number,
+    pointerMoveEventMerger: IEventMerger<R>,
+    pointerMoveCallback: IPointerMoveCallback<R>,
+    onStopCallback: IOnStopCallback
+  ): void {
+    if (this.isMonitoring()) {
+      this.stopMonitoring(false);
+    }
+    this._pointerMoveEventMerger = pointerMoveEventMerger;
+    this._pointerMoveCallback = pointerMoveCallback;
+    this._onStopCallback = onStopCallback;
 
-		try {
-			initialElement.setPointerCapture(pointerId);
-			this._hooks.add(toDisposable(() => {
-				initialElement.releasePointerCapture(pointerId);
-			}));
-		} catch (err) {
-			// See https://github.com/microsoft/vscode/issues/144584
-			// `setPointerCapture` sometimes fails when being invoked from a `mousedown` listener
-			// Things appear to work even with `setPointerCapture` failing, so no need to do anything special.
-		}
+    try {
+      initialElement.setPointerCapture(pointerId);
+      this._hooks.add(toDisposable(() => {
+        initialElement.releasePointerCapture(pointerId);
+      }));
+    } catch (err) {
+      // See https://github.com/microsoft/vscode/issues/144584
+      // `setPointerCapture` sometimes fails when being invoked from a `mousedown` listener
+      // Things appear to work even with `setPointerCapture` failing, so no need to do anything special.
+    }
 
-		this._hooks.add(dom.addDisposableThrottledListener<R, PointerEvent>(
-			initialElement,
-			dom.EventType.POINTER_MOVE,
-			(data: R) => {
-				if (data.buttons !== initialButtons) {
-					// Buttons state has changed in the meantime
-					this.stopMonitoring(true);
-					return;
-				}
-				this._pointerMoveCallback!(data);
-			},
-			(lastEvent: R | null, currentEvent) => this._pointerMoveEventMerger!(lastEvent, currentEvent)
-		));
+    this._hooks.add(dom.addDisposableThrottledListener<R, PointerEvent>(
+      initialElement,
+      dom.EventType.POINTER_MOVE,
+      (data: R) => {
+        if (data.buttons !== initialButtons) {
+          // Buttons state has changed in the meantime
+          this.stopMonitoring(true);
+          return;
+        }
+        this._pointerMoveCallback!(data);
+      },
+      (lastEvent: R | null, currentEvent) => this._pointerMoveEventMerger!(lastEvent, currentEvent)
+    ));
 
-		this._hooks.add(dom.addDisposableListener(
-			initialElement,
-			dom.EventType.POINTER_UP,
-			(e: PointerEvent) => this.stopMonitoring(true, e)
-		));
-	}
+    this._hooks.add(dom.addDisposableListener(
+      initialElement,
+      dom.EventType.POINTER_UP,
+      (e: PointerEvent) => {
+        console.log('pointer up');
+        this.stopMonitoring(true, e);
+      }
+    ));
+  }
 }

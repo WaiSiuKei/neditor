@@ -26,7 +26,7 @@ export class Overlay extends Disposable {
     this.ctx = this.canvas.getContext('2d')!;
   }
 
-  redraw(appState: ICanvasState) {
+  reflow(appState: ICanvasState) {
     const scale = window.devicePixelRatio;
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.save();

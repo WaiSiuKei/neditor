@@ -13,7 +13,7 @@ import { ScopedIdentifier } from '../../../canvas/canvasCommon/scope';
 import { ICanvasService } from '../../canvas/common/canvas';
 import { CanvasModel } from './modelImpl';
 import { registerSingleton } from '../../instantiation/common/extensions';
-import * as Y from "yjs";
+import * as Y from 'yjs';
 
 function MODEL_ID(resource: URI): string {
   return resource.toString();
@@ -164,72 +164,13 @@ export class ModelService extends Disposable implements IModelService {
     this.updateMode = UpdateMode.None;
   }
 
-  private _forkSymbol: Optional<symbol>;
-  private _beforeCursorState: Optional<ScopedIdentifier[]>;
-  private _sessionSource: Optional<UndoRedoSource>;
-  fork(undoRedoSource: UndoRedoSource, cursorState: ScopedIdentifier[], symbol?: symbol): void {
-    if (this._forkSymbol) return;
-    // 如果正在更新 model，不允许 fork
-    if (this.isUpdating()) {
-      NOTREACHED();
-    }
-
-    if (symbol) {
-      this._forkSymbol = symbol;
-    }
-
-    // 这是处理 add 了还没有 merge 就继续 fork 的情况
-    if (this.updateMode === UpdateMode.Add) {
-      this.commitAndMerge(this._sessionSource!, cursorState);
-    }
-
-    for (const model of this.getAllModels()) {
-      this.modelVersionBeforeChange.set(model, model.getVersionId());
-    }
-    this._beforeCursorState = cursorState.slice();
-    this._sessionSource = undoRedoSource;
-  }
-
-  add(callback: () => void): void {
-    if (this.updateMode === UpdateMode.None) {
-      this.updateMode = UpdateMode.Add;
-    } else if (this.updateMode === UpdateMode.Transform) {
-      NOTREACHED();
-    }
-
-    this.doUpdate(callback);
-  }
-
-  commitAndMerge(undoRedoSource: UndoRedoSource, cursorState: ScopedIdentifier[], symbol?: symbol): void {
-    if (this._forkSymbol && symbol !== this._forkSymbol) {
-      return;
-    }
-    this._forkSymbol = undefined;
-    this.updateMode = UpdateMode.None;
-  }
-
-  checkout(): void {
-    this._forkSymbol = undefined;
-    this.updateMode = UpdateMode.None;
-  }
-
   transform<T>(undoRedoSource: UndoRedoSource, cb: () => T, beforeCursorState: ScopedIdentifier[], getAfterCursorState: () => ScopedIdentifier[]) {
-    // 这是处理 add 了还没有 merge 就继续 transform 的情况
-    if (this.updateMode === UpdateMode.Add) {
-      this.commitAndMerge(this._sessionSource!, beforeCursorState);
-    }
     if (this.updateMode === UpdateMode.None) {
       this.updateMode = UpdateMode.Transform;
-    } else if (this.updateMode === UpdateMode.Transform) {
-      throw new Error('400');
     }
     const ret = this.doUpdate(cb);
     this.updateMode = UpdateMode.None;
     return ret;
-  }
-
-  changeWithoutHistory<T>(cb: () => T): T {
-    return this.doUpdate(cb);
   }
 
   private doUpdate<T>(cb: () => T) {
@@ -242,7 +183,7 @@ export class ModelService extends Disposable implements IModelService {
         console.error(e);
         NOTREACHED();
       }
-    })
+    });
     this.endUpdate();
 
     return ret;

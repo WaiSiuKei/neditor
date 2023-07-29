@@ -1,10 +1,10 @@
 import { Optional } from '../../../base/common/typescript';
-import { IDocumentModel, IYDocumentModel} from '../../../common/model';
+import { IDocumentModel, IYDocumentModel } from '../../../common/model';
 import { URI } from '../../../base/common/uri';
 import { Event } from '../../../base/common/event';
 import { IModelContentChangedEvent } from './modelEvents';
 import { ScopedIdentifier } from '../../../canvas/canvasCommon/scope';
-import { IBlockNodeModel, IFragmentNodeModel, INodeModel, IRootNodeModel, ITextNodeModel, YNodeBase, NodeType } from '../../../common/node';
+import { IBlockNodeModel, IFragmentNodeModel, INodeModel, IRootNodeModel, ITextNodeModel, YNode, NodeType, NodeModelProxy } from '../../../common/node';
 import { IIdentifier } from '../../../common/common';
 import { ILocation } from './location';
 import { createDecorator } from '../../instantiation/common/instantiation';
@@ -19,7 +19,6 @@ export const RootNodeId = 'root';
 export enum UpdateMode {
   None,
   Transform,
-  Add,
 }
 
 type AttrsShouldBeBlank = 'id' | 'from' | 'order'
@@ -62,7 +61,8 @@ export interface IModelBase<T extends IDocumentModel> extends IDisposable {
   /**
    * 添加节点，待定
    */
-  addNode(at: ILocation, nodeInit: INodeInit): YNodeBase;
+  addNode(at: ILocation, nodeInit: INodeInit): NodeModelProxy;
+  _internal_addNode(at: ILocation, nodeInit: INodeInit): YNode;
   /**
    * 删除节点
    * @param at - 位置
@@ -89,32 +89,37 @@ export interface IModelBase<T extends IDocumentModel> extends IDisposable {
   /**
    * 根据 id 获取节点数据
    */
-  getNodeById(id: IIdentifier): Optional<YNodeBase>;
+  getNodeById(id: IIdentifier): Optional<NodeModelProxy>;
+  _internal_getNodeById(id: IIdentifier): Optional<YNode>;
+  getChildrenNodesOfId(id: IIdentifier): NodeModelProxy[];
+  _internal_getChildrenNodesOfId(id: IIdentifier): YNode[];
   /**
    * 获取父节点
    */
-  getParentNodeOfId(id: IIdentifier): Optional<YNodeBase>;
+  getParentNodeOfId(id: IIdentifier): Optional<NodeModelProxy>;
+  _internal_getParentNodeOfId(id: IIdentifier): Optional<YNode>;
   /**
    * 获取相邻前节点
    */
-  getPreviousSiblingNodeOfId(id: IIdentifier): Optional<YNodeBase>;
+  getPreviousSiblingNodeOfId(id: IIdentifier): Optional<NodeModelProxy>;
+  _internal_getPreviousSiblingNodeOfId(id: IIdentifier): Optional<YNode>;
   /**
    * 获取相邻后节点
    */
-  getNextSiblingNodeOfId(id: IIdentifier): Optional<YNodeBase>;
+  getNextSiblingNodeOfId(id: IIdentifier): Optional<NodeModelProxy>;
+  _internal_getNextSiblingNodeOfId(id: IIdentifier): Optional<YNode>;
   /**
    * 获取祖先节点列表，根节点在前
    * @param id - 查询的节点的 id
    */
-  getAncestorNodesOfId(id: IIdentifier): YNodeBase[]; // root 在最前
+  getAncestorNodesOfId(id: IIdentifier): NodeModelProxy[]; // root 在最前
+  _internal_getAncestorNodesOfId(id: IIdentifier): YNode[];
   /**
    * 是否为祖先节点
    * @param ancestorId - 查询的节点的 id
    * @param id - 被查询的节点的 id
    */
   isAncestorNodeOfId(ancestorId: IIdentifier, id: IIdentifier): boolean;
-  getChildrenNodesOfId(ID: IIdentifier): YNodeBase[];
-  queryNodes(condition: (n: YNodeBase) => boolean): YNodeBase[];
 }
 
 export interface ICanvasModel extends IModelBase<IDocumentModel> {
@@ -125,26 +130,6 @@ export type ICanvasModelLike = IModelBase<IDocumentModel>
 
 export interface IModelHistoryContext {
   /**
-   * 需要对 model 进行多次修改、一次记录的话，先调用这个，类似 github fork repo 的概念
-   */
-  fork(undoRedoSource: UndoRedoSource, cursorState: ScopedIdentifier[], symbol?: symbol): void;
-  /**
-   * 在 fork 版本上添加修改，类似 git add 的效果
-   */
-  add(cb: () => void): void;
-  /**
-   * 对 fork 版本的改动进行合并，类似 github 提 PR，只产生一条记录
-   */
-  commitAndMerge(
-    undoRedoSource: UndoRedoSource,
-    cursorState: ScopedIdentifier[],
-    symbol?: symbol,
-  ): void;
-  /**
-   * 对 fork 版本的改动进行废弃，这个 fork 版本也随之消失
-   */
-  checkout(): void;
-  /**
    * 提交一次修改、产生一次记录，类似于 git 里面的单独 commit
    */
   transform<T>(
@@ -153,7 +138,6 @@ export interface IModelHistoryContext {
     beforeCursorState: ScopedIdentifier[],
     getAfterCursorState: () => ScopedIdentifier[],
   ): T;
-  changeWithoutHistory<T>(cb: () => T): T;
 }
 
 export interface IModelOperationContext {

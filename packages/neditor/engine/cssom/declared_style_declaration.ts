@@ -1,3 +1,4 @@
+import { StyleMutationObserver } from './mutation_observer';
 import { StyleDeclaration } from './style_declaration';
 import { DeclaredStyleData } from './declared_style_data';
 import { Optional } from '@neditor/core/base/common/typescript';
@@ -11,6 +12,7 @@ import { Interpretor } from '../css_parser/interpretor';
 export class DeclaredStyleDeclaration extends StyleDeclaration {
   private data_: Optional<DeclaredStyleData>;
   private css_parser_: Interpretor | undefined = undefined;
+  private mutation_observer_: Optional<StyleMutationObserver>;
 
   constructor(data?: DeclaredStyleData)
   constructor(arg?: any) {
@@ -35,7 +37,7 @@ export class DeclaredStyleDeclaration extends StyleDeclaration {
     }
     this.css_parser_!.apply(this, `${property_name} : ${property_value};`);
 
-    // this.RecordMutation();
+    this.RecordMutation();
   }
 
   GetDeclaredPropertyValueStringByKey(key: PropertyKey): string {
@@ -67,11 +69,14 @@ export class DeclaredStyleDeclaration extends StyleDeclaration {
   }
 
   RecordMutation() {
-    NOTIMPLEMENTED();
-    // if (this.mutation_observer_) {
-    //   // Trigger layout update.
-    //   mutation_observer_.OnCSSMutation();
-    // }
+    if (this.mutation_observer_) {
+      // Trigger layout update.
+      this.mutation_observer_.OnCSSMutation();
+    }
+  }
+
+  set_mutation_observer(observer: StyleMutationObserver) {
+    this.mutation_observer_ = observer;
   }
 
   toString() {
