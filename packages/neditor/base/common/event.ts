@@ -12,13 +12,11 @@ import {
   toDisposable,
 } from './lifecycle';
 import { LinkedList } from './linkedList';
-import { once as onceFn } from '@neditor/core/base/common/functional';
 import { IWaitUntil } from './async';
 import { CancellationToken } from './cancellation';
 import { onUnexpectedError } from './errors';
 import { StopWatch } from './stopwatch';
-import { MicrotaskDelay } from "./symbols";
-import { IObservable, IObserver } from "./observableImpl/base";
+import { MicrotaskDelay } from './symbols';
 
 // -----------------------------------------------------------------------------------------------------------------------
 // Uncomment the next line to print warnings whenever an emitter with listeners is disposed. That is a sign of code smell.
@@ -31,6 +29,7 @@ const _enableDisposeWithListenerWarning = false;
 // See https://github.com/microsoft/vscode/issues/142851
 // -----------------------------------------------------------------------------------------------------------------------
 const _enableSnapshotPotentialLeakWarning = false;
+
 // _enableSnapshotPotentialLeakWarning = Boolean("TRUE"); // causes a linter warning so that it cannot be pushed
 
 class EventProfiling {
@@ -182,7 +181,10 @@ export namespace Event {
    * returned event causes this utility to leak a listener on the original event.
    */
   export function forEach<I>(event: Event<I>, each: (i: I) => void, disposable?: DisposableStore): Event<I> {
-    return snapshot((listener, thisArgs = null, disposables?) => event(i => { each(i); listener.call(thisArgs, i); }, null, disposables), disposable);
+    return snapshot((listener, thisArgs = null, disposables?) => event(i => {
+      each(i);
+      listener.call(thisArgs, i);
+    }, null, disposables), disposable);
   }
 
   /**
@@ -559,57 +561,7 @@ export namespace Event {
       store?.dispose();
     });
   }
-
-  class EmitterObserver<T> implements IObserver {
-
-    readonly emitter: Emitter<T>;
-
-    private _counter = 0;
-    private _hasChanged = false;
-
-    constructor(readonly obs: IObservable<T, any>, store: DisposableStore | undefined) {
-      const options: EmitterOptions = {
-        onWillAddFirstListener: () => {
-          obs.addObserver(this);
-        },
-        onDidRemoveLastListener: () => {
-          obs.removeObserver(this);
-        }
-      };
-      if (!store) {
-        _addLeakageTraceLogic(options);
-      }
-      this.emitter = new Emitter<T>(options);
-      if (store) {
-        store.add(this.emitter);
-      }
-    }
-
-    beginUpdate<T>(_observable: IObservable<T, void>): void {
-      // console.assert(_observable === this.obs);
-      this._counter++;
-    }
-
-    handleChange<T, TChange>(_observable: IObservable<T, TChange>, _change: TChange): void {
-      this._hasChanged = true;
-    }
-
-    endUpdate<T>(_observable: IObservable<T, void>): void {
-      if (--this._counter === 0) {
-        if (this._hasChanged) {
-          this._hasChanged = false;
-          this.emitter.fire(this.obs.get());
-        }
-      }
-    }
-  }
-
-  export function fromObservable<T>(obs: IObservable<T, any>, store?: DisposableStore): Event<T> {
-    const observer = new EmitterObserver(obs, store);
-    return observer.emitter.event;
-  }
 }
-
 
 export interface EmitterOptions {
   /**
