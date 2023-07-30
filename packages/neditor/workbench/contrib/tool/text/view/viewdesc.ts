@@ -51,35 +51,12 @@ export interface NodeView {
   /// its child nodes will be handled by ProseMirror.
   update?: (node: Node, decorations: readonly Decoration[], innerDecorations: DecorationSource) => boolean;
 
-  /// Can be used to override the way the node's selected status (as a
-  /// node selection) is displayed.
-  selectNode?: () => void;
-
-  /// When defining a `selectNode` method, you should also provide a
-  /// `deselectNode` method to remove the effect again.
-  deselectNode?: () => void;
-
   /// This will be called to handle setting the selection inside the
   /// node. The `anchor` and `head` positions are relative to the start
   /// of the node. By default, a DOM selection will be created between
   /// the DOM positions corresponding to those positions, but if you
   /// override it you can do something else.
-  setSelection?: (anchor: number, head: number, root: Document | ShadowRoot) => void;
-
-  /// Can be used to prevent the editor view from trying to handle some
-  /// or all DOM events that bubble up from the node view. Events for
-  /// which this returns true are not handled by the editor.
-  stopEvent?: (event: Event) => boolean;
-
-  /// Called when a DOM
-  /// [mutation](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver)
-  /// or a selection change happens within the view. When the change is
-  /// a selection change, the record will have a `type` property of
-  /// `"selection"` (which doesn't occur for native mutation records).
-  /// Return false if the editor should re-read the selection or
-  /// re-parse the range around the mutation, true if it can safely be
-  /// ignored.
-  ignoreMutation?: (mutation: MutationRecord) => boolean;
+  setSelection?: (anchor: number, head: number, root: Document) => void;
 
   /// Called when the node view is removed from the editor or the whole
   /// editor is destroyed. (Not available for marks.)
@@ -90,7 +67,7 @@ const NOT_DIRTY = 0, CHILD_DIRTY = 1, CONTENT_DIRTY = 2, NODE_DIRTY = 3;
 
 // Superclass for the various kinds of descriptions. Defines their
 // basic structure and shared methods.
-export class ViewDesc extends Disposable {
+export class ViewDesc extends Disposable implements NodeView {
   dirty = NOT_DIRTY;
   node!: Node | null;
 
@@ -104,6 +81,7 @@ export class ViewDesc extends Disposable {
     public updater: ICanvasUpdater,
   ) {
     super();
+    console.log(dom);
     // An expando property on the DOM node provides a link back to its
     // description.
     dom.pmViewDesc = this;
@@ -118,9 +96,6 @@ export class ViewDesc extends Disposable {
 
   // Used to check whether a given description corresponds to a
   // widget/mark/node.
-  matchesWidget(widget: Decoration) {
-    return false;
-  }
   matchesMark(mark: Mark) {
     return false;
   }
@@ -128,19 +103,6 @@ export class ViewDesc extends Disposable {
     return false;
   }
   matchesHack(nodeName: string) {
-    return false;
-  }
-
-  // When parsing in-editor content (in domchange.js), we allow
-  // descriptions to determine the parse rules that should be used to
-  // parse them.
-  // parseRule(): ParseRule | null {
-  //   return null
-  // }
-
-  // Used by the editor's event handler to ignore events that come
-  // from certain descs.
-  stopEvent(event: Event) {
     return false;
   }
 
@@ -303,8 +265,8 @@ export class ViewDesc extends Disposable {
     // If this points into the middle of a child, call through
     if (offset) return this.children[i].domFromPos(offset - this.children[i].border, side);
     // Go back if there were any zero-length widgets with side >= 0 before this point
-    for (let prev; i && !(prev = this.children[i - 1]).size && prev instanceof WidgetViewDesc && prev.side >= 0; i--) {
-    }
+    // for (let prev; i && !(prev = this.children[i - 1]).size && prev instanceof WidgetViewDesc && prev.side >= 0; i--) {
+    // }
     // Scan towards the first useable node
     if (side <= 0) {
       let prev, enter = true;
@@ -695,9 +657,6 @@ export class NodeViewDesc extends ViewDesc {
 // A dummy desc used to tag trailing BR or IMG nodes created to work
 // around contentEditable terribleness.
 class TrailingHackViewDesc extends ViewDesc {
-  parseRule() {
-    return { ignore: true };
-  }
   matchesHack(nodeName: string) {
     return this.dirty == NOT_DIRTY && this.dom.nodeName == nodeName;
   }
@@ -706,61 +665,6 @@ class TrailingHackViewDesc extends ViewDesc {
   }
   get ignoreForCoords() {
     return this.dom.nodeName == 'IMG';
-  }
-}
-
-// A widget desc represents a widget decoration, which is a DOM node
-// drawn between the document nodes.
-class WidgetViewDesc extends ViewDesc {
-  constructor(parent: ViewDesc, readonly widget: Decoration, view: IEditorView, pos: number) {
-    let self: WidgetViewDesc, dom = (widget.type as any).toDOM as WidgetConstructor;
-    if (typeof dom == 'function') dom = dom(view, () => {
-      if (!self) return pos;
-      if (self.parent) return self.parent.posBeforeChild(self);
-    });
-    if (!widget.type.spec.raw) {
-      if (dom.nodeType != 1) {
-        NOTIMPLEMENTED();
-        // let wrap = Document.GetInstance().createElement('span');
-        // wrap.appendChild(dom);
-        // dom = wrap;
-      }
-      ;(dom as HTMLElement).setAttribute('contentEditable', 'false');
-      // ;(dom as HTMLElement).classList.add("ProseMirror-widget")
-    }
-    super(parent, [], dom, null, view.updater);
-    this.widget = widget;
-    self = this;
-  }
-
-  matchesWidget(widget: Decoration) {
-    return this.dirty == NOT_DIRTY && widget.type.eq(this.widget.type);
-  }
-
-  // parseRule() {
-  //   return { ignore: true };
-  // }
-
-  stopEvent(event: Event) {
-    let stop = this.widget.spec.stopEvent;
-    return stop ? stop(event) : false;
-  }
-
-  ignoreMutation(mutation: MutationRecord) {
-    return (mutation.type as any) != 'selection' || this.widget.spec.ignoreSelection;
-  }
-
-  destroy() {
-    this.widget.type.destroy(this.dom);
-    super.destroy();
-  }
-
-  get domAtom() {
-    return true;
-  }
-
-  get side() {
-    return (this.widget.type as any).side as number;
   }
 }
 
@@ -782,11 +686,6 @@ class MarkViewDesc extends ViewDesc {
     //   spec = DOMSerializer.renderSpec(Document.GetInstance(), mark.type.spec.toDOM!(mark, inline)) as any
     // return new MarkViewDesc(parent, mark, spec.dom, spec.contentDOM || spec.dom as HTMLElement)
   }
-
-  // parseRule(): ParseRule | null {
-  //   if ((this.dirty & NODE_DIRTY) || this.mark.type.spec.reparseInView) return null
-  //   return { mark: this.mark.type.name, attrs: this.mark.attrs, contentElement: this.contentDOM || undefined }
-  // }
 
   matchesMark(mark: Mark) {
     return this.dirty != NODE_DIRTY && this.mark.eq(mark);
@@ -958,12 +857,6 @@ class TextViewDesc extends NodeViewDesc {
               innerDeco: DecorationSource, dom: DOMNode, nodeDOM: DOMNode, view: IEditorView) {
     super(parent, node, outerDeco, innerDeco, dom, null, nodeDOM, view, 0);
   }
-
-  // parseRule(): ParseRule {
-  //   let skip = this.nodeDOM.parentNode
-  //   while (skip && skip != this.dom && !(skip as any).pmIsDeco) skip = skip.parentNode
-  //   return { skip: (skip || true) as any }
-  // }
 
   update(node: Node, outerDeco: readonly Decoration[], innerDeco: DecorationSource, view: IEditorView) {
     if (this.dirty == NODE_DIRTY || (this.dirty != NOT_DIRTY && !this.inParent()) ||
