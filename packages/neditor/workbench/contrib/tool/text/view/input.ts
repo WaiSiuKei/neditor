@@ -1,41 +1,27 @@
-import { isMacintosh } from "../../../../../base/common/platform";
-import { NOTIMPLEMENTED } from "../../../../../base/common/notreached";
-import { IEditorView } from "./view";
+import { NOTIMPLEMENTED } from '../../../../../base/common/notreached';
+import { IEditorView } from './view';
 
 export class InputState {
-  shiftKey = false
-  mouseDown: MouseDown | null = null
-  lastKeyCode: number | null = null
-  lastKeyCodeTime = 0
-  lastClick = { time: 0, x: 0, y: 0, type: "" }
-  lastSelectionOrigin: string | null = null
-  lastSelectionTime = 0
-  lastIOSEnter = 0
-  lastIOSEnterFallbackTimeout = -1
-  lastFocus = 0
-  lastTouch = 0
-  lastAndroidDelete = 0
-  composing = false
-  composingTimeout = -1
-  compositionNodes: any[] = []
-  compositionEndedAt = -2e8
-}
-
-const selectNodeModifier: keyof MouseEvent = isMacintosh ? "metaKey" : "ctrlKey"
-
-function setSelectionOrigin(view: IEditorView, origin: string) {
-  NOTIMPLEMENTED()
-  // view.input.lastSelectionOrigin = origin
-  // view.input.lastSelectionTime = Date.now()
+  shiftKey = false;
+  mouseDown: MouseDown | null = null;
+  lastKeyCode: number | null = null;
+  lastKeyCodeTime = 0;
+  lastSelectionOrigin: string | null = null;
+  lastSelectionTime = 0;
+  lastFocus = 0;
+  composing = false;
+  composingTimeout = -1;
+  compositionNodes: any[] = [];
+  compositionEndedAt = -2e8;
 }
 
 export class MouseDown {
-  startDoc: Node
-  selectNode: boolean
-  allowDefault: boolean
-  delayedSelectionSync = false
-  mightDrag: { node: Node, pos: number, addAttr: boolean, setUneditable: boolean } | null = null
-  target: HTMLElement | null
+  startDoc: Node;
+  selectNode: boolean;
+  allowDefault: boolean;
+  delayedSelectionSync = false;
+  mightDrag: { node: Node, pos: number, addAttr: boolean, setUneditable: boolean } | null = null;
+  target: HTMLElement | null;
 
   constructor(
     readonly view: IEditorView,
@@ -43,7 +29,7 @@ export class MouseDown {
     readonly event: MouseEvent,
     readonly flushed: boolean
   ) {
-    NOTIMPLEMENTED()
+    NOTIMPLEMENTED();
     // this.startDoc = view.state.doc
     // this.selectNode = !!event[selectNodeModifier]
     // this.allowDefault = event.shiftKey
@@ -89,7 +75,7 @@ export class MouseDown {
   }
 
   done() {
-    NOTIMPLEMENTED()
+    NOTIMPLEMENTED();
     // this.view.root.removeEventListener("mouseup", this.up as any)
     // this.view.root.removeEventListener("mousemove", this.move as any)
     // if (this.mightDrag && this.target) {
@@ -103,7 +89,7 @@ export class MouseDown {
   }
 
   up(event: MouseEvent) {
-    NOTIMPLEMENTED()
+    NOTIMPLEMENTED();
     // this.done()
     //
     // if (!this.view.dom.contains(event.target as HTMLElement))
@@ -139,14 +125,13 @@ export class MouseDown {
   }
 
   move(event: MouseEvent) {
-    this.updateAllowDefault(event)
-    setSelectionOrigin(this.view, "pointer")
-    if (event.buttons == 0) this.done()
+    this.updateAllowDefault(event);
+    if (event.buttons == 0) this.done();
   }
 
   updateAllowDefault(event: MouseEvent) {
     if (!this.allowDefault && (Math.abs(this.event.x - event.clientX) > 4 ||
       Math.abs(this.event.y - event.clientY) > 4))
-      this.allowDefault = true
+      this.allowDefault = true;
   }
 }

@@ -60,8 +60,6 @@ export class ViewController {
     view.domObserver.forceFlush();
     if (view.someProp('handleKeyDown', f => f(view, event)) || captureKeyDown(view, event)) {
       event.preventDefault();
-    } else {
-      setSelectionOrigin(view, 'key');
     }
   }
 
@@ -90,7 +88,3 @@ export class ViewController {
   }
 }
 
-function setSelectionOrigin(view: IEditorView, origin: string) {
-  view.input.lastSelectionOrigin = origin;
-  view.input.lastSelectionTime = Date.now();
-}
