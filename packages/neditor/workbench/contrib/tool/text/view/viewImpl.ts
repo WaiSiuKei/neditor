@@ -55,10 +55,6 @@ export class EditorView extends Disposable implements IEditorView {
     }));
   }
 
-  get composing() {
-    return this.input.composing;
-  }
-
   hasFocus(): boolean {
     return this.domState.hasFocus();
   }
@@ -101,11 +97,6 @@ export class EditorView extends Disposable implements IEditorView {
 
   updateStateAfterMutation() {
     let state = this.state;
-    // When stored marks are added, stop composition, so that they can
-    // be displayed.
-    if (state.storedMarks && this.composing) {
-      clearComposition(this);
-    }
 
     // updateCursorWrapper(this)
     // let innerDeco = viewDecorations(this);
@@ -129,12 +120,6 @@ export class EditorView extends Disposable implements IEditorView {
   updateState(state: EditorState) {
     let prev = this.state;
     let updateSel = false;
-    // When stored marks are added, stop composition, so that they can
-    // be displayed.
-    if (state.storedMarks && this.composing) {
-      clearComposition(this);
-      updateSel = true;
-    }
     this.state = state;
 
     let innerDeco = viewDecorations(this);
@@ -167,7 +152,6 @@ export class EditorView extends Disposable implements IEditorView {
       // #1011, #1013, #1035).
       let forceSelUpdate = updateDoc
         && (isIE || isChrome)
-        && !this.composing
         && !prev.selection.empty
         && !state.selection.empty
         && selectionContextChanged(prev.selection, state.selection);

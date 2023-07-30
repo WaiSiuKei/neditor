@@ -16,8 +16,8 @@ export function begin() {
 
 const onEndCallbacks: Array<() => void> = [];
 export function end() {
-  editingMode = EditingMode.none;
   onEndCallbacks.forEach(fn => fn());
+  editingMode = EditingMode.none;
 }
 
 export function setOnEnd(fn: () => void) {

@@ -26,17 +26,7 @@ function clearNodeSelection(view: IEditorView) {
 }
 
 export function clearComposition(view: IEditorView) {
-  if (view.input.composing) {
-    view.input.composing = false;
-    view.input.compositionEndedAt = timestampFromCustomEvent();
-  }
   while (view.input.compositionNodes.length > 0) {
     view.input.compositionNodes.pop()!.markParentsDirty();
   }
-}
-
-function timestampFromCustomEvent() {
-  let event = document.createEvent('Event');
-  event.initEvent('event', true, true);
-  return event.timeStamp;
 }

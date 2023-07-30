@@ -54,7 +54,6 @@ export interface IEditorView extends IDisposable {
   domObserver: DOMObserver;
   updater: ICanvasUpdater;
   root: Document;
-  readonly composing: boolean;
   focused: boolean;
   hasFocus(): boolean;
   dispatch(tr: Transaction): void;

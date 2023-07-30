@@ -55,8 +55,6 @@ export class ViewController {
     }
     const { view } = this;
     view.input.shiftKey = event.keyCode === KeyCode.Shift || event.shiftKey;
-    view.input.lastKeyCode = event.keyCode;
-    view.input.lastKeyCodeTime = Date.now();
     view.domObserver.forceFlush();
     if (view.someProp('handleKeyDown', f => f(view, event)) || captureKeyDown(view, event)) {
       event.preventDefault();

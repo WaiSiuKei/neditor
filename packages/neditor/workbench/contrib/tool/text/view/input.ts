@@ -4,15 +4,10 @@ import { IEditorView } from './view';
 export class InputState {
   shiftKey = false;
   mouseDown: MouseDown | null = null;
-  lastKeyCode: number | null = null;
-  lastKeyCodeTime = 0;
   lastSelectionOrigin: string | null = null;
   lastSelectionTime = 0;
   lastFocus = 0;
-  composing = false;
-  composingTimeout = -1;
   compositionNodes: any[] = [];
-  compositionEndedAt = -2e8;
 }
 
 export class MouseDown {

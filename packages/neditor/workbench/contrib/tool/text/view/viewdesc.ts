@@ -2,7 +2,7 @@ import { DCHECK } from '../../../../../base/check';
 import { Disposable } from '../../../../../base/common/lifecycle';
 import { ICanvasUpdater } from '../canvasUpdater';
 import { DOMMatcher, DOMSerializer } from '../model/to_dom';
-import { DOMNode, nodeSize } from './dom';
+import { DOMNode } from './dom';
 import { HTMLElement } from '../../../../../engine/dom/html_element';
 import { Fragment, Node } from '../model';
 import { Document } from '../../../../../engine/dom/document';
@@ -13,8 +13,6 @@ import { Optional } from '../../../../../base/common/typescript';
 import { assertIsDefined, withNullAsUndefined } from '../../../../../base/common/type';
 import { IEditorView } from './view';
 import { NOTIMPLEMENTED, NOTREACHED } from '../../../../../base/common/notreached';
-import { TextSelection } from '../state/selection';
-import { Text } from '../../../../../engine/dom/text';
 import { HTMLBRElement } from '../../../../../engine/dom/html_br_element';
 import { AttrNameOfComponentType, ComponentTypes } from '../../../../../canvas/viewModel/path';
 
@@ -593,35 +591,6 @@ export class NodeViewDesc extends ViewDesc {
 
   }
 
-  // parseRule(): ParseRule | null {
-  //   // Experimental kludge to allow opt-in re-parsing of nodes
-  //   if (this.node.type.spec.reparseInView) return null
-  //   // FIXME the assumption that this can always return the current
-  //   // attrs means that if the user somehow manages to change the
-  //   // attrs in the dom, that won't be picked up. Not entirely sure
-  //   // whether this is a problem
-  //   let rule: ParseRule = { node: this.node.type.name, attrs: this.node.attrs }
-  //   if (this.node.type.whitespace == "pre") rule.preserveWhitespace = "full"
-  //   if (!this.contentDOM) {
-  //     rule.getContent = () => this.node.content
-  //   } else if (!this.contentLost) {
-  //     rule.contentElement = this.contentDOM
-  //   } else {
-  //     // Chrome likes to randomly recreate parent nodes when
-  //     // backspacing things. When that happens, this tries to find the
-  //     // new parent.
-  //     for (let i = this.children.length - 1; i >= 0; i--) {
-  //       let child = this.children[i]
-  //       if (this.dom.contains(child.dom.parentNode)) {
-  //         rule.contentElement = child.dom.parentNode as HTMLElement
-  //         break
-  //       }
-  //     }
-  //     if (!rule.contentElement) rule.getContent = () => Fragment.empty
-  //   }
-  //   return rule
-  // }
-
   matchesNode(node: Node, outerDeco: readonly Decoration[], innerDeco: DecorationSource) {
     return this.dirty == NOT_DIRTY && node.eq(this.node) &&
       sameOuterDeco(outerDeco, this.outerDeco) && innerDeco.eq(this.innerDeco);
@@ -642,10 +611,7 @@ export class NodeViewDesc extends ViewDesc {
   updateChildren(view: IEditorView, pos: number) {
     let inline = this.node.inlineContent;
     let off = pos;
-    let composition = view.input.composing ? this.localCompositionInfo(view, pos) : null;
-    let localComposition = composition && composition.pos > -1 ? composition : null;
-    let compositionInChild = composition && composition.pos < 0;
-    let updater = new ViewTreeUpdater(this, localComposition && localComposition.node, view);
+    let updater = new ViewTreeUpdater(this, null, view);
     iterDeco(
       this.node,
       this.innerDeco,
@@ -666,11 +632,6 @@ export class NodeViewDesc extends ViewDesc {
         let compIndex;
         if (updater.findNodeMatch(child, outerDeco, innerDeco, i)) {
           // Found precise match with existing node view
-        } else if (compositionInChild && view.state.selection.from > off &&
-          view.state.selection.to < off + child.nodeSize &&
-          (compIndex = updater.findIndexWithChild(composition!.node)) > -1 &&
-          updater.updateNodeAt(child, outerDeco, innerDeco, compIndex, view)) {
-          // Updated the specific node that holds the composition
         } else if (updater.updateNextNode(child, outerDeco, innerDeco, view, i)) {
           // Could update an existing node to reflect this node
         } else {
@@ -687,56 +648,8 @@ export class NodeViewDesc extends ViewDesc {
 
     // Sync the DOM if anything changed
     if (updater.changed || this.dirty == CONTENT_DIRTY) {
-      // May have to protect focused DOM from being changed if a composition is active
-      if (localComposition) this.protectLocalComposition(view, localComposition);
       renderDescs(this.contentDOM!, this.children, view);
     }
-  }
-
-  localCompositionInfo(view: IEditorView, pos: number): { node: Text, pos: number, text: string } | null {
-    // Only do something if both the selection and a focused text node
-    // are inside of this node
-    let { from, to } = view.state.selection;
-    if (!(view.state.selection instanceof TextSelection) || from < pos || to > pos + this.node.content.size) return null;
-    let sel = view.domSelection();
-    let textNode = nearbyTextNode(sel.focusNode!, sel.focusOffset);
-    if (!textNode || !this.dom.contains(withNullAsUndefined(textNode.parentNode))) return null;
-
-    if (this.node.inlineContent) {
-      // Find the text in the focused node in the node, stop if it's not
-      // there (may have been modified through other means, in which
-      // case it should overwritten)
-      let text = textNode.nodeValue!;
-      let textPos = findTextInFragment(this.node.content, text, from - pos, to - pos);
-      return textPos < 0 ? null : { node: textNode, pos: textPos, text };
-    } else {
-      return { node: textNode, pos: -1, text: '' };
-    }
-  }
-
-  protectLocalComposition(view: IEditorView, { node, pos, text }: { node: Text, pos: number, text: string }) {
-    // The node is already part of a local view desc, leave it there
-    if (this.getDesc(node)) return;
-
-    // Create a composition view for the orphaned nodes
-    let topNode: DOMNode = node;
-    for (; ; topNode = topNode.parentNode!) {
-      if (topNode.parentNode == this.contentDOM) break;
-      while (topNode.previousSibling) {
-        debugger
-        topNode.parentNode!.removeChild(topNode.previousSibling);
-      }
-      while (topNode.nextSibling) {
-        debugger
-        topNode.parentNode!.removeChild(topNode.nextSibling);
-      }
-      if (topNode.pmViewDesc) topNode.pmViewDesc = undefined;
-    }
-    let desc = new CompositionViewDesc(this, topNode, node, text, this.view);
-    view.input.compositionNodes.push(desc);
-
-    // Patch up this.children to contain the composition view
-    this.children = replaceNodes(this.children, pos, pos + text.length, view, desc);
   }
 
   // If this desc must be updated to match the given node decoration,
@@ -746,10 +659,6 @@ export class NodeViewDesc extends ViewDesc {
       !node.sameMarkup(this.node)) return false;
     this.updateInner(node, outerDeco, innerDeco, view);
     return true;
-  }
-
-  forceUpdate(node: Node, outerDeco: readonly Decoration[], innerDeco: DecorationSource, view: IEditorView) {
-    this.updateInner(node, outerDeco, innerDeco, view);
   }
 
   updateInner(node: Node, outerDeco: readonly Decoration[], innerDeco: DecorationSource, view: IEditorView) {
@@ -772,24 +681,6 @@ export class NodeViewDesc extends ViewDesc {
       this.dom.pmViewDesc = this;
     }
     this.outerDeco = outerDeco;
-  }
-
-  // Mark this node as being the selected node.
-  selectNode() {
-    if (this.nodeDOM.nodeType == 1) {
-      // (this.nodeDOM as HTMLElement).classList.add("ProseMirror-selectednode")
-    }
-    if (this.contentDOM || !this.node.type.spec.draggable) {
-      (this.dom as HTMLElement).setAttribute('draggable', 'true');
-    }
-  }
-
-  // Remove selected node marking from this node.
-  deselectNode() {
-    if (this.nodeDOM.nodeType == 1) {
-      // (this.nodeDOM as HTMLElement).classList.remove("ProseMirror-selectednode")
-    }
-    if (this.contentDOM || !this.node.type.spec.draggable) (this.dom as HTMLElement).removeAttribute('draggable');
   }
 
   get domAtom() {
@@ -870,29 +761,6 @@ class WidgetViewDesc extends ViewDesc {
 
   get side() {
     return (this.widget.type as any).side as number;
-  }
-}
-
-class CompositionViewDesc extends ViewDesc {
-  constructor(parent: ViewDesc, dom: DOMNode, readonly textDOM: Text, readonly text: string, view: IEditorView) {
-    super(parent, [], dom, null, view.updater);
-  }
-
-  get size() {
-    return this.text.length;
-  }
-
-  localPosFromDOM(dom: DOMNode, offset: number) {
-    if (dom != this.textDOM) return this.posAtStart + (offset ? this.size : 0);
-    return this.posAtStart + offset;
-  }
-
-  domFromPos(pos: number) {
-    return { node: this.textDOM, offset: pos };
-  }
-
-  ignoreMutation(mut: MutationRecord) {
-    return mut.type === 'characterData' && mut.target.nodeValue == mut.oldValue;
   }
 }
 
@@ -1542,48 +1410,6 @@ function rm(dom: DOMNode) {
   let next = dom.nextSibling;
   dom.parentNode!.removeChild(dom);
   return next;
-}
-
-function nearbyTextNode(node: DOMNode, offset: number): Text | null {
-  for (; ;) {
-    if (node.nodeType == 3) return node as Text;
-    if (node.nodeType == 1 && offset > 0) {
-      if (node.childNodes.length > offset && node.childNodes[offset]!.nodeType == 3)
-        return node.childNodes[offset] as Text;
-      node = node.childNodes[offset - 1]!;
-      offset = nodeSize(node);
-    } else if (node.nodeType == 1 && offset < node.childNodes.length) {
-      node = node.childNodes[offset]!;
-      offset = 0;
-    } else {
-      return null;
-    }
-  }
-}
-
-// Find a piece of text in an inline fragment, overlapping from-to
-function findTextInFragment(frag: Fragment, text: string, from: number, to: number) {
-  for (let i = 0, pos = 0; i < frag.childCount && pos <= to;) {
-    let child = frag.child(i++), childStart = pos;
-    pos += child.nodeSize;
-    if (!child.isText) continue;
-    let str = child.text!;
-    while (i < frag.childCount) {
-      let next = frag.child(i++);
-      pos += next.nodeSize;
-      if (!next.isText) break;
-      str += next.text;
-    }
-    if (pos >= from) {
-      let found = childStart < to ? str.lastIndexOf(text, to - childStart - 1) : -1;
-      if (found >= 0 && found + text.length + childStart >= from)
-        return childStart + found;
-      if (from == to && str.length >= (to + text.length) - childStart &&
-        str.slice(to - childStart, to - childStart + text.length) == text)
-        return to;
-    }
-  }
-  return -1;
 }
 
 // Replace range from-to in an array of view descs with replacement
