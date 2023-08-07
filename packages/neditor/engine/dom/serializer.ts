@@ -95,8 +95,7 @@ function WriteAttributes(element: Element, out_stream: string): string {
     // attribute map.
     const htmlEl = element.AsHTMLElement();
     if (htmlEl) {
-      out_stream += ' style=';
-      out_stream += htmlEl.style.toString();
+      out_stream += ` style="${htmlEl.style.toString()}"`;
     }
   }
 

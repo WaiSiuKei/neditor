@@ -1,7 +1,7 @@
 import { isArrayShallowEqual } from '../../base/common/array';
 import { DeferredPromise } from '../../base/common/async';
-import { begin, end } from '../../base/common/reactivity';
 import { TextToolID } from '../../workbench/contrib/tool/text/textTool';
+import { begin, end } from '../canvasCommon/scheduler';
 import { hitTest } from '../element/collision';
 import { CanvasElement } from '../element/types';
 import { getElementsAtPosition } from '../scene/comparisons';
@@ -243,6 +243,7 @@ export class Canvas extends Disposable implements ICanvas {
       return this._historyHelper.transform(cb);
     } finally {
       end();
+      this.view.layoutManager.DoLayoutAndProduceRenderTree();
     }
   }
 

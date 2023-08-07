@@ -1,7 +1,7 @@
 import { Context, createContext } from './context';
 import { walk } from './walk';
 import { remove } from '@vue/shared';
-import { stop } from '../../../../../base/common/reactivity';
+import { stop } from '@vue/reactivity';
 import { Element } from '../../../../../engine/dom/element';
 import { Text } from '../../../../../engine/dom/text';
 import { Node } from '../../../../../engine/dom/node';
@@ -54,11 +54,7 @@ export class Block {
         node = next;
       }
     } else {
-      if (!this.template.parentNode && Reflect.has(this.template, 'pmViewDesc')) {
-        // 应该被prosemirror移除了
-      } else {
-        this.template.parentNode?.removeChild(this.template);
-      }
+      this.template.parentNode!.removeChild(this.template);
     }
     this.teardown();
   }

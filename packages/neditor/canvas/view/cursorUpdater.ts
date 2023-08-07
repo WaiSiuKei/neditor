@@ -28,8 +28,8 @@ export class CursorUpdater extends Disposable {
       this.view.setCursor(CursorStyle.text);
       const range = selection.getRangeAt(0);
       if (!range) NOTREACHED();
-      const end = range.endContainer();
-      const endOffset = range.endOffset();
+      const end = range.endContainer;
+      const endOffset = range.endOffset;
       if (end.IsElement()) {
         if (end.tagName === HTMLParagraphElement.kTagName) {
           DCHECK(endOffset === 0 || endOffset === 1);

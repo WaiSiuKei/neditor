@@ -1162,7 +1162,7 @@ export abstract class Box extends Disposable {
     }
   }
 
-// Converts a layout subtree into a render subtree.
+  // Converts a layout subtree into a render subtree.
 // This method defines the overall strategy of the conversion and relies
 // on the subclasses to provide the actual content.
   RenderAndAnimate(
@@ -1170,8 +1170,11 @@ export abstract class Box extends Disposable {
     offset_from_parent_node: Vector2dF,
     stacking_context: ContainerBox): void {
     DCHECK(stacking_context);
+    console.log('offset_from_parent_node', offset_from_parent_node, this.node?.AsElement()?.getAttribute('id'));
+    if (this.node?.AsElement()?.getAttribute('id') === 'p1') debugger;
 
-    let border_box_offset = new Vector2dF(this.left().toFloat() + this.margin_left().toFloat(),
+    let border_box_offset = new Vector2dF(
+      this.left().toFloat() + this.margin_left().toFloat(),
       this.top().toFloat() + this.margin_top().toFloat());
     border_box_offset.ADD_ASSIGN(offset_from_parent_node);
 
@@ -1200,8 +1203,8 @@ export abstract class Box extends Disposable {
     this.cached_render_tree_node_info_ = new CachedRenderTreeNodeInfo(border_box_offset);
 
     let opacity = (this.computed_style()!.opacity as NumberValue).value();
-//  bool opacity_animated =
-//      animations().IsPropertyAnimated(cssom::kOpacityProperty);
+    //  bool opacity_animated =
+    //      animations().IsPropertyAnimated(cssom::kOpacityProperty);
     let opacity_animated = false;
     if (opacity <= 0.0 && !opacity_animated) {
       // If the box has 0 opacity, and opacity is not animated, then we do not
@@ -1218,7 +1221,7 @@ export abstract class Box extends Disposable {
     }
 
     let border_node_builder = new CompositionNodeBuilder(border_box_offset);
-//  AnimateNode::Builder animate_node_builder;
+    //  AnimateNode::Builder animate_node_builder;
 
     let rounded_corners = this.ComputeRoundedCorners();
 
@@ -1626,9 +1629,9 @@ export abstract class Box extends Disposable {
 //   https://www.w3.org/TR/css3-transforms/#transformable-element
   abstract IsTransformable(): boolean
 
-// Updates the source container box's cross references with its descendants in
-// the box tree that have it as their containing block or stacking context.
-// This function is called recursively.
+  // Updates the source container box's cross references with its descendants in
+  // the box tree that have it as their containing block or stacking context.
+  // This function is called recursively.
   UpdateCrossReferencesOfContainerBox(
     source_box: ContainerBox,
     nearest_containing_block: RelationshipToBox,
@@ -1659,7 +1662,6 @@ export abstract class Box extends Disposable {
       // Otherwise, the element's position is "relative"; the containing block is
       // formed by the content edge of the nearest block container ancestor box,
       // which is the initial value of |my_nearest_containing_block|.
-
       if (my_nearest_containing_block == RelationshipToBox.kIsBox) {
         source_box.AddContainingBlockChild(this);
       }
@@ -1671,8 +1673,7 @@ export abstract class Box extends Disposable {
     // https://www.w3.org/TR/css3-transforms/#transform-rendering.
     // Stacking contexts only matter for descendant positioned boxes and child
     // stacking contexts.
-    if (nearest_stacking_context == RelationshipToBox.kIsBox &&
-      (is_positioned || this.IsStackingContext())) {
+    if (nearest_stacking_context == RelationshipToBox.kIsBox && (is_positioned || this.IsStackingContext())) {
       // Fixed position elements cannot have a containing block that is not also
       // a stacking context, so it is impossible for it to have a containing
       // block that is closer than the stacking context, although it can be

@@ -39,10 +39,10 @@ import { FormattingContext } from './formatting_context';
 import { WrapAtPolicy, WrapOpportunityPolicy, WrapResult } from './line_wrapping';
 import { DCHECK } from '@neditor/core/base/check';
 import { DCHECK_EQ } from '@neditor/core/base/check_op';
-import { QuadF } from "../math/quad_f";
-import { MapCoordinatesFlags } from "./map_coordinates_flags";
-import { NOTIMPLEMENTED } from "@neditor/core/base/common/notreached";
-import { RectF } from "../math/rect_f";
+import { QuadF } from '../math/quad_f';
+import { MapCoordinatesFlags } from './map_coordinates_flags';
+import { NOTIMPLEMENTED } from '@neditor/core/base/common/notreached';
+import { RectF } from '../math/rect_f';
 
 export abstract class BlockContainerBox extends ContainerBox {
   // A vertical offset of the baseline of the last child box that has one,
@@ -356,8 +356,7 @@ export abstract class BlockContainerBox extends ContainerBox {
       // If the element has 'position: absolute', ...
       // the containing block is formed by the padding edge of the ancestor.
       //   http://www.w3.org/TR/CSS21/visudet.html#containing-block-details
-      absolute_child_layout_params.containing_block_size.set_width(
-        this.GetPaddingBoxWidth());
+      absolute_child_layout_params.containing_block_size.set_width(this.GetPaddingBoxWidth());
       // The "auto" height is not known yet but it shouldn't matter for in-flow
       // children, as per:
       //
@@ -368,8 +367,7 @@ export abstract class BlockContainerBox extends ContainerBox {
       if (maybe_height) {
         child_layout_params.containing_block_size.set_height(maybe_height);
       } else if (maybe_top && maybe_bottom) {
-        child_layout_params.containing_block_size.set_height(
-          containing_block_size.height().SUB(maybe_top).SUB(maybe_bottom));
+        child_layout_params.containing_block_size.set_height(containing_block_size.height().SUB(maybe_top).SUB(maybe_bottom));
       } else {
         child_layout_params.containing_block_size.set_height(new LayoutUnit);
       }
@@ -378,29 +376,27 @@ export abstract class BlockContainerBox extends ContainerBox {
     child_layout_params.maybe_margin_bottom = maybe_margin_bottom;
     child_layout_params.maybe_height = maybe_height;
 
-    let formatting_context =
-      this.UpdateRectOfInFlowChildBoxes(child_layout_params);
+    let formatting_context = this.UpdateRectOfInFlowChildBoxes(child_layout_params);
 
     if (this.IsAbsolutelyPositioned()) {
       this.UpdateHeightAssumingAbsolutelyPositionedBox(
         containing_block_size.height(), maybe_top, maybe_bottom, maybe_height,
         maybe_margin_top, maybe_margin_bottom, formatting_context);
     } else {
-      this.UpdateHeightAssumingInFlowBox(maybe_height, maybe_margin_top,
+      this.UpdateHeightAssumingInFlowBox(
+        maybe_height,
+        maybe_margin_top,
         maybe_margin_bottom, formatting_context
       );
-
     }
 
     // Positioned children are laid out at the end as their position and size
     // depends on the size of the containing block as well as possibly their
     // previously calculated in-flow position.
     child_layout_params.containing_block_size.set_height(this.height());
-    absolute_child_layout_params.containing_block_size.set_height(
-      this.GetPaddingBoxHeight());
+    absolute_child_layout_params.containing_block_size.set_height(this.GetPaddingBoxHeight());
 
-    this.UpdateRectOfPositionedChildBoxes(child_layout_params,
-      absolute_child_layout_params);
+    this.UpdateRectOfPositionedChildBoxes(child_layout_params, absolute_child_layout_params);
 
     if (formatting_context.maybe_baseline_offset_from_top_content_edge()) {
       this.maybe_baseline_offset_from_top_margin_edge_ =
@@ -789,13 +785,13 @@ export abstract class BlockContainerBox extends ContainerBox {
   }
 
   QuadsForSelfInternal(quads: QuadF[], mode: MapCoordinatesFlags, map_to_absolute: boolean) {
-    let local_rect = this.BorderBoxRect()
+    let local_rect = this.BorderBoxRect();
     if (map_to_absolute) {
-      const border_box = this.GetBorderBoxFromRoot(false)
-      quads.push(QuadF.fromRectF(RectF.fromRectLayoutUnit(border_box)))
+      const border_box = this.GetBorderBoxFromRoot(false);
+      quads.push(QuadF.fromRectF(RectF.fromRectLayoutUnit(border_box)));
     } else {
-      const border_box = this.BorderBoxRect()
-      quads.push(QuadF.fromRectF(RectF.fromRectLayoutUnit(border_box)))
+      const border_box = this.BorderBoxRect();
+      quads.push(QuadF.fromRectF(RectF.fromRectLayoutUnit(border_box)));
     }
   }
 }

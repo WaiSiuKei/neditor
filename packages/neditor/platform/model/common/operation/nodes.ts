@@ -47,9 +47,7 @@ export function insertNodeOperation(at: ILocation, nodeInit: INodeInit): IOperat
       }
     } else if (direction === DirectionType.backward || direction === DirectionType.forward) {
       const parent = model._internal_getParentNodeOfId(ref);
-      if (!parent) {
-        throw new Error('404');
-      }
+      DCHECK(parent);
       node.set('from', parent.get('id') as string);
       const refNode = model._internal_getNodeById(ref);
       DCHECK(refNode);
@@ -106,14 +104,12 @@ function deleteSibling(model: ICanvasModelLike, id: IIdentifier, direction: Dire
   const siblings = model._internal_getChildrenNodesOfId(from).sort((a, b) => cmp(a.get('order') as string, b.get('order') as string));
   const idxOfSelf = siblings.indexOf(node);
   if (direction === DirectionType.forward) {
-    if (idxOfSelf === 0) {
-      throw new Error('400');
-    }
+    const idxTodelete = idxOfSelf - 1;
+    DCHECK(idxTodelete >= 0 && idxTodelete < siblings.length);
     deleteIt(model, siblings[idxOfSelf - 1].get('id') as string);
   } else if (direction === DirectionType.backward) {
-    if (idxOfSelf === siblings.length - 1) {
-      throw new Error('400');
-    }
+    const idxTodelete = idxOfSelf + 1;
+    DCHECK(idxTodelete >= 0 && idxTodelete < siblings.length);
     deleteIt(model, siblings[idxOfSelf + 1].get('id') as string);
   } else {
     NOTREACHED();

@@ -2,7 +2,7 @@ import {
   effect as rawEffect,
   reactive,
   ReactiveEffectRunner
-} from '../../../../../base/common/reactivity';
+} from '@vue/reactivity';
 import { hasOwn } from '@vue/shared';
 import { Block } from './block';
 import { Directive } from './directives';

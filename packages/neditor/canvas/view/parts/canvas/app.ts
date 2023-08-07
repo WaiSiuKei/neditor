@@ -1,4 +1,5 @@
 import { toDisposable } from '../../../../base/common/lifecycle';
+import { HTMLSpanElement } from '../../../../engine/dom/html_span_element';
 import {
   IBlockNodeViewModel,
   ICanvasViewModel,
@@ -11,11 +12,7 @@ import { createApp } from './adapter/app';
 import { NOTIMPLEMENTED } from '../../../../base/common/notreached';
 import { Document } from '../../../../engine/dom/document';
 import { NodeType } from '../../../../common/node';
-import { HTMLParagraphElement } from '../../../../engine/dom/html_paragraph_element';
 import { AttrNameOfComponentType, AttrNameOfId, AttrNameOfRoot, AttrNameOfScope } from '../../../viewModel/path';
-import { Optional } from '../../../../base/common/typescript';
-import { HTMLElement } from '../../../../engine/dom/html_element';
-import { DCHECK_EQ } from '../../../../base/check_op';
 
 export function mountAPP(vm: ICanvasViewModel, document: Document) {
   const body = document.createElement('body');
@@ -40,7 +37,7 @@ export function mountAPP(vm: ICanvasViewModel, document: Document) {
       return createBlock(node, scopeChain);
     }
     if (isTextNodeViewModel(node)) {
-      return createParagraph(node, scopeChain);
+      return createInline(node, scopeChain);
     }
     NOTIMPLEMENTED();
   };
@@ -76,25 +73,19 @@ export function mountAPP(vm: ICanvasViewModel, document: Document) {
     };
   };
 
-  const createParagraph = (vm: ITextNodeViewModel, scope = '') => {
+  const createInline = (vm: ITextNodeViewModel, scope = '') => {
     return {
       vm,
       scope,
       nodeType: NodeType.Text,
-      $template: (reuse: Optional<HTMLElement>) => {
-        if (reuse) {
-          DCHECK_EQ(reuse.tagName, HTMLParagraphElement.kTagName);
-        }
-        const p = reuse || document.createElement(HTMLParagraphElement.kTagName);
-        // p.setAttribute(AttrNameOfId, vm.id);
-        // p.setAttribute(VirtualDOMTypeKey, NodeType.Text);
-        // p.setAttribute(AttrNameOfScope, scope || "")
-        p.setAttribute(`v-bind:${AttrNameOfId}`, 'vm.id');
-        p.setAttribute(`v-bind:${AttrNameOfComponentType}`, 'nodeType');
-        p.setAttribute(`v-bind:${AttrNameOfScope}`, 'scope');
-        p.setAttribute('v-bind:style', 'vm.style');
-        p.setAttribute('v-text', 'vm.content');
-        return p;
+      $template: () => {
+        const el = document.createElement(HTMLSpanElement.kTagName);
+        el.setAttribute(`v-bind:${AttrNameOfId}`, 'vm.id');
+        el.setAttribute(`v-bind:${AttrNameOfComponentType}`, 'nodeType');
+        el.setAttribute(`v-bind:${AttrNameOfScope}`, 'scope');
+        el.setAttribute('v-bind:style', 'vm.style');
+        el.setAttribute('v-text', 'vm.content');
+        return el;
       },
     };
   };

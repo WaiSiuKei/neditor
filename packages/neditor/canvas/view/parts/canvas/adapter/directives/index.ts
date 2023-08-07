@@ -1,5 +1,5 @@
 import { Context } from '../context'
-import { effect as rawEffect } from '../../../../../../base/common/reactivity';
+import { effect as rawEffect } from '@vue/reactivity';
 import { bind } from './bind'
 import { show } from './show'
 import { text } from './text'

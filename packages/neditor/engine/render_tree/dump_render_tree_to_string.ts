@@ -12,7 +12,7 @@ import type { TextNode } from './text_node';
 import type { LinearGradientBrush, RadialGradientBrush, SolidColorBrush } from './brush';
 import { BrushVisitor } from './brush_visitor';
 import type { ImageNode } from './image_node';
-import { FreehandNode } from "./freehand_node";
+import { FreehandNode } from './freehand_node';
 
 // A render tree visitor that accumulates node dumps to text within a
 // std::ostringstream object.
@@ -33,8 +33,7 @@ export class DebugTreePrinter extends NodeVisitor {
 
     this.indent_++;
 
-    let children =
-      composition.data().children();
+    let children = composition.data().children();
     for (let node of children) {
       node.Accept(this);
     }

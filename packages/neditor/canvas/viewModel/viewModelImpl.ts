@@ -1,4 +1,5 @@
-import { begin, end, reactive } from '../../base/common/reactivity';
+import { reactive } from '@vue/reactivity';
+import { begin, end } from '../canvasCommon/scheduler';
 import {
   ICanvasViewModel,
   INodeViewModel,

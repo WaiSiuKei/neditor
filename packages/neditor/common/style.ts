@@ -110,6 +110,10 @@ export const CommonStyleDeclarationSample = {
 } as const;
 
 const BlockLevelStyleDeclarationSample = {
+  overflowWrap: '',
+  whiteSpace: '',
+  lineHeight: '',
+  position: '',
   // textAlign: '',
   // 'text-align': '',
   // 'text-align-last': '',
@@ -137,10 +141,10 @@ const BlockLevelStyleDeclarationSample = {
 } as const;
 
 const InlineLevelStyleDeclarationSample = {
-  display: 'block' as const,
+  display: '',
+  position: '',
+
   color: '',
-  overflowWrap: '',
-  whiteSpace: '',
 
   fontSize: '',
   fontFamily: '',
@@ -160,7 +164,6 @@ const InlineLevelStyleDeclarationSample = {
   // 'font-variant-numeric': '',
   // 'font-variant-position': '',
   // 'font-weight': '',
-  lineHeight: '',
 } as const;
 
 type CommonStyleDeclarationKeys = keyof typeof CommonStyleDeclarationSample;

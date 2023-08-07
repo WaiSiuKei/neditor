@@ -133,7 +133,7 @@ export class LayoutManager implements DocumentObserver {
     // if (this.layout_trigger_ == kOnDocumentMutation) {
     this.DirtyLayout();
     // }
-    this.DoLayoutAndProduceRenderTree();
+    // this.DoLayoutAndProduceRenderTree();
   }
 
   StartLayoutTimer() {

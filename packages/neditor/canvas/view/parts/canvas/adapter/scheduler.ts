@@ -1,4 +1,4 @@
-import { setOnEnd } from '../../../../../base/common/reactivity';
+import { setOnEnd } from '../../../../canvasCommon/scheduler';
 
 let queued = false;
 const queue: Function[] = [];
@@ -18,4 +18,4 @@ const flushJobs = () => {
   queued = false;
 };
 
-setOnEnd(flushJobs)
+setOnEnd(flushJobs);

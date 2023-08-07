@@ -1,7 +1,7 @@
 import { cmp } from '../../../base/common/bignumber';
 import { Emitter, Event } from '../../../base/common/event';
 import { Disposable, IDisposable, toDisposable } from '../../../base/common/lifecycle';
-import { NOTREACHED } from '../../../base/common/notreached';
+import { NOTIMPLEMENTED, NOTREACHED } from '../../../base/common/notreached';
 import { deepClone, keys } from '../../../base/common/objects';
 import { Optional } from '../../../base/common/typescript';
 import { URI } from '../../../base/common/uri';
@@ -13,9 +13,9 @@ import {
   IYDocumentModel,
   IYNodeModels
 } from '../../../common/model';
-import { getNodeFrom, getNodeId, getNodeOrder, NodeModelProxy, toOptionalProxy, toProxy, YNode, YNodeValue } from '../../../common/node';
+import { getNodeFrom, getNodeId, getNodeOrder, getNodeType, NodeType, YNode, YNodeValue } from '../../../common/node';
 import { DirectionType, ILocation } from './location';
-import { IModelBase, IModelOperationContext, IModelService, INodeInit, UpdateMode } from './model';
+import { AncestorModelProxy, BlockNodeModelProxy, Descendant, DescendantModelProxy, IModelBase, IModelOperationContext, IModelService, INodeInit, NodeModelProxy, TextNodeModelProxy, toOptionalProxy, toProxy } from './model';
 import {
   insertNodeOperation,
   removeNodeOperation,
@@ -227,8 +227,8 @@ export class ModelOperator<T extends IDocumentModel> extends Disposable implemen
     return insertNodeOperation(deepClone(at), init)(this);
   }
 
-  addNode(at: ILocation, init: INodeInit): NodeModelProxy {
-    return toProxy(this._internal_addNode(at, init));
+  addNode(at: ILocation, init: INodeInit): DescendantModelProxy {
+    return toProxy(this._internal_addNode(at, init), this);
   }
 
   removeNode(at: ILocation) {
@@ -260,8 +260,8 @@ export class ModelOperator<T extends IDocumentModel> extends Disposable implemen
     return getModelNodes(this._yModel).get(id);
   }
 
-  getNodeById(id: IIdentifier) {
-    return toOptionalProxy(this._internal_getNodeById(id));
+  getNodeById(id: IIdentifier): Optional<NodeModelProxy> {
+    return toOptionalProxy(this._internal_getNodeById(id), this);
   }
 
   _internal_getParentNodeOfId(id: IIdentifier) {
@@ -270,8 +270,8 @@ export class ModelOperator<T extends IDocumentModel> extends Disposable implemen
     const from = getNodeFrom(node);
     return from ? this._internal_getNodeById(from) : undefined;
   }
-  getParentNodeOfId(id: IIdentifier) {
-    return toOptionalProxy(this._internal_getParentNodeOfId(id));
+  getParentNodeOfId(id: IIdentifier): Optional<AncestorModelProxy> {
+    return toOptionalProxy(this._internal_getParentNodeOfId(id), this);
   }
   _internal_getPreviousSiblingNodeOfId(id: string) {
     const parent = this._internal_getParentNodeOfId(id);
@@ -317,17 +317,17 @@ export class ModelOperator<T extends IDocumentModel> extends Disposable implemen
     const nodeArr = Array.from(this._yModel.get('nodes')!.values() as IterableIterator<YNode>);
     return nodeArr.filter(n => getNodeFrom(n) === id).sort((a, b) => cmp(getNodeOrder(a), getNodeOrder(b)));
   }
-  getAncestorNodesOfId(id: IIdentifier): NodeModelProxy[] {
-    return this._internal_getAncestorNodesOfId(id).map(toProxy);
+  getAncestorNodesOfId(id: IIdentifier): AncestorModelProxy[] {
+    return this._internal_getAncestorNodesOfId(id).map(n => toProxy(n, this));
   }
-  getChildrenNodesOfId(id: IIdentifier): NodeModelProxy[] {
-    return this._internal_getChildrenNodesOfId(id).map(toProxy);
+  getChildrenNodesOfId(id: IIdentifier): DescendantModelProxy[] {
+    return this._internal_getChildrenNodesOfId(id).map(n => toProxy(n, this));
   }
-  getNextSiblingNodeOfId(id: IIdentifier): Optional<NodeModelProxy> {
-    return toOptionalProxy(this._internal_getNextSiblingNodeOfId(id));
+  getNextSiblingNodeOfId(id: IIdentifier): Optional<DescendantModelProxy> {
+    return toOptionalProxy(this._internal_getNextSiblingNodeOfId(id), this);
   }
-  getPreviousSiblingNodeOfId(id: IIdentifier): Optional<NodeModelProxy> {
-    return toOptionalProxy(this._internal_getPreviousSiblingNodeOfId(id));
+  getPreviousSiblingNodeOfId(id: IIdentifier): Optional<DescendantModelProxy> {
+    return toOptionalProxy(this._internal_getPreviousSiblingNodeOfId(id), this);
   }
 }
 

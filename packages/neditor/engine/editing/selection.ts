@@ -1,10 +1,11 @@
+import { Emitter, Event } from '@neditor/core/base/common/event';
+import { Disposable } from '@neditor/core/base/common/lifecycle';
+import { NOTIMPLEMENTED } from '../../base/common/notreached';
+import { MicrotaskDelay } from '../../base/common/symbols';
 import { Optional } from '../../base/common/typescript';
 import type { Document } from '../dom/document';
 import { Node } from '../dom/node';
 import { Range } from '../dom/range';
-import { Emitter } from '@neditor/core/base/common/event';
-import { Disposable } from '@neditor/core/base/common/lifecycle';
-import { NOTIMPLEMENTED } from '../../base/common/notreached';
 
 export enum SelectionType {
   None = 'None',
@@ -15,45 +16,54 @@ export enum SelectionType {
 export class Selection extends Disposable {
   private _onDidChange = this._register(new Emitter<void>());
   private _doc: Document;
+  // private _debouncedOnDidChangeEvent: Event<void>;
 
   constructor(doc: Document) {
     super();
     this._doc = doc;
+    // this._debouncedOnDidChangeEvent = Event.debounce(this._onDidChange.event,
+    //   (last, event) => event,
+    //   MicrotaskDelay,
+    //   true,
+    // );
   }
 
   get onDidChange() {
     return this._onDidChange.event;
   }
+  // get onDidChangeNextTick() {
+  //   return this._debouncedOnDidChangeEvent;
+  // }
   ranges: Range[] = [];
   get anchorNode(): Node | null {
     if (!this.ranges.length) return null;
     const r = this.ranges[0];
-    return r.startContainer();
+    return r.startContainer;
   }
   get anchorOffset(): number {
     if (!this.ranges.length) return 0;
     const r = this.ranges[0];
-    return r.startOffset();
+    return r.startOffset;
   }
   get focusNode(): Node | null {
     if (!this.ranges.length) return null;
     const r = this.ranges[0];
-    return r.endContainer();
+    return r.endContainer;
   }
   get focusOffset(): number {
     if (!this.ranges.length) return 0;
     const r = this.ranges[0];
-    return r.endOffset();
+    return r.endOffset;
   }
   get type(): SelectionType {
     if (!this.ranges.length) return SelectionType.None;
     const r = this.ranges[0];
-    return r.collapsed() ? SelectionType.Caret : SelectionType.Range;
+    return r.collapsed ? SelectionType.Caret : SelectionType.Range;
   }
   get isCollapsed(): boolean {
     if (!this.ranges.length) return false;
     const r = this.ranges[0];
-    return r.collapsed();
+    return r.collapsed;
   }
   get rangeCount(): number {
     return this.ranges.length;

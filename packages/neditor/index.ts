@@ -13,6 +13,7 @@ import '@neditor/core/workbench/browser/parts/editor/editorPart';
 import '@neditor/core/workbench/contrib/action/action.contributions';
 import '@neditor/core/workbench/contrib/tool/tool.contributions';
 import { create } from './workbench/browser/web.factory';
+// import './editor';
 
 create(document.body, {});
 

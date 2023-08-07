@@ -118,19 +118,16 @@ export const _for = (el: Element, exp: string, ctx: Context) => {
   const mountBlock = (ctx: Context, ref: Node) => {
     let exp = el.getAttribute('v-scope');
     let component: Optional<Element> = undefined;
-    const prev = ref?.previousSibling
-    const viewDesc = prev && prev.IsElement() && prev.parentNode === parent && Reflect.get(prev, 'pmViewDesc')
-    const reuse = viewDesc && prev
     if (exp || el.hasAttribute('v-scope')) {
       const scope = exp ? evaluate(ctx.scope, exp) : {};
       ctx = createScopedContext(ctx, scope);
       if (scope.$template) {
-        component = scope.$template(reuse).AsElement();
+        component = scope.$template().AsElement();
       }
     }
     const block = new Block(component || el, ctx);
     block.key = ctx.key;
-    !reuse && block.insert(parent, ref);
+    block.insert(parent, ref);
     return block;
   };
 

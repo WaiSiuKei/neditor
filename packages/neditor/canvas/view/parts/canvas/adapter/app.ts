@@ -1,4 +1,4 @@
-import { reactive } from '../../../../../base/common/reactivity';
+import { reactive } from '@vue/reactivity';
 import { Block } from './block';
 import { Directive } from './directives';
 import { createContext } from './context';

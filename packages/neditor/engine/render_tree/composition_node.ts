@@ -101,7 +101,7 @@ export class CompositionNode extends Node {
   dispose() {
     super.dispose();
     for (let child of this.data_.children()) {
-      child.dispose()
+      child.dispose();
     }
     this.disposed = true;
   }

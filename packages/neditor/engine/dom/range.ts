@@ -33,19 +33,19 @@ export class Range extends AbstractRange {
     this.setStart(start_container, start_offset);
     this.setEnd(end_container, end_offset);
   }
-  collapsed(): boolean {
+  get collapsed(): boolean {
     return this.start_.EQ(this.end_);
   }
-  endContainer(): Node {
+  get endContainer(): Node {
     return this.end_.Container();
   }
-  endOffset(): number {
+  get endOffset(): number {
     return this.end_.Offset();
   }
-  startContainer(): Node {
+  get startContainer(): Node {
     return this.start_.Container();
   }
-  startOffset(): number {
+  get startOffset(): number {
     return this.start_.Offset();
   }
 

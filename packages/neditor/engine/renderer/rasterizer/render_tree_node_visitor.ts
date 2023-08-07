@@ -121,8 +121,7 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
   VisitCompositionNode(composition_node: CompositionNode): void {
     TRACE_EVENT0('cobalt::renderer', 'Visit(CompositionNode)');
 
-    let children =
-      composition_node.data().children();
+    let children = composition_node.data().children();
 
     if (children.length === 0) {
       return;
@@ -130,8 +129,9 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
 
     const { draw_state_ } = this;
 
-    draw_state_.render_target.translate(composition_node.data().offset().x() * devicePixelRatio,
-      composition_node.data().offset().y() * devicePixelRatio);
+    const dx = composition_node.data().offset().x() * devicePixelRatio;
+    const dy = composition_node.data().offset().y() * devicePixelRatio;
+    draw_state_.render_target.translate(dx, dy);
 
     // If we have more than one child (there is little to be gained by performing
     // these calculations otherwise since our bounding rectangle is equal to
@@ -150,8 +150,7 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
       }
     }
 
-    draw_state_.render_target.translate(-composition_node.data().offset().x() * devicePixelRatio,
-      -composition_node.data().offset().y() * devicePixelRatio);
+    draw_state_.render_target.translate(-dx, -dy,);
 
     // #if ENABLE_FLUSH_AFTER_EVERY_NODE
     // draw_state_.render_target.flush();
@@ -367,10 +366,11 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
   }
 
   private withScaleAndTranslate(cb: () => void) {
-    this.draw_state_.render_target.save();
+    // this.draw_state_.render_target.save();
     this.draw_state_.render_target.scale(devicePixelRatio, devicePixelRatio);
     cb();
-    this.draw_state_.render_target.restore();
+    this.draw_state_.render_target.scale(1 / devicePixelRatio, 1 / devicePixelRatio);
+    // this.draw_state_.render_target.restore();
   }
 
   private RenderSinglePlaneImage(

@@ -8,7 +8,7 @@ import { DCHECK } from '../../../../base/check';
 import { Optional } from '../../../../base/common/typescript';
 import { ScopedIdentifier } from '../../../../canvas/canvasCommon/scope';
 import { getScopedIdentifier } from '../../../../canvas/viewModel/path';
-import { BlockNodeModelProxy, isBlockNodeModelProxy } from '../../../../common/node';
+import { BlockNodeModelProxy, isBlockNodeModelProxy } from '../../../../platform/model/common/model';
 
 class PointerTool extends BaseTool {
   get id(): string {

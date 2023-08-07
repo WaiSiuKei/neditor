@@ -1,16 +1,21 @@
-import { Optional } from '../../../base/common/typescript';
-import { IDocumentModel, IYDocumentModel } from '../../../common/model';
-import { URI } from '../../../base/common/uri';
-import { Event } from '../../../base/common/event';
-import { IModelContentChangedEvent } from './modelEvents';
-import { ScopedIdentifier } from '../../../canvas/canvasCommon/scope';
-import { IBlockNodeModel, IFragmentNodeModel, INodeModel, IRootNodeModel, ITextNodeModel, YNode, NodeType, NodeModelProxy } from '../../../common/node';
-import { IIdentifier } from '../../../common/common';
-import { ILocation } from './location';
-import { createDecorator } from '../../instantiation/common/instantiation';
-import { IDisposable } from '../../../base/common/lifecycle';
-import { UndoRedoSource } from '../../undoRedo/common/undoRedo';
+import { isPlainObject } from 'is-plain-object';
 import * as Y from 'yjs';
+import { DCHECK } from '../../../base/check';
+import { Event } from '../../../base/common/event';
+import { IDisposable } from '../../../base/common/lifecycle';
+import { NOTIMPLEMENTED } from '../../../base/common/notreached';
+import { isString } from '../../../base/common/type';
+import { EnumAndLiteral, Optional, ValueOf } from '../../../base/common/typescript';
+import { URI } from '../../../base/common/uri';
+import { ScopedIdentifier } from '../../../canvas/canvasCommon/scope';
+import { IIdentifier } from '../../../common/common';
+import { IDocumentModel, IYDocumentModel } from '../../../common/model';
+import { getNodeContent, getNodeFrom, getNodeId, getNodeOrder, getNodeStyle, getNodeType, IBlockNodeModel, IFragmentNodeModel, IRootNodeModel, ITextNodeModel, NodeType, YNode } from '../../../common/node';
+import { IBlockStyleDeclaration, IInlineStyleDeclaration, IStyleDeclaration } from '../../../common/style';
+import { createDecorator } from '../../instantiation/common/instantiation';
+import { UndoRedoSource } from '../../undoRedo/common/undoRedo';
+import { DirectionType, ILocation } from './location';
+import { IModelContentChangedEvent } from './modelEvents';
 
 export const IModelService = createDecorator<IModelService>('modelService');
 
@@ -61,7 +66,7 @@ export interface IModelBase<T extends IDocumentModel> extends IDisposable {
   /**
    * 添加节点，待定
    */
-  addNode(at: ILocation, nodeInit: INodeInit): NodeModelProxy;
+  addNode(at: ILocation, nodeInit: INodeInit): DescendantModelProxy;
   _internal_addNode(at: ILocation, nodeInit: INodeInit): YNode;
   /**
    * 删除节点
@@ -91,28 +96,28 @@ export interface IModelBase<T extends IDocumentModel> extends IDisposable {
    */
   getNodeById(id: IIdentifier): Optional<NodeModelProxy>;
   _internal_getNodeById(id: IIdentifier): Optional<YNode>;
-  getChildrenNodesOfId(id: IIdentifier): NodeModelProxy[];
+  getChildrenNodesOfId(id: IIdentifier): DescendantModelProxy[];
   _internal_getChildrenNodesOfId(id: IIdentifier): YNode[];
   /**
    * 获取父节点
    */
-  getParentNodeOfId(id: IIdentifier): Optional<NodeModelProxy>;
+  getParentNodeOfId(id: IIdentifier): Optional<AncestorModelProxy>;
   _internal_getParentNodeOfId(id: IIdentifier): Optional<YNode>;
   /**
    * 获取相邻前节点
    */
-  getPreviousSiblingNodeOfId(id: IIdentifier): Optional<NodeModelProxy>;
+  getPreviousSiblingNodeOfId(id: IIdentifier): Optional<DescendantModelProxy>;
   _internal_getPreviousSiblingNodeOfId(id: IIdentifier): Optional<YNode>;
   /**
    * 获取相邻后节点
    */
-  getNextSiblingNodeOfId(id: IIdentifier): Optional<NodeModelProxy>;
+  getNextSiblingNodeOfId(id: IIdentifier): Optional<DescendantModelProxy>;
   _internal_getNextSiblingNodeOfId(id: IIdentifier): Optional<YNode>;
   /**
    * 获取祖先节点列表，根节点在前
    * @param id - 查询的节点的 id
    */
-  getAncestorNodesOfId(id: IIdentifier): NodeModelProxy[]; // root 在最前
+  getAncestorNodesOfId(id: IIdentifier): AncestorModelProxy[]; // root 在最前
   _internal_getAncestorNodesOfId(id: IIdentifier): YNode[];
   /**
    * 是否为祖先节点
@@ -122,11 +127,11 @@ export interface IModelBase<T extends IDocumentModel> extends IDisposable {
   isAncestorNodeOfId(ancestorId: IIdentifier, id: IIdentifier): boolean;
 }
 
-export interface ICanvasModel extends IModelBase<IDocumentModel> {
+export type ICanvasModelLike = IModelBase<IDocumentModel>
+
+export interface ICanvasModel extends ICanvasModelLike {
   replaceModel(newModel: IDocumentModel): void;
 }
-
-export type ICanvasModelLike = IModelBase<IDocumentModel>
 
 export interface IModelHistoryContext {
   /**
@@ -178,4 +183,199 @@ export interface IModelChangeParticipant {
 
 export interface IOperationCallback<T extends any> {
   (model: ICanvasModelLike): T;
+}
+
+export const proxyHandler: ProxyHandler<ReturnType<typeof getNodeStyle>> = {
+  get(target: ReturnType<typeof getNodeStyle>, p: keyof IStyleDeclaration): any {
+    if (!isString(p)) NOTIMPLEMENTED();
+    return target.get(p);
+  },
+  set(target: ReturnType<typeof getNodeStyle>, p: keyof IStyleDeclaration, value: ValueOf<Required<IStyleDeclaration>>): boolean {
+    if (!isString(p)) NOTIMPLEMENTED();
+    target.set(p, value);
+    return true;
+  },
+  has(target: ReturnType<typeof getNodeStyle>, p: keyof IStyleDeclaration): boolean {
+    if (!isString(p)) NOTIMPLEMENTED();
+    return target.has(p);
+  },
+  deleteProperty(target: ReturnType<typeof getNodeStyle>, p: keyof IStyleDeclaration): boolean {
+    if (!isString(p)) NOTIMPLEMENTED();
+    target.delete(p);
+    return true;
+  },
+  ownKeys(target: ReturnType<typeof getNodeStyle>): ArrayLike<keyof IStyleDeclaration> {
+    return Array.from(target.keys()) as unknown as ArrayLike<keyof IStyleDeclaration>;
+  }
+};
+
+class NodeProxy {
+  readonly _newOnlyBrand: undefined;
+  readonly id: IIdentifier;
+  constructor(
+    public y: YNode,
+    protected model: ICanvasModelLike,
+  ) {
+    this.id = getNodeId(y);
+  }
+  isRoot(): this is RootNodeModelProxy {
+    return false;
+  }
+  isBlock(): this is BlockNodeModelProxy {
+    return false;
+  }
+  isText(): this is TextNodeModelProxy {
+    return false;
+  }
+}
+
+class ChildNodeProxy extends NodeProxy {
+  get from(): IIdentifier {
+    return getNodeFrom(this.y);
+  }
+  set from(val) {
+    this.y.set('from', val);
+  }
+  get order(): string {
+    return getNodeOrder(this.y);
+  }
+  set order(val) {
+    this.y.set('order', val);
+  }
+}
+
+export class RootNodeModelProxy extends ChildNodeProxy implements IRootNodeModel {
+  type: EnumAndLiteral<NodeType.Root> = NodeType.Root;
+  constructor(
+    y: YNode,
+    model: ICanvasModelLike,
+  ) {
+    super(y, model);
+    const type = getNodeType(y);
+    DCHECK(type === NodeType.Root);
+  }
+}
+
+export class BlockNodeModelProxy extends ChildNodeProxy implements IBlockNodeModel {
+  readonly style: IBlockStyleDeclaration;
+  type: EnumAndLiteral<NodeType.Block> = NodeType.Block;
+  constructor(
+    y: YNode,
+    model: ICanvasModelLike,
+  ) {
+    super(y, model);
+    const type = getNodeType(y);
+    DCHECK(type === NodeType.Block);
+    this.style = new Proxy(getNodeStyle(y), proxyHandler) as unknown as IBlockStyleDeclaration;
+  }
+  isBlock(): this is BlockNodeModelProxy {
+    return true;
+  }
+  // 给编辑器用的
+  readonly _blockBrand: undefined;
+  get children() {
+    return this.model.getChildrenNodesOfId(this.id);
+  }
+  removeChildAt(idx: number): void {
+    debugger;
+    NOTIMPLEMENTED();
+  }
+  insertChildAt(idx: number, child: DescendantModelProxy): void {
+    if (isPlainObject(child)) {
+      const children = this.children;
+      const ref = this.children[idx];
+      DCHECK(ref);
+      let init: INodeInit = Object.create(null);
+      init.type = child.type;
+      init.style = Object.create(null);
+      if (init.type === NodeType.Text) {
+        init.content = (child as TextNodeModelProxy).content;
+      } else {
+        NOTIMPLEMENTED();
+      }
+      this.model._internal_addNode({ ref: ref.id, direction: DirectionType.forward }, init);
+    } else {
+      NOTIMPLEMENTED();
+    }
+  }
+  appendChildren(...children: DescendantModelProxy[]): void {
+    debugger;
+    NOTIMPLEMENTED();
+  }
+  setChildren(...children: DescendantModelProxy[]): void {
+    debugger;
+    NOTIMPLEMENTED();
+  }
+  insertAfter(child: DescendantModelProxy, ref: DescendantModelProxy): void {
+    debugger;
+    NOTIMPLEMENTED();
+  }
+}
+
+export function isBlockNodeModelProxy(val: any): val is BlockNodeModelProxy {
+  return val instanceof BlockNodeModelProxy;
+}
+
+export class TextNodeModelProxy extends ChildNodeProxy implements ITextNodeModel {
+  readonly style: IBlockStyleDeclaration;
+  type: EnumAndLiteral<NodeType.Text> = NodeType.Text;
+  constructor(
+    y: YNode,
+    model: ICanvasModelLike,
+  ) {
+    super(y, model);
+    const type = getNodeType(y);
+    DCHECK(type === NodeType.Text);
+    if (type !== NodeType.Text) {
+      debugger;
+    }
+    this.style = new Proxy(getNodeStyle(y), proxyHandler) as unknown as IInlineStyleDeclaration;
+  }
+  get content(): string {
+    return getNodeContent(this.y);
+  }
+  set content(val) {
+    this.y.set('content', val);
+  }
+  // 给编辑器用的
+  isText(): this is TextNodeModelProxy {
+    return true;
+  }
+  readonly _textBrand: undefined;
+  setContent(val: string) {
+    this.content = val;
+  }
+  getParent() {
+    return this.model.getParentNodeOfId(this.id);
+  }
+}
+
+export function isTextNodeModelProxy(val: any): val is TextNodeModelProxy {
+  return val instanceof TextNodeModelProxy;
+}
+export type NodeModelProxy = RootNodeModelProxy | BlockNodeModelProxy | TextNodeModelProxy
+export type DescendantModelProxy = BlockNodeModelProxy | TextNodeModelProxy;
+
+export interface BaseText {
+  readonly content: string;
+}
+
+export type Descendant = { readonly children: readonly Descendant[] } | BaseText
+export type AncestorModelProxy = RootNodeModelProxy | BlockNodeModelProxy
+export function toProxy<T extends NodeModelProxy>(y: YNode, model: ICanvasModelLike): T {
+  const type = getNodeType(y);
+  if (type === NodeType.Root) {
+    return new RootNodeModelProxy(y, model) as unknown as T;
+  }
+  if (type === NodeType.Block) {
+    return new BlockNodeModelProxy(y, model) as unknown as T;
+  }
+  if (type === NodeType.Text) {
+    return new TextNodeModelProxy(y, model) as unknown as T;
+  }
+  NOTIMPLEMENTED();
+}
+export function toOptionalProxy<T extends NodeModelProxy>(y: Optional<YNode>, model: ICanvasModelLike): Optional<T> {
+  if (!y) return undefined;
+  return toProxy<T>(y, model);
 }

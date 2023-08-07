@@ -8,8 +8,11 @@
   },
   "dependencies": {
     "@types/big.js": "6.1.6",
+    "@vue/reactivity": "^3.3.4",
     "@vue/shared": "3.2.47",
     "big.js": "6.2.1",
+    "immer": "^10.0.2",
+    "is-plain-object": "^5.0.0",
     "jpeg-js": "0.4.4",
     "lodash-es": "4.17.21",
     "normalize.css": "8.0.1",

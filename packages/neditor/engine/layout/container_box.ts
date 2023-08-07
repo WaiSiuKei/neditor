@@ -820,19 +820,18 @@ class RenderAndAnimateStackingContextChildrenCoordinator {
     child_info: StackingContextChildInfo) {
     this.ApplyOverflowHiddenForChild(child_info.overflow_hidden_to_apply);
 
-    // Generate the offset from the child container to the child box.
-    const child_containing_block: ContainerBox =
-      child_info.box.GetContainingBlock();
-    let position_offset: Vector2dLayoutUnit =
-      this.child_container_offset_from_parent_node_.ADD(
-        this.GetOffsetFromChildContainerToContainingBlockContentBox(
-          child_containing_block, child_info.containing_block_relationship)
-      ).ADD(
-        child_info.box.GetContainingBlockOffsetFromItsContentBox(
-          child_containing_block)
-      );
+    if (child_info.box.node?.AsElement()?.getAttribute('id') === 'p1') debugger;
 
-    child_info.box.RenderAndAnimate(this.GetActiveNodeBuilder(), position_offset.toVector2dF(),
+    // Generate the offset from the child container to the child box.
+    const child_containing_block: ContainerBox = child_info.box.GetContainingBlock();
+    let position_offset: Vector2dLayoutUnit =
+      this.child_container_offset_from_parent_node_
+        .ADD(this.GetOffsetFromChildContainerToContainingBlockContentBox(child_containing_block, child_info.containing_block_relationship))
+        .ADD(child_info.box.GetContainingBlockOffsetFromItsContentBox(child_containing_block));
+
+    child_info.box.RenderAndAnimate(
+      this.GetActiveNodeBuilder(),
+      position_offset.toVector2dF(),
       this.stacking_context_);
   }
 
@@ -938,12 +937,9 @@ class RenderAndAnimateStackingContextChildrenCoordinator {
     // a parent (meaning that it's the root box) or is transformed (it is
     // impossible for |end_box| to be a more distant ancestor than a transformed
     // box).
-    while (current_box != end_box && current_box.parent() &&
-    !current_box.IsTransformed()) {
+    while (current_box != end_box && current_box.parent() && !current_box.IsTransformed()) {
       const next_box: ContainerBox = current_box.GetContainingBlock();
-      offset.ADD_ASSIGN(
-        current_box.GetContentBoxOffsetFromContainingBlockContentBox(next_box)
-      );
+      offset.ADD_ASSIGN(current_box.GetContentBoxOffsetFromContainingBlockContentBox(next_box));
       current_box = next_box;
     }
 
