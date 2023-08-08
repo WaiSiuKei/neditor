@@ -192,7 +192,11 @@ export function GenerateRenderTreeFromBoxTree(
     // LayoutStatTracker::kStopWatchTypeRenderAndAnimate,
     // base::StopWatch::kAutoStartOn, layout_stat_tracker);
 
-    initial_containing_block.RenderAndAnimate(render_tree_root_builder, new Vector2dF(0, 0), initial_containing_block);
+    initial_containing_block.RenderAndAnimate(
+      render_tree_root_builder,
+      initial_containing_block,
+      new Vector2dF(0, 0),
+      initial_containing_block);
   }
 
   // During computed style update and RenderAndAnimate, we get the actual images

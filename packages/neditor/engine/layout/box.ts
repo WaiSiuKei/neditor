@@ -188,6 +188,8 @@ interface RenderAndAnimateBackgroundImageResult {
   is_opaque: boolean;
 }
 
+export const BorderBoxOffsets = new WeakMap<Box, Vector2dF>();
+
 export abstract class Box extends Disposable {
   // The css_computed_style_declaration_ member references the
   // cssom::CSSComputedStyleDeclaration object owned by the HTML Element from
@@ -316,7 +318,8 @@ export abstract class Box extends Disposable {
   }
 
   GetMarginCollapsingStatus(): MarginCollapsingStatus {
-    return MarginCollapsingStatus.kCollapseMargins;
+    // return MarginCollapsingStatus.kCollapseMargins;
+    return MarginCollapsingStatus.kIgnore;
   }
 
 // Returns true if the box is positioned (e.g. position is non-static or
@@ -1167,16 +1170,22 @@ export abstract class Box extends Disposable {
 // on the subclasses to provide the actual content.
   RenderAndAnimate(
     parent_content_node_builder: CompositionNodeBuilder,
+    parent_box: ContainerBox,
     offset_from_parent_node: Vector2dF,
     stacking_context: ContainerBox): void {
     DCHECK(stacking_context);
-    console.log('offset_from_parent_node', offset_from_parent_node, this.node?.AsElement()?.getAttribute('id'));
-    if (this.node?.AsElement()?.getAttribute('id') === 'p1') debugger;
+    const pOffset = BorderBoxOffsets.get(parent_box);
+    // console.log('offset_from_parent_node', parent_box.IsPositioned(), offset_from_parent_node, pOffset?.toString(), this.node?.AsElement()?.getAttribute('id'));
+    // if (this.node?.AsElement()?.getAttribute('id') === 'p1') debugger;
 
     let border_box_offset = new Vector2dF(
       this.left().toFloat() + this.margin_left().toFloat(),
       this.top().toFloat() + this.margin_top().toFloat());
     border_box_offset.ADD_ASSIGN(offset_from_parent_node);
+    if (pOffset && this.AsContainerBox()) {
+      border_box_offset.ADD_ASSIGN(pOffset);
+    }
+    BorderBoxOffsets.set(this, border_box_offset.CLONE());
 
     // If there's a pre-existing cached render tree node that is located at the
     // border box offset, then simply use it. The only work that needs to be done

@@ -57,14 +57,15 @@ export class AnonymousBlockBox extends BlockContainerBox {
     return Level.kBlockLevel;
   }
   GetMarginCollapsingStatus(): MarginCollapsingStatus {
-    // If all enclosed boxes are absolutely-positioned, ignore it for
-    // margin-collapse.
-
-    if (this.child_boxes().every(box => box.IsAbsolutelyPositioned())) return MarginCollapsingStatus.kIgnore;
-
-    // If any enclosed block is inline-level, break collapsing model for
-    // parent/siblings.
-    return MarginCollapsingStatus.kSeparateAdjoiningMargins;
+    return MarginCollapsingStatus.kIgnore;
+    // // If all enclosed boxes are absolutely-positioned, ignore it for
+    // // margin-collapse.
+    //
+    // if (this.child_boxes().every(box => box.IsAbsolutelyPositioned())) return MarginCollapsingStatus.kIgnore;
+    //
+    // // If any enclosed block is inline-level, break collapsing model for
+    // // parent/siblings.
+    // return MarginCollapsingStatus.kSeparateAdjoiningMargins;
   }
   AsAnonymousBlockBox() {
     return this;

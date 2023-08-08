@@ -79,6 +79,12 @@ export class CompositionNodeBuilder {
   set_offset(offset: Vector2dF) {
     this.offset_ = offset;
   }
+
+  CLONE() {
+    const ret = new CompositionNodeBuilder(this.offset_.CLONE());
+    ret.children_ = this.children_;
+    return ret;
+  }
 }
 
 export class CompositionNode extends Node {

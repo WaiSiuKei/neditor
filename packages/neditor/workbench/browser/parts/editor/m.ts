@@ -36,7 +36,10 @@ const a: IDocumentModel = {
         display: 'block',
         lineHeight: '40px',
         overflowWrap: 'break-word',
-        whiteSpace: 'pre-wrap'
+        whiteSpace: 'pre-wrap',
+        borderColor: '#ffadf8',
+        borderStyle: 'solid',
+        borderWidth: '1px',
       },
       from: 'div1',
       order: '0.1',

@@ -151,15 +151,20 @@ export abstract class ContainerBox extends Box {
     // Render all child stacking contexts and positioned children in our stacking
     // context that have negative z-index values.
     //   https://www.w3.org/TR/CSS21/visuren.html#z-index
-    this.RenderAndAnimateStackingContextChildren(
-      this.negative_z_index_stacking_context_children_, content_node_builder,
-      content_box_offset, stacking_context);
+    if (this.negative_z_index_stacking_context_children_.size) {
+      this.RenderAndAnimateStackingContextChildren(
+        this.negative_z_index_stacking_context_children_, content_node_builder,
+        content_box_offset, stacking_context);
+    }
 
     // Render in-flow, non-positioned child boxes.
     //   https://www.w3.org/TR/CSS21/visuren.html#z-index
     for (let child_box of this.child_boxes_) {
       if (!child_box.IsPositioned() && !child_box.IsStackingContext()) {
-        child_box.RenderAndAnimate(content_node_builder, content_box_offset.toVector2dF(),
+        child_box.RenderAndAnimate(
+          content_node_builder,
+          this_as_stacking_context,
+          content_box_offset.toVector2dF(),
           this_as_stacking_context);
       }
     }
@@ -167,9 +172,11 @@ export abstract class ContainerBox extends Box {
     // Render all child stacking contexts and positioned children in our stacking
     // context that have non-negative z-index values.
     //   https://www.w3.org/TR/CSS21/visuren.html#z-index
-    this.RenderAndAnimateStackingContextChildren(
-      this.non_negative_z_index_stacking_context_children_, content_node_builder,
-      content_box_offset, stacking_context);
+    if (this.non_negative_z_index_stacking_context_children_.size) {
+      this.RenderAndAnimateStackingContextChildren(
+        this.non_negative_z_index_stacking_context_children_, content_node_builder,
+        content_box_offset, stacking_context);
+    }
   }
 
   // Returns true if the given style allows a container box to act as a
@@ -687,7 +694,6 @@ export abstract class ContainerBox extends Box {
 
     // Render all children of the passed in list in sorted order.
     for (let [child_info, k] of stacking_context_child_list) {
-
       // If this container box is a stacking context, then verify that this child
       // box belongs to it; otherwise, verify that the container box and the child
       // box share the same stacking context and that the child's z-index is 0.
@@ -820,8 +826,6 @@ class RenderAndAnimateStackingContextChildrenCoordinator {
     child_info: StackingContextChildInfo) {
     this.ApplyOverflowHiddenForChild(child_info.overflow_hidden_to_apply);
 
-    if (child_info.box.node?.AsElement()?.getAttribute('id') === 'p1') debugger;
-
     // Generate the offset from the child container to the child box.
     const child_containing_block: ContainerBox = child_info.box.GetContainingBlock();
     let position_offset: Vector2dLayoutUnit =
@@ -831,6 +835,7 @@ class RenderAndAnimateStackingContextChildrenCoordinator {
 
     child_info.box.RenderAndAnimate(
       this.GetActiveNodeBuilder(),
+      child_containing_block,
       position_offset.toVector2dF(),
       this.stacking_context_);
   }

@@ -85,4 +85,8 @@ export class Vector2dF {
   CLONE() {
     return new Vector2dF(this.x(), this.y())
   }
+
+  toString() {
+    return `[${this.x_}, ${this.y_}]`
+  }
 }
