@@ -7,10 +7,12 @@ import { NOTIMPLEMENTED } from '../../../../../base/common/notreached';
 import { Optional } from '../../../../../base/common/typescript';
 import { ICanvas } from '../../../../../canvas/canvas/canvas';
 import { HTMLElement } from '../../../../../engine/dom/html_element';
+import { HTMLSpanElement } from '../../../../../engine/dom/html_span_element';
 import { IKeybindingService } from '../../../../../platform/keybinding/common/keybinding';
 import { IToolService } from '../../../../../platform/tool/common/tool';
 import { Editor, Point, Range, Node, Path, Transforms } from '../editor';
 import { DOMElement, DOMNode, DOMRange, DOMSelection, isDOMElement, isDOMSelection, normalizeDOMPoint, DOMPoint } from '../utils/dom';
+import { ELEMENT_TO_NODE } from '../utils/weak-maps';
 
 type KeybindingHandler = () => void
 
@@ -276,44 +278,10 @@ class CanvasEditor {
     let textNode: DOMElement | null = null;
     let offset = 0;
 
-    if (parentNode) {
-      debugger;
-      NOTIMPLEMENTED();
-      // let leafNode = parentNode.closest('[data-slate-leaf]');
-      //
-      // // Calculate how far into the text node the `nearestNode` is, so that we
-      // // can determine what the offset relative to the text node is.
-      // if (leafNode) {
-      //   textNode = leafNode.closest('[data-slate-node="text"]');
-      //
-      //   if (textNode) {
-      //     const range = window.document.createRange();
-      //     range.setStart(textNode, 0);
-      //     range.setEnd(nearestNode, nearestOffset);
-      //
-      //     const contents = range.cloneContents();
-      //     const removals = [
-      //       ...Array.prototype.slice.call(
-      //         contents.querySelectorAll('[data-slate-zero-width]')
-      //       ),
-      //       ...Array.prototype.slice.call(
-      //         contents.querySelectorAll('[contenteditable=false]')
-      //       ),
-      //     ];
-      //
-      //     removals.forEach(el => {
-      //       el!.parentNode!.removeChild(el);
-      //     });
-      //
-      //     // COMPAT: Edge has a bug where Range.prototype.toString() will
-      //     // convert \n into \r\n. The bug causes a loop when slate-react
-      //     // attempts to reposition its cursor to match the native position. Use
-      //     // textContent.length instead.
-      //     // https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10291116/
-      //     offset = contents.textContent!.length;
-      //   }
-      // }
-    }
+    DCHECK(parentNode.firstChild === nearestNode);
+    DCHECK(parentNode.tagName === HTMLSpanElement.kTagName);
+    offset = nearestOffset;
+    textNode = parentNode;
 
     if (!textNode) {
       if (suppressThrow) {
@@ -352,18 +320,17 @@ class CanvasEditor {
   toSlateNode(editor: Editor, domNode: DOMNode) {
     let domEl = isDOMElement(domNode) ? domNode : domNode.parentElement;
 
-    return NOTIMPLEMENTED();
-    // if (domEl && !domEl.hasAttribute('data-slate-node')) {
-    //   domEl = domEl.closest(`[data-slate-node]`);
-    // }
-    //
-    // const node = domEl ? ELEMENT_TO_NODE.get(domEl as HTMLElement) : null;
-    //
-    // if (!node) {
-    //   throw new Error(`Cannot resolve a Slate node from DOM node: ${domEl}`);
-    // }
-    //
-    // return node;
+    if (domEl && domEl.tagName === HTMLSpanElement.kTagName) {
+      domEl = domEl.parentElement!;
+    }
+
+    const node = domEl ? ELEMENT_TO_NODE.get(domEl as HTMLElement) : null;
+
+    if (!node) {
+      throw new Error(`Cannot resolve a Slate node from DOM node: ${domEl}`);
+    }
+
+    return node;
   }
 
   findPath(editor: Editor, node: Node): Path {

@@ -341,7 +341,7 @@ export class TextTool extends BaseTool {
     DCHECK(node);
     DCHECK(node.isBlock());
     const doc = this.canvas.view.document;
-    const dom = Array.from(doc.body!.childNodes).find(e => e && e.IsElement() && e.getAttribute(AttrNameOfId) === id);
+    const dom = doc.getElementById(id);
     DCHECK(dom);
     const editor = createEditor({
       root: node,
