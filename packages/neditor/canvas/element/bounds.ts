@@ -58,7 +58,7 @@ export class ElementBounds {
     }>();
 
   static getBounds(element: CanvasElement) {
-    const cachedBounds = ElementBounds.boundsCache.get(element);
+    // const cachedBounds = ElementBounds.boundsCache.get(element);
 
     // if (cachedBounds?.version && cachedBounds.version === element.version) {
     //   return cachedBounds.bounds;

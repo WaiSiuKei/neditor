@@ -26,67 +26,67 @@ const a: IDocumentModel = {
       from: RootNodeId,
       order: '0.5',
     },
-    p1: {
-      id: 'p1',
-      type: NodeType.Block,
-      style: {
-        width: 'auto',
-        height: '12px',
-        position: 'relative',
-        display: 'block',
-        lineHeight: '40px',
-        overflowWrap: 'break-word',
-        whiteSpace: 'pre-wrap',
-        borderColor: '#ffadf8',
-        borderStyle: 'solid',
-        borderWidth: '1px',
-      },
-      from: 'div1',
-      order: '0.1',
-    },
-    title1: {
-      id: 'title1',
-      type: NodeType.Text,
-      style: {
-        display: 'inline',
-        position: 'relative',
-        fontFamily: '"source han sans"',
-        fontSize: '28px',
-        color: 'black'
-      },
-      content: 'Title',
-      from: 'p1',
-      order: '0.1'
-    },
-    // p2: {
-    //   id: 'p2',
+    // p1: {
+    //   id: 'p1',
     //   type: NodeType.Block,
     //   style: {
     //     width: 'auto',
     //     height: 'auto',
     //     position: 'relative',
     //     display: 'block',
-    //     lineHeight: '20px',
+    //     lineHeight: '40px',
     //     overflowWrap: 'break-word',
-    //     whiteSpace: 'pre-wrap'
+    //     whiteSpace: 'pre-wrap',
+    //     borderColor: '#ffadf8',
+    //     borderStyle: 'solid',
+    //     borderWidth: '1px',
     //   },
     //   from: 'div1',
-    //   order: '0.2',
+    //   order: '0.1',
     // },
-    // text1: {
-    //   id: 'text1',
+    // title1: {
+    //   id: 'title1',
     //   type: NodeType.Text,
     //   style: {
     //     display: 'inline',
     //     position: 'relative',
     //     fontFamily: '"source han sans"',
-    //     fontSize: '14px',
+    //     fontSize: '28px',
     //     color: 'black'
     //   },
-    //   content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco',
-    //   from: 'p2',
+    //   content: 'Title',
+    //   from: 'p1',
     //   order: '0.1'
     // },
+    p2: {
+      id: 'p2',
+      type: NodeType.Block,
+      style: {
+        width: 'auto',
+        height: 'auto',
+        position: 'relative',
+        display: 'block',
+        lineHeight: '20px',
+        overflowWrap: 'break-word',
+        whiteSpace: 'pre-wrap'
+      },
+      from: 'div1',
+      order: '0.2',
+    },
+    text1: {
+      id: 'text1',
+      type: NodeType.Text,
+      style: {
+        display: 'inline',
+        position: 'relative',
+        fontFamily: '"source han sans"',
+        fontSize: '14px',
+        color: 'black'
+      },
+      content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco',
+      from: 'p2',
+      order: '0.1'
+    },
     // div2: {
     //   id: 'div2',
     //   type: NodeType.Block,

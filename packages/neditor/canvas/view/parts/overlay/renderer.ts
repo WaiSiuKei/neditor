@@ -3,7 +3,7 @@ import { getCommonBounds } from '../../../element/bounds';
 import { CanvasElement } from '../../../element/types';
 import { RenderConfig } from '../../type';
 
-export const DEFAULT_SPACING = 2;
+export const DEFAULT_SPACING = 0;
 
 const getSelectionFromElements = (elements: readonly CanvasElement[]) => {
   const [elementX1, elementY1, elementX2, elementY2] =

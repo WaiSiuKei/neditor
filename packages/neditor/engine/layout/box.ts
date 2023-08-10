@@ -188,7 +188,7 @@ interface RenderAndAnimateBackgroundImageResult {
   is_opaque: boolean;
 }
 
-export const BorderBoxOffsets = new WeakMap<Box, Vector2dF>();
+export const AccumulatedBoxOffsets = new WeakMap<Box, Vector2dF>();
 
 export abstract class Box extends Disposable {
   // The css_computed_style_declaration_ member references the
@@ -1174,7 +1174,7 @@ export abstract class Box extends Disposable {
     offset_from_parent_node: Vector2dF,
     stacking_context: ContainerBox): void {
     DCHECK(stacking_context);
-    const pOffset = BorderBoxOffsets.get(parent_box);
+    const pOffset = AccumulatedBoxOffsets.get(parent_box);
     // console.log('offset_from_parent_node', parent_box.IsPositioned(), offset_from_parent_node, pOffset?.toString(), this.node?.AsElement()?.getAttribute('id'));
     // if (this.node?.AsElement()?.getAttribute('id') === 'p1') debugger;
 
@@ -1185,7 +1185,9 @@ export abstract class Box extends Disposable {
     if (pOffset && this.AsContainerBox()) {
       border_box_offset.ADD_ASSIGN(pOffset);
     }
-    BorderBoxOffsets.set(this, border_box_offset.CLONE());
+    const offset = border_box_offset.CLONE();
+    offset.ADD_ASSIGN(new Vector2dF(this.padding_top().toFloat(), this.padding_left().toFloat()));
+    AccumulatedBoxOffsets.set(this, offset);
 
     // If there's a pre-existing cached render tree node that is located at the
     // border box offset, then simply use it. The only work that needs to be done
