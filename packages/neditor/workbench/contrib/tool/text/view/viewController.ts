@@ -8,11 +8,12 @@ import { NOTIMPLEMENTED } from '../../../../../base/common/notreached';
 import { ICanvas } from '../../../../../canvas/canvas/canvas';
 import { ICommandService } from '../../../../../platform/commands/common/commands';
 import { CommandService } from '../../../../../platform/commands/common/commandService';
-import { IContextKeyService } from '../../../../../platform/contextkey/common/contextkey';
+import { IContextKeyService, IContextKeyServiceTarget } from '../../../../../platform/contextkey/common/contextkey';
 import { SyncDescriptor } from '../../../../../platform/instantiation/common/descriptors';
 import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation';
 import { ServiceCollection } from '../../../../../platform/instantiation/common/serviceCollection';
 import { IKeybindingService } from '../../../../../platform/keybinding/common/keybinding';
+import { DescendantModelProxy } from '../../../../../platform/model/common/model';
 import { IToolService } from '../../../../../platform/tool/common/tool';
 import { Editor, Operation, Range, SelectionOperation, Transforms } from '../editor';
 import { CanvasEditor } from './canvasEditorInterface';
@@ -43,7 +44,7 @@ export class ViewController extends Disposable {
     const textEditorService = new TextEditorService();
     textEditorService.addEditor(editor);
 
-    this._contextKeyService = this._register(contextKeyService.createScoped(this.editor.el));
+    this._contextKeyService = this._register(contextKeyService.createScoped(this.editor.el as IContextKeyServiceTarget));
     serviceCollection.set(ITextEditorService, textEditorService);
     serviceCollection.set(IKeybindingService, new SyncDescriptor(TextEditorKeybindingService));
     serviceCollection.set(IContextKeyService, this._contextKeyService);
@@ -128,12 +129,12 @@ export class ViewController extends Disposable {
     DCHECK(rangeOfDOM);
     if (!Range.equals(rangeOfSlate, rangeOfDOM)) {
       const { anchor, focus } = rangeOfSlate;
-      const anchorP = this.editor.root.children[anchor.path[0]];
+      const anchorP = this.editor.root.children[anchor.path[0]] as DescendantModelProxy;
       DCHECK(anchorP.isBlock());
       const anchorSpan = anchorP.children[anchor.path[1]];
       DCHECK(anchorSpan.isText());
 
-      const focusP = this.editor.root.children[focus.path[0]];
+      const focusP = this.editor.root.children[focus.path[0]] as DescendantModelProxy;
       DCHECK(focusP.isBlock());
       const focusSpan = focusP.children[focus.path[1]];
       DCHECK(focusSpan.isText());
@@ -196,7 +197,7 @@ export class ViewController extends Disposable {
       this.onEsc();
       return;
     }
-    this._keybindingService.dispatchEvent(event, this.editor.el);
+    this._keybindingService.dispatchEvent(event, this.editor.el as IContextKeyServiceTarget);
     console.log('keydown', this.resolveKeybinding(event).getLabel());
   };
 

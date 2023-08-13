@@ -4,6 +4,7 @@ import { Optional } from '../../../../../base/common/typescript';
 import { ICanvas } from '../../../../../canvas/canvas/canvas';
 import { getScope } from '../../../../../canvas/viewModel/path';
 import { HTMLSpanElement } from '../../../../../engine/dom/html_span_element';
+import { BlockNodeModelProxy, DescendantModelProxy } from '../../../../../platform/model/common/model';
 import { Editor, Path, Point, Range, Descendant } from '../editor';
 import { DOMElement, DOMNode, DOMPoint, DOMRange, DOMSelection, isDOMElement, isDOMSelection, normalizeDOMPoint } from '../utils/dom';
 
@@ -162,12 +163,12 @@ export class CanvasEditor {
 
   findPath(editor: Editor, node: Descendant): Path {
     const path: Path = [];
-    let child = node;
+    let child = node as DescendantModelProxy;
 
     const model = this.canvas.model;
 
     while (true) {
-      if (child.id === editor.root.id) return path;
+      if (child.id === (editor.root as BlockNodeModelProxy).id) return path;
       const parent = model.getParentNodeOfId(child.id);
 
       DCHECK(parent && parent.isBlock());

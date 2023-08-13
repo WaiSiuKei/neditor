@@ -37,7 +37,7 @@ function isInlineText(n: Node) {
 }
 
 function isParagraph(n: Node) {
-  return n.IsElement() && n.firstChild && isInlineText(n.firstChild);
+  return n.IsElement() && n.firstChild && n.firstChild.firstChild && isInlineText(n.firstChild.firstChild);
 }
 
 function isParagraphContainer(n: Node) {
@@ -46,7 +46,7 @@ function isParagraphContainer(n: Node) {
 
 function getParagraphContainer(n: Node): Node {
   DCHECK(n.IsText());
-  return n.parentNode!.parentNode!;
+  return n.parentNode!.parentNode!.parentNode!;
 }
 
 export class TextTool extends BaseTool {
@@ -229,7 +229,7 @@ export class TextTool extends BaseTool {
 
     const childNodes = Array.from(paragraphContainer.childNodes).filter(n => n?.IsElement());
     const items = childNodes.map(p => {
-      const paragraph = this.canvas.view.layoutManager.getParagraphOfNode(p!.firstChild!)!;
+      const paragraph = this.canvas.view.layoutManager.getParagraphOfNode(p!.firstChild!.firstChild!)!;
       return this.canvas.view.layoutManager.getRTreeItemsByParagraph(paragraph);
     }).flat().sort((a, b) => a.minY < b.minY ? -1 : 1);
 

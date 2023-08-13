@@ -500,7 +500,7 @@ export class Paragraph implements IDisposable {
   ): number {
     let i = 1;
     let usedLength = 0;
-    let baseMatchPosition = -1;
+    let bestMatchPosition = -1;
     for (; i + start_position <= end_position; i++) {
       const currentWidth = used_font.GetTextWidth(
         this.unicode_text_,
@@ -511,14 +511,14 @@ export class Paragraph implements IDisposable {
       if (currentWidth >= limit) {
         let currentCharIsBestMatch = Math.abs(currentWidth - limit) < Math.abs(usedLength - limit);
         usedLength = currentCharIsBestMatch ? currentWidth : usedLength;
-        baseMatchPosition = currentCharIsBestMatch ? start_position + i : start_position + i - 1;
+        bestMatchPosition = currentCharIsBestMatch ? start_position + i : start_position + i - 1;
         break;
       }
       usedLength = currentWidth;
     }
-    if (limit > usedLength) baseMatchPosition = end_position;
+    if (bestMatchPosition === -1 && limit > usedLength) bestMatchPosition = end_position;
 
-    return baseMatchPosition;
+    return bestMatchPosition;
   }
 
   GetSubstrWidth(

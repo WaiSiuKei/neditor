@@ -114,7 +114,7 @@ export class SelectionBackground {
     DCHECK_EQ(ancestor, ancestor.parentNode!.parentNode);
     const paragraphs = Array.from(ancestor.childNodes)
       .filter(n => n?.IsElement())
-      .map(p => this.layoutManager.getParagraphOfNode(p!.firstChild!)!);
+      .map(p => this.layoutManager.getParagraphOfNode(p!.firstChild!.firstChild!)!);
 
     const anchorParagraph = this.layoutManager.getParagraphOfNode(anchorNode);
     DCHECK(anchorParagraph);

@@ -26,38 +26,35 @@ const a: IDocumentModel = {
       from: RootNodeId,
       order: '0.5',
     },
-    // p1: {
-    //   id: 'p1',
-    //   type: NodeType.Block,
-    //   style: {
-    //     width: 'auto',
-    //     height: 'auto',
-    //     position: 'relative',
-    //     display: 'block',
-    //     lineHeight: '40px',
-    //     overflowWrap: 'break-word',
-    //     whiteSpace: 'pre-wrap',
-    //     borderColor: '#ffadf8',
-    //     borderStyle: 'solid',
-    //     borderWidth: '1px',
-    //   },
-    //   from: 'div1',
-    //   order: '0.1',
-    // },
-    // title1: {
-    //   id: 'title1',
-    //   type: NodeType.Text,
-    //   style: {
-    //     display: 'inline',
-    //     position: 'relative',
-    //     fontFamily: '"source han sans"',
-    //     fontSize: '28px',
-    //     color: 'black'
-    //   },
-    //   content: 'Title',
-    //   from: 'p1',
-    //   order: '0.1'
-    // },
+    p1: {
+      id: 'p1',
+      type: NodeType.Block,
+      style: {
+        width: 'auto',
+        height: 'auto',
+        position: 'relative',
+        display: 'block',
+        lineHeight: '40px',
+        overflowWrap: 'break-word',
+        whiteSpace: 'pre-wrap',
+      },
+      from: 'div1',
+      order: '0.1',
+    },
+    title1: {
+      id: 'title1',
+      type: NodeType.Text,
+      style: {
+        display: 'inline',
+        position: 'relative',
+        fontFamily: '"source han sans"',
+        fontSize: '28px',
+        color: 'black'
+      },
+      content: 'Title',
+      from: 'p1',
+      order: '0.1'
+    },
     p2: {
       id: 'p2',
       type: NodeType.Block,
