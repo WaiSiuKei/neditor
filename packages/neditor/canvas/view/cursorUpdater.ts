@@ -1,15 +1,14 @@
-import { DCHECK } from '../../base/check';
 import { tail } from '../../base/common/array';
 import { Disposable } from '../../base/common/lifecycle';
 import { NOTIMPLEMENTED, NOTREACHED } from '../../base/common/notreached';
 import { Optional } from '../../base/common/typescript';
-import { HTMLDivElement } from '../../engine/dom/html_div_element';
-import { HTMLParagraphElement } from '../../engine/dom/html_paragraph_element';
-import { TextBox } from '../../engine/layout/text_box';
 import { IMVVMStatus } from '../canvas/canvas';
-import { CursorStyle, ICanvasView } from './view';
+import { CursorStyle, ICanvasView, IPhysicalCursorPosition } from './view';
 
 export class CursorUpdater extends Disposable {
+  lastCursorPosition: Optional<IPhysicalCursorPosition>;
+  lastPlacedAtLineEnd = false;
+  lastPlacedAtParagraphEnd = false;
   constructor(
     public view: ICanvasView,
     public mvvm: IMVVMStatus,
@@ -86,12 +85,33 @@ export class CursorUpdater extends Disposable {
           const textStartPosition = textBox.GetRenderedTextStartPosition();
           const textEndPosition = textBox.GetRenderedTextEndPosition();
           if (textStartPosition > endOffset || textEndPosition < endOffset) continue;
+          // endoffset 等于 textEndPosition 的话
+          if (textEndPosition === endOffset) {
+            let canShowAtEdge = (() => {
+              // 现在是最后一行的
+              if (item === tail(items)) {
+                this.lastPlacedAtParagraphEnd = true;
+                return true;
+              }
+              // 上次也是显示在行尾。支持在行尾上下移动光标的情况
+              if (this.lastPlacedAtLineEnd) return true;
+              // 之前有显示（但不在同一行的开头，需要支持在行首上下移动光标）
+              if (this.lastCursorPosition) {
+                const r = textBox.RectOfSlice(textStartPosition, textStartPosition);
+                return r.y === this.lastCursorPosition.inlineStart && r.x !== this.lastCursorPosition.blockStart;
+              }
+              return false;
+            })();
+            if (!canShowAtEdge) continue;
+          }
+          this.lastPlacedAtLineEnd = textEndPosition === endOffset;
           const rect = textBox.RectOfSlice(endOffset, endOffset);
-          this.view.drawCursor({
+          this.lastCursorPosition = {
             blockStart: rect.x,
             inlineSize: rect.height,
             inlineStart: rect.y,
-          });
+          };
+          this.view.drawCursor(this.lastCursorPosition);
           break;
         }
       } else {

@@ -33,15 +33,16 @@ class MoveBlockCommand extends TextEditorCommand {
     const items = view.layoutManager.getRTreeItemsByParagraph(paragraph);
     let boxIdx: number | undefined;
     let x: number | undefined;
-    items.forEach((item, i) => {
+    for (const item of items) {
       const textBox = item.box;
       const textStartPosition = textBox.GetRenderedTextStartPosition();
       const textEndPosition = textBox.GetRenderedTextEndPosition();
-      if (textStartPosition > offset || textEndPosition < offset) return;
+      if (textStartPosition > offset || textEndPosition < offset) continue;
       const rect = textBox.RelativeRectOfSlice(offset, offset);
       x = rect.x;
-      boxIdx = i;
-    });
+      boxIdx = items.indexOf(item);
+      break;
+    }
     DCHECK(boxIdx);
     DCHECK(x);
     let nextBox: TextBox | undefined;
@@ -52,24 +53,20 @@ class MoveBlockCommand extends TextEditorCommand {
       const idxOfCurrentParagraph = paragraphs.indexOf(paragraph);
       const nextParagraph = paragraphs[dir === BlockDirection.up ? idxOfCurrentParagraph - 1 : idxOfCurrentParagraph + 1];
       if (!nextParagraph && dir === BlockDirection.up) {
-        if (!selection.isCollapsed) {
-          const range = document.createRange();
-          const node = items[0].box.node!;
-          range.setStart(node, 0);
-          range.setEnd(node, 0);
-          selection.addRange(range);
-        }
+        const range = document.createRange();
+        const node = items[0].box.node!;
+        range.setStart(node, 0);
+        range.setEnd(node, 0);
+        selection.addRange(range);
         return;
       }
       if (!nextParagraph && dir === BlockDirection.down) {
-        if (!selection.isCollapsed) {
-          const range = document.createRange();
-          const lastBox = tail(items).box;
-          const node = lastBox.node!;
-          range.setStart(node, lastBox.GetRenderedTextEndPosition());
-          range.setEnd(node, lastBox.GetRenderedTextEndPosition());
-          selection.addRange(range);
-        }
+        const range = document.createRange();
+        const lastBox = tail(items).box;
+        const node = lastBox.node!;
+        range.setStart(node, lastBox.GetRenderedTextEndPosition());
+        range.setEnd(node, lastBox.GetRenderedTextEndPosition());
+        selection.addRange(range);
         return;
       }
       const itemsOfSiblingParagraph = view.layoutManager.getRTreeItemsByParagraph(nextParagraph);
