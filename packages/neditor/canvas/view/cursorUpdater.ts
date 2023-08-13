@@ -52,7 +52,7 @@ export class CursorUpdater extends Disposable {
             const items = this.view.layoutManager.getRTreeItemsByParagraph(paragraph);
             const lastItem = tail(items);
             const textBox = lastItem.box;
-            const textEndPosition = textBox.GetTextEndPosition();
+            const textEndPosition = textBox.GetRenderedTextEndPosition();
             const rect = textBox.RectOfSlice(textEndPosition, textEndPosition);
             this.view.drawCursor({
               blockStart: rect.x,
@@ -78,8 +78,8 @@ export class CursorUpdater extends Disposable {
         const items = this.view.layoutManager.getRTreeItemsByParagraph(paragraph);
         for (let item of items) {
           const textBox = item.box;
-          const textStartPosition = textBox.GetTextStartPosition();
-          const textEndPosition = textBox.GetTextEndPosition();
+          const textStartPosition = textBox.GetRenderedTextStartPosition();
+          const textEndPosition = textBox.GetRenderedTextEndPosition();
           if (textStartPosition > endOffset || textEndPosition < endOffset) continue;
           const rect = textBox.RectOfSlice(endOffset, endOffset);
           this.view.drawCursor({

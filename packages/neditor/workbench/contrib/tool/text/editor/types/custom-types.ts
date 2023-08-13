@@ -1,3 +1,5 @@
+import { BlockNodeModelProxy, TextNodeModelProxy } from '../../../../../../platform/model/common/model';
+
 /**
  * Extendable Custom Types Interface
  */
@@ -22,6 +24,8 @@ type ExtendableTypes =
 
 export interface CustomTypes {
   [key: string]: unknown
+  Element: BlockNodeModelProxy;
+  Text: TextNodeModelProxy;
 }
 
 export type ExtendedType<

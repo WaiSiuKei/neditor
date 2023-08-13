@@ -45,7 +45,7 @@ export interface ICommandRegistry {
   getCommands(): ICommandsMap;
 }
 
-export const CommandsRegistry: ICommandRegistry = new class implements ICommandRegistry {
+export class CommandRegistryImpl implements ICommandRegistry {
 
   private readonly _commands = new Map<string, LinkedList<ICommand>>();
 
@@ -108,4 +108,6 @@ export const CommandsRegistry: ICommandRegistry = new class implements ICommandR
     }
     return result;
   }
-};
+}
+
+export const CommandsRegistry: ICommandRegistry = new CommandRegistryImpl();

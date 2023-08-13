@@ -30,7 +30,6 @@ export abstract class AbstractKeybindingService extends Disposable implements IK
   }
 
   protected abstract _getResolver(): KeybindingResolver;
-  protected abstract _documentHasFocus(): boolean;
   public abstract resolveKeybinding(keybinding: Keybinding): ResolvedKeybinding[];
   public abstract resolveKeyboardEvent(keyboardEvent: IKeyboardEvent): ResolvedKeybinding;
 
@@ -68,18 +67,6 @@ export abstract class AbstractKeybindingService extends Disposable implements IK
     return this._dispatch(e, target);
   }
 
-  public softDispatch(e: IKeyboardEvent, target: IContextKeyServiceTarget): IResolveResult | null {
-    const keybinding = this.resolveKeyboardEvent(e);
-    const [firstPart] = keybinding.getDispatchParts();
-    if (firstPart === null) {
-      // cannot be dispatched, probably only modifier keys
-      return null;
-    }
-
-    const contextValue = this._contextKeyService.getContext(target);
-    return this._getResolver().resolve(contextValue, firstPart);
-  }
-
   protected _dispatch(e: IKeyboardEvent, target: IContextKeyServiceTarget): boolean {
     return this._doDispatch(this.resolveKeyboardEvent(e), target);
   }
@@ -95,7 +82,7 @@ export abstract class AbstractKeybindingService extends Disposable implements IK
     }
 
     const contextValue = this._contextKeyService.getContext(target);
-    const keypressLabel = keybinding.getLabel();
+    // const keypressLabel = keybinding.getLabel();
     const resolveResult = this._getResolver().resolve(contextValue, firstPart);
 
     // this._logService.trace('KeybindingService#dispatch', keypressLabel, resolveResult?.commandId);

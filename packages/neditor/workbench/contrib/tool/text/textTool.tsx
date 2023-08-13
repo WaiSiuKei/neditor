@@ -8,6 +8,7 @@ import { toPX } from '../../../../base/browser/css';
 import { IKeyboardEvent } from '../../../../base/browser/keyboardEvent';
 import { DCHECK } from '../../../../base/check';
 import { tail } from '../../../../base/common/array';
+import { dispose } from '../../../../base/common/lifecycle';
 import { NOTIMPLEMENTED, NOTREACHED } from '../../../../base/common/notreached';
 import { deepClone } from '../../../../base/common/objects';
 import { assertValue } from '../../../../base/common/type';
@@ -21,6 +22,7 @@ import { Node } from '../../../../engine/dom/node';
 import { NodeTraversal } from '../../../../engine/dom/node_traversal';
 import { ITextBoxRTreeItem } from '../../../../engine/layout/r_tree';
 import { HitTestLevel } from '../../../../platform/input/common/input';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation';
 import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding';
 import { DirectionType } from '../../../../platform/model/common/location';
 import { INodeInit, isTextNodeModelProxy, RootNodeId } from '../../../../platform/model/common/model';
@@ -49,6 +51,7 @@ function getParagraphContainer(n: Node): Node {
 
 export class TextTool extends BaseTool {
   _editor?: Editor;
+  _viewController?: ViewController;
   anchorY: Optional<number>;
   anchorX: Optional<number>;
   private _textAreaHandler: Optional<TextAreaHandler>;
@@ -170,6 +173,10 @@ export class TextTool extends BaseTool {
   private _disposeEditor() {
     if (!this._editor) return;
     this._editor = undefined;
+    if (this._viewController) {
+      dispose(this._viewController);
+      this._viewController = undefined;
+    }
 
     if (this._textAreaHandler) {
       this._textAreaHandler.dispose();
@@ -246,14 +253,14 @@ export class TextTool extends BaseTool {
     DCHECK(maxItem);
     let minOffset: number;
     if (minY <= minItem.minY) {
-      minOffset = minItem.box.GetTextStartPosition();
+      minOffset = minItem.box.GetRenderedTextStartPosition();
     } else {
       const boxLeft = minItem.minX;
       const boxRight = minItem.maxX;
       if (minX >= boxRight) {
-        minOffset = minItem.box.GetTextEndPosition();
+        minOffset = minItem.box.GetRenderedTextEndPosition();
       } else if (minX <= boxLeft) {
-        minOffset = minItem.box.GetTextStartPosition();
+        minOffset = minItem.box.GetRenderedTextStartPosition();
       } else {
         minOffset = minItem.box.GetTextPositionAtVisualLocation(minX - boxLeft);
       }
@@ -261,14 +268,14 @@ export class TextTool extends BaseTool {
 
     let maxOffset: number;
     if (maxY >= maxItem.maxY) {
-      maxOffset = maxItem.box.GetTextEndPosition();
+      maxOffset = maxItem.box.GetRenderedTextEndPosition();
     } else {
       const boxRight = maxItem.maxX;
       const boxLeft = maxItem.minX;
       if (maxX >= boxRight) {
-        maxOffset = maxItem.box.GetTextEndPosition();
+        maxOffset = maxItem.box.GetRenderedTextEndPosition();
       } else if (maxX < boxLeft) {
-        maxOffset = maxItem.box.GetTextStartPosition();
+        maxOffset = maxItem.box.GetRenderedTextStartPosition();
       } else {
         maxOffset = maxItem.box.GetTextPositionAtVisualLocation(maxX - boxLeft);
       }
@@ -315,9 +322,9 @@ export class TextTool extends BaseTool {
     const spaceFromLeft = clientX - boxLeft;
     let offset: number;
     if (spaceFromLeft <= 0) {
-      offset = startItem.box.GetTextStartPosition();
+      offset = startItem.box.GetRenderedTextStartPosition();
     } else if (clientX >= boxRight) {
-      offset = startItem.box.GetTextEndPosition();
+      offset = startItem.box.GetRenderedTextEndPosition();
     } else {
       offset = startItem.box.GetTextPositionAtVisualLocation(spaceFromLeft);
     }
@@ -332,7 +339,8 @@ export class TextTool extends BaseTool {
     DCHECK(!this._editor);
     DCHECK(anchor.IsText());
     this.canvas.setSelectedElements([]);
-    const paragraphContainer = anchor.parentElement!.parentElement!;
+    // text -> span -> p -> div
+    const paragraphContainer = anchor.parentElement!.parentElement!.parentElement!;
     const id = paragraphContainer.getAttribute(AttrNameOfId);
     const scope = getScope(paragraphContainer);
     DCHECK(id);
@@ -358,12 +366,17 @@ export class TextTool extends BaseTool {
       });
     });
 
-    this._textAreaHandler = new TextAreaHandler(
-      new ViewController(
+    this._viewController = this.canvas.invokeWithinContext(accessor => {
+      const instantiationService = accessor.get(IInstantiationService);
+      return instantiationService.createInstance(
+        ViewController,
         editor,
         this.canvas,
         this._triggerEndEditing.bind(this),
-      ),
+      );
+    });
+    this._textAreaHandler = new TextAreaHandler(
+      this._viewController,
       this.canvas.view,
     );
     document.body.append(

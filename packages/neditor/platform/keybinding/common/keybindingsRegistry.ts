@@ -60,7 +60,7 @@ export interface IKeybindingsRegistry {
   getDefaultKeybindings(): IKeybindingItem[];
 }
 
-class KeybindingsRegistryImpl implements IKeybindingsRegistry {
+export class KeybindingsRegistryImpl implements IKeybindingsRegistry {
 
   private _coreKeybindings: IKeybindingItem[];
   private _extensionKeybindings: IKeybindingItem[];

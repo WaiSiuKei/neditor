@@ -37,10 +37,6 @@ export class KeybindingService extends AbstractKeybindingService {
     return this._cachedResolver;
   }
 
-  protected _documentHasFocus(): boolean {
-    return document.hasFocus();
-  }
-
   private _toNormalizedKeybindingItems(
     items: IKeybindingItem[],
     isDefault: boolean,

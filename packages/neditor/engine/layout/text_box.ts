@@ -102,12 +102,19 @@ export class TextBox extends Box {
     return true;
   }
 
-  // 扣除控制字符
   GetTextStartPosition() {
     return this.text_start_position_;
   }
+  // 扣除开头的控制字符
+  GetRenderedTextStartPosition() {
+    return this.text_start_position_ - 1;
+  }
   GetTextEndPosition() {
     return this.text_end_position_;
+  }
+  // 扣除开头的控制字符
+  GetRenderedTextEndPosition() {
+    return this.text_end_position_ - 1;
   }
   GetClientRect() {
     const borderBox = this.GetBorderBoxFromRoot(false);
@@ -116,15 +123,17 @@ export class TextBox extends Box {
     return new RectLayoutUnit(new PointLayoutUnit(left, top), new SizeLayoutUnit(borderBox.width(), this.GetInlineLevelBoxHeight()));
   }
 
-  getSelectionStartPosition() {
-    return this._selectionStartPosition;
-  }
-  getSelectionEndPosition() {
-    return this._selectionEndPosition;
-  }
-  setSelection(from = -1, to = -1) {
+  /**
+   * 这里传入的是 visual offset
+   * 需要加上控制字符
+   */
+  setSelection(from = -2, to = -2) {
+    // 加上控制字符
+    from += 1;
+    to += 1;
     DCHECK(from <= to);
     if (from !== -1) {
+      if (from < this.text_start_position_) debugger
       DCHECK(from >= this.text_start_position_);
     }
     if (to !== -1) {
@@ -277,13 +286,15 @@ export class TextBox extends Box {
     return wrap_result;
   }
 
+  // 扣除控制字符
   GetTextPositionAtVisualLocation(length: number) {
-    return this.paragraph.GetTextPositionAtVisualLocation(
+    const val = this.paragraph.GetTextPositionAtVisualLocation(
       this.paragraph.base_direction(),
       this.used_font_,
       this.text_start_position_,
       this.text_end_position_,
       length);
+    return Math.max(val - 1, 0);
   }
 
   GetSplitSibling() {
@@ -937,8 +948,9 @@ export class TextBox extends Box {
 // });
   }
   RectOfSlice(anchorOffset: number, focusOffset: number) {
-    const anchorOffsetInParagraph = anchorOffset;
-    const focusOffsetInParagraph = focusOffset;
+    // 控制字符
+    const anchorOffsetInParagraph = anchorOffset + 1;
+    const focusOffsetInParagraph = focusOffset + 1;
     const start = Math.max(anchorOffsetInParagraph, this.text_start_position_);
     const end = Math.min(focusOffsetInParagraph, this.text_end_position_);
     const startLocation = this.paragraph.GetSubstrWidth(
@@ -959,6 +971,29 @@ export class TextBox extends Box {
     const offsetX = borderBox.x().toFloat();
     const left = Math.min(startLocation, endLocation);
     return new Rect(offsetX + left, y, Math.abs(endLocation - startLocation), h);
+  }
+  RelativeRectOfSlice(anchorOffset: number, focusOffset: number) {
+    // 控制字符
+    const anchorOffsetInParagraph = anchorOffset + 1;
+    const focusOffsetInParagraph = focusOffset + 1;
+    const start = Math.max(anchorOffsetInParagraph, this.text_start_position_);
+    const end = Math.min(focusOffsetInParagraph, this.text_end_position_);
+    const startLocation = this.paragraph.GetSubstrWidth(
+      this.paragraph.base_direction(),
+      this.used_font_,
+      this.text_start_position_,
+      start - this.text_start_position_
+    );
+    const endLocation = end === start ? startLocation : this.paragraph.GetSubstrWidth(
+      this.paragraph.base_direction(),
+      this.used_font_,
+      this.text_start_position_,
+      end - this.text_start_position_
+    );
+    const h = this.GetInlineLevelBoxHeight().toFloat();
+    const y = this.GetInlineLevelTopMargin().NEG().toFloat();
+    const left = Math.min(startLocation, endLocation);
+    return new Rect(left, y, Math.abs(endLocation - startLocation), h);
   }
 }
 

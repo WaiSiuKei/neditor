@@ -6,6 +6,7 @@
 import { Emitter, Event } from '@neditor/core/base/common/event';
 import { Disposable } from '@neditor/core/base/common/lifecycle';
 import { NOTIMPLEMENTED } from '@neditor/core/base/common/notreached';
+import { DLOG } from '../../../base/logging';
 import { ICanvasService } from './canvas';
 import { ICanvas } from '@neditor/core/canvas/canvas/canvas';
 import { Optional } from '@neditor/core/base/common/typescript';
@@ -23,7 +24,6 @@ export class CanvasManager extends Disposable implements ICanvasService {
   private readonly _onDidActiveCanvasChange: Emitter<ICanvas> = this._register(new Emitter<ICanvas>());
   public readonly onDidActiveCanvasChange: Event<ICanvas> = this._onDidActiveCanvasChange.event;
 
-
   private readonly _editors: Map<string, ICanvas> = new Map<string, ICanvas>();
   private _editor: Optional<ICanvas>;
 
@@ -31,7 +31,7 @@ export class CanvasManager extends Disposable implements ICanvasService {
     this._editors.set(editor.id, editor);
     this._editor = editor;
     this._onCanvasAdded.fire(editor);
-    this._onDidActiveCanvasChange.fire(editor)
+    this._onDidActiveCanvasChange.fire(editor);
   }
 
   removeCanvas(editor: ICanvas): void {
@@ -45,7 +45,7 @@ export class CanvasManager extends Disposable implements ICanvasService {
   }
 
   getFocusedCanvas(): Optional<ICanvas> {
-    NOTIMPLEMENTED();
+    return undefined;
   }
 
   getActiveCanvas(): Optional<ICanvas> {

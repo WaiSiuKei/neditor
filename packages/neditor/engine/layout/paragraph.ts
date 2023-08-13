@@ -516,6 +516,7 @@ export class Paragraph implements IDisposable {
       }
       usedLength = currentWidth;
     }
+    if (limit > usedLength) baseMatchPosition = end_position;
 
     return baseMatchPosition;
   }

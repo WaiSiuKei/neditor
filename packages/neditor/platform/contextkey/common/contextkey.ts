@@ -1667,7 +1667,7 @@ export interface IContextKey<T> {
 }
 
 export interface IContextKeyServiceTarget {
-  parentElement: IContextKeyServiceTarget | null;
+  parentElement: IContextKeyServiceTarget | null | undefined;
   setAttribute(attr: string, value: string): void;
   removeAttribute(attr: string): void;
   hasAttribute(attr: string): boolean;

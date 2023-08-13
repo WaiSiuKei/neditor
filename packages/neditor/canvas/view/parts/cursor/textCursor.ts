@@ -101,7 +101,7 @@ export class TextCursor extends Disposable {
     }
     this._domNode.setDisplay('block');
     this._domNode.setTop(this._renderData.top);
-    this._domNode.setLeft(this._renderData.left);
+    this._domNode.setLeft(this._renderData.left - 1);
     this._domNode.setWidth(this._renderData.width);
     this._domNode.setHeight(this._renderData.height);
   }
