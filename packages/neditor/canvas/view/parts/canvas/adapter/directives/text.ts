@@ -1,29 +1,22 @@
 import { isObject } from '@vue/shared';
 import { Directive } from '.';
+import { DCHECK } from '../../../../../../base/check';
+import { HTMLSpanElement } from '../../../../../../engine/dom/html_span_element';
 import { Text } from '../../../../../../engine/dom/text';
 import { Element } from '../../../../../../engine/dom/element';
-import { NOTIMPLEMENTED } from "../../../../../../base/common/notreached";
-import { HTMLBRElement } from "../../../../../../engine/dom/html_br_element";
-import { AttrNameOfComponentType, ComponentTypes } from "../../../../../viewModel/path";
 
 export const text: Directive<Text | Element> = ({ el, get, effect }) => {
   effect(() => {
     const toSet = toDisplayString(get());
-    if (!toSet) {
-      const p = el.AsElement()!.AsHTMLElement()
-      if (!p) NOTIMPLEMENTED()
-      const { firstChild } = p
-      if (firstChild && firstChild.nodeValue === HTMLBRElement.kTagName) {
-        // noop
-      } else {
-        el.textContent = ''
-        // 加个 br
-        const br = el.GetDocument()!.createElement(HTMLBRElement.kTagName)
-        br.setAttribute(AttrNameOfComponentType, ComponentTypes.TrailingBreak)
-        p.appendChild(br);
-      }
-    } else {
+    if (el.IsText()) {
       el.textContent = toSet;
+    } else {
+      DCHECK(el.tagName === HTMLSpanElement.kTagName);
+      if (el.firstChild) {
+        el.firstChild.textContent = toSet;
+      } else {
+        el.textContent = toSet;
+      }
     }
   });
 };

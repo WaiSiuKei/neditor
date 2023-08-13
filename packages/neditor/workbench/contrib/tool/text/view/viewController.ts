@@ -13,10 +13,12 @@ import { SyncDescriptor } from '../../../../../platform/instantiation/common/des
 import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation';
 import { ServiceCollection } from '../../../../../platform/instantiation/common/serviceCollection';
 import { IKeybindingService } from '../../../../../platform/keybinding/common/keybinding';
-import { DescendantModelProxy } from '../../../../../platform/model/common/model';
+import { DescendantModelProxy, isTextNodeModelProxy } from '../../../../../platform/model/common/model';
 import { IToolService } from '../../../../../platform/tool/common/tool';
-import { Editor, Operation, Range, SelectionOperation, Transforms } from '../editor';
+import { Editor, Operation, Range, Text, TextOperation, Transforms } from '../editor';
+import { TextTransforms } from '../editor/interfaces/transforms/text';
 import { CanvasEditor } from './canvasEditorInterface';
+import { LineFeed } from './common';
 import { ITextEditorService, TextEditorKeybindingService, TextEditorService } from './platform';
 import './commands/deleteBackward';
 import './commands/extendLine';
@@ -38,7 +40,7 @@ export class ViewController extends Disposable {
     @IContextKeyService contextKeyService: IContextKeyService,
   ) {
     super();
-    this._canvasEditor = new CanvasEditor(this.canvas);
+    this._canvasEditor = new CanvasEditor(this.editor, this.canvas);
     this._registerDOMEvent();
     const serviceCollection = new ServiceCollection();
     const textEditorService = new TextEditorService();
@@ -62,14 +64,6 @@ export class ViewController extends Disposable {
     });
   }
 
-  private resolveKeybinding(e: IKeyboardEvent) {
-    return this.canvas.invokeWithinContext(accessor => {
-      const keybindingService = accessor.get<IKeybindingService>(IKeybindingService);
-      return keybindingService.resolveKeyboardEvent(e);
-    });
-  }
-  //#endregion
-
   //#region keybinding handlers
   private _exit() {
     this.onEsc();
@@ -90,7 +84,7 @@ export class ViewController extends Disposable {
   private _onDOMSelectionChange() {
     const domSelection = this.canvas.view.document.getSelection();
     if (domSelection.anchorNode) {
-      const range = this._canvasEditor.toSlateRange(this.editor, domSelection, {
+      const range = this._canvasEditor.toSlateRange(domSelection, {
         exactMatch: false,
         suppressThrow: true,
       });
@@ -104,30 +98,33 @@ export class ViewController extends Disposable {
 
   private _registerEditorEvent() {
     this.editor.onChange = (options?: { operation?: Operation }) => {
-      console.log('op', options);
       if (!options) NOTIMPLEMENTED();
       const { operation } = options;
       if (!operation) NOTIMPLEMENTED();
       if (Operation.isSelectionOperation(operation)) {
-        return this.handleEditorSelectionOperation(operation);
+        return this.handleSyncSelectionToDOM();
       }
+      if (Operation.isTextOperation(operation)) {
+        return this.handleTextOperation(operation);
+      }
+      console.log('op', options?.operation?.type, options?.operation);
     };
     this._register(toDisposable(() => this.editor.onChange = () => {}));
   }
   //#endregion
 
   //#region editor operations
-  handleEditorSelectionOperation(op: SelectionOperation) {
+  handleSyncSelectionToDOM(force = false) {
     const rangeOfSlate = this.editor.selection;
     DCHECK(rangeOfSlate);
 
     const domSelection = this.canvas.view.document.getSelection();
-    const rangeOfDOM = this._canvasEditor.toSlateRange(this.editor, domSelection, {
+    const rangeOfDOM = this._canvasEditor.toSlateRange(domSelection, {
       exactMatch: false,
       suppressThrow: true,
     });
     DCHECK(rangeOfDOM);
-    if (!Range.equals(rangeOfSlate, rangeOfDOM)) {
+    if (!Range.equals(rangeOfSlate, rangeOfDOM) || force) {
       const { anchor, focus } = rangeOfSlate;
       const anchorP = this.editor.root.children[anchor.path[0]] as DescendantModelProxy;
       DCHECK(anchorP.isBlock());
@@ -152,40 +149,41 @@ export class ViewController extends Disposable {
       selection.addRange(range);
     }
   }
+
+  handleTextOperation(operation: TextOperation) {
+    // const { type, offset, text, path } = operation;
+    // const node = this._canvasEditor.toNode(path);
+    this.canvas.transform(() => {});
+    /**
+     * compositionType 的时候
+     * step1 输入a，编辑器插入了a，候选的有「啊...」等汉字
+     * step2 按空格，这时选中了第一个，即「啊」
+     * 这时 selection 不变，但是光标位置变了，所以要强制刷一下
+     */
+    this.handleSyncSelectionToDOM(true);
+  }
   //#endregion
 
   //#region DOM events
   public type(text: string): void {
-    // const { view } = this;
-    // if (!/[\r\n]/.test(text)) {
-    //   view.dispatch(view.state.tr.insertText(text));
-    // }
+    if (text === LineFeed) {
+      console.log('line feed');
+    } else {
+      // console.log('type', text);
+      Editor.deleteFragment(this.editor);
+      TextTransforms.insertText(this.editor, text);
+    }
   }
 
   public compositionType(text: string, replacePrevCharCnt: number, replaceNextCharCnt: number, positionDelta: number): void {
     DCHECK(!replaceNextCharCnt);
     DCHECK(!positionDelta);
 
-    // const { view } = this;
-    // const { state } = view;
-    // let { tr, selection } = state;
-    // const { head } = selection;
-    // if (replacePrevCharCnt) {
-    //   tr.delete(head - replacePrevCharCnt, head);
-    // }
-    // tr.insertText(text);
-    // view.dispatch(tr);
+    TextTransforms.delete(this.editor, { unit: 'character', distance: replacePrevCharCnt, reverse: true });
+    TextTransforms.insertText(this.editor, text);
   }
 
   public compositionStart(): void {
-    // const { view } = this;
-    // const { state } = view;
-    // const { selection } = state;
-    // if (!selection.empty) {
-    //   let { tr } = state;
-    //   view.dispatch(tr.deleteSelection());
-    // }
-    // DCHECK(selection.empty);
   }
 
   public compositionEnd(): void {
@@ -198,7 +196,6 @@ export class ViewController extends Disposable {
       return;
     }
     this._keybindingService.dispatchEvent(event, this.editor.el as IContextKeyServiceTarget);
-    console.log('keydown', this.resolveKeybinding(event).getLabel());
   };
 
   public focus() {

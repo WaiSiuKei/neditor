@@ -5,19 +5,22 @@ import { ICanvas } from '../../../../../canvas/canvas/canvas';
 import { getScope } from '../../../../../canvas/viewModel/path';
 import { HTMLSpanElement } from '../../../../../engine/dom/html_span_element';
 import { BlockNodeModelProxy, DescendantModelProxy } from '../../../../../platform/model/common/model';
-import { Editor, Path, Point, Range, Descendant } from '../editor';
+import { Editor, Path, Point, Range, Descendant, Node, Text } from '../editor';
 import { DOMElement, DOMNode, DOMPoint, DOMRange, DOMSelection, isDOMElement, isDOMSelection, normalizeDOMPoint } from '../utils/dom';
 
 export class CanvasEditor {
-  constructor(private canvas: ICanvas) {}
+  constructor(
+    private editor: Editor,
+    private canvas: ICanvas
+  ) {}
   toSlateRange<T extends boolean>(
-    editor: Editor,
     domRange: DOMRange | DOMSelection,
     options: {
       exactMatch: boolean
       suppressThrow: T
     }
   ): T extends true ? Range | null : Range {
+    const { editor } = this;
     const { exactMatch, suppressThrow } = options;
     const el = isDOMSelection(domRange)
       ? domRange.anchorNode
@@ -73,7 +76,6 @@ export class CanvasEditor {
     // }
 
     const anchor = this.toSlatePoint(
-      editor,
       [anchorNode, anchorOffset],
       {
         exactMatch,
@@ -86,7 +88,7 @@ export class CanvasEditor {
 
     const focus = isCollapsed
       ? anchor
-      : this.toSlatePoint(editor, [focusNode, focusOffset], {
+      : this.toSlatePoint([focusNode, focusOffset], {
         exactMatch,
         suppressThrow,
       });
@@ -112,7 +114,6 @@ export class CanvasEditor {
   }
 
   toSlatePoint<T extends boolean>(
-    editor: Editor,
     domPoint: DOMPoint,
     options: {
       exactMatch: boolean
@@ -144,12 +145,14 @@ export class CanvasEditor {
     // COMPAT: If someone is clicking from one Slate editor into another,
     // the select event fires twice, once for the old editor's `element`
     // first, and then afterwards for the correct `element`. (2017/03/03)
-    const slateNode = this.toSlateNode(editor, textNode!);
-    const path = this.findPath(editor, slateNode);
+    const slateNode = this.toSlateNode(textNode!);
+    const path = this.findPath(slateNode);
     return { path, offset } as T extends true ? Point | null : Point;
   }
 
-  toSlateNode(editor: Editor, domNode: DOMNode) {
+  toSlateNode(domNode: DOMNode) {
+    const { editor } = this;
+
     let domEl = isDOMElement(domNode) ? domNode : domNode.parentElement;
 
     DCHECK(domEl);
@@ -161,7 +164,22 @@ export class CanvasEditor {
     return node;
   }
 
-  findPath(editor: Editor, node: Descendant): Path {
+  toNode(path: Path): Node {
+    const toVisit = path.slice();
+    let ret: Node = this.editor.root;
+    toVisit.forEach(idx => {
+      DCHECK(!Text.isText(ret));
+      const children = ret.children;
+      ret = children[idx];
+      DCHECK(ret);
+    });
+    DCHECK(ret);
+    return ret;
+  }
+
+  findPath(node: Descendant): Path {
+    const { editor } = this;
+
     const path: Path = [];
     let child = node as DescendantModelProxy;
 
