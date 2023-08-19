@@ -10,8 +10,8 @@ import { LayoutManager } from './layout_manager';
 import { TextBox } from './text_box';
 
 function offsetInBox(textBox: TextBox, offset: number): boolean {
-  const textStartPosition = textBox.GetRenderedTextStartPosition();
-  const textEndPosition = textBox.GetRenderedTextEndPosition();
+  const textStartPosition = textBox.GetVisualTextStartPosition();
+  const textEndPosition = textBox.GetVisualTextEndPosition();
   return textStartPosition <= offset && textEndPosition >= offset;
 }
 
@@ -100,8 +100,8 @@ export class SelectionBackground {
       const items = this.layoutManager.getRTreeItemsByParagraph(p);
       for (let item of items) {
         const textBox = item.box;
-        const textStartPosition = textBox.GetRenderedTextStartPosition();
-        const textEndPosition = textBox.GetRenderedTextEndPosition();
+        const textStartPosition = textBox.GetVisualTextStartPosition();
+        const textEndPosition = textBox.GetVisualTextEndPosition();
         textBox.setSelection(textStartPosition, textEndPosition);
         this.selected.add(textBox);
       }
@@ -132,8 +132,8 @@ export class SelectionBackground {
       if (i === minParagraphIndex) {
         for (let item of items) {
           const textBox = item.box;
-          const textStartPosition = textBox.GetRenderedTextStartPosition();
-          const textEndPosition = textBox.GetRenderedTextEndPosition();
+          const textStartPosition = textBox.GetVisualTextStartPosition();
+          const textEndPosition = textBox.GetVisualTextEndPosition();
           if (textEndPosition > totalMinOffset) {
             textBox.setSelection(Math.max(textStartPosition, totalMinOffset), textEndPosition);
             this.selected.add(textBox);
@@ -142,8 +142,8 @@ export class SelectionBackground {
       } else if (i === maxParagraphIndex) {
         for (let item of items) {
           const textBox = item.box;
-          const textStartPosition = textBox.GetRenderedTextStartPosition();
-          const textEndPosition = textBox.GetRenderedTextEndPosition();
+          const textStartPosition = textBox.GetVisualTextStartPosition();
+          const textEndPosition = textBox.GetVisualTextEndPosition();
           if (textStartPosition < totalMaxOffset) {
             textBox.setSelection(textStartPosition, Math.min(textEndPosition, totalMaxOffset));
             this.selected.add(textBox);
@@ -152,8 +152,8 @@ export class SelectionBackground {
       } else {
         for (let item of items) {
           const textBox = item.box;
-          const textStartPosition = textBox.GetRenderedTextStartPosition();
-          const textEndPosition = textBox.GetRenderedTextEndPosition();
+          const textStartPosition = textBox.GetVisualTextStartPosition();
+          const textEndPosition = textBox.GetVisualTextEndPosition();
           textBox.setSelection(textStartPosition, textEndPosition);
           this.selected.add(textBox);
         }
@@ -173,8 +173,8 @@ export class SelectionBackground {
     const maxOffset = Math.max(anchorOffset, focusOffset);
     for (let item of items) {
       const textBox = item.box;
-      const textStartPosition = textBox.GetRenderedTextStartPosition();
-      const textEndPosition = textBox.GetRenderedTextEndPosition();
+      const textStartPosition = textBox.GetVisualTextStartPosition();
+      const textEndPosition = textBox.GetVisualTextEndPosition();
       let minInBox = offsetInBox(textBox, minOffset);
       let maxInBox = offsetInBox(textBox, maxOffset);
 

@@ -253,14 +253,14 @@ export class TextTool extends BaseTool {
     DCHECK(maxItem);
     let minOffset: number;
     if (minY <= minItem.minY) {
-      minOffset = minItem.box.GetRenderedTextStartPosition();
+      minOffset = minItem.box.GetVisualTextStartPosition();
     } else {
       const boxLeft = minItem.minX;
       const boxRight = minItem.maxX;
       if (minX >= boxRight) {
-        minOffset = minItem.box.GetRenderedTextEndPosition();
+        minOffset = minItem.box.GetVisualTextEndPosition();
       } else if (minX <= boxLeft) {
-        minOffset = minItem.box.GetRenderedTextStartPosition();
+        minOffset = minItem.box.GetVisualTextStartPosition();
       } else {
         minOffset = minItem.box.GetTextPositionAtVisualLocation(minX - boxLeft);
       }
@@ -268,14 +268,14 @@ export class TextTool extends BaseTool {
 
     let maxOffset: number;
     if (maxY >= maxItem.maxY) {
-      maxOffset = maxItem.box.GetRenderedTextEndPosition();
+      maxOffset = maxItem.box.GetVisualTextEndPosition();
     } else {
       const boxRight = maxItem.maxX;
       const boxLeft = maxItem.minX;
       if (maxX >= boxRight) {
-        maxOffset = maxItem.box.GetRenderedTextEndPosition();
+        maxOffset = maxItem.box.GetVisualTextEndPosition();
       } else if (maxX < boxLeft) {
-        maxOffset = maxItem.box.GetRenderedTextStartPosition();
+        maxOffset = maxItem.box.GetVisualTextStartPosition();
       } else {
         maxOffset = maxItem.box.GetTextPositionAtVisualLocation(maxX - boxLeft);
       }
@@ -322,9 +322,9 @@ export class TextTool extends BaseTool {
     const spaceFromLeft = clientX - boxLeft;
     let offset: number;
     if (spaceFromLeft <= 0) {
-      offset = startItem.box.GetRenderedTextStartPosition();
+      offset = startItem.box.GetVisualTextStartPosition();
     } else if (clientX >= boxRight) {
-      offset = startItem.box.GetRenderedTextEndPosition();
+      offset = startItem.box.GetVisualTextEndPosition();
     } else {
       offset = startItem.box.GetTextPositionAtVisualLocation(spaceFromLeft);
     }

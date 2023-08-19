@@ -168,8 +168,8 @@ class MoveBlockCommand extends TextEditorCommand {
     let x: number | undefined;
     for (const item of items) {
       const textBox = item.box;
-      const textStartPosition = textBox.GetRenderedTextStartPosition();
-      const textEndPosition = textBox.GetRenderedTextEndPosition();
+      const textStartPosition = textBox.GetVisualTextStartPosition();
+      const textEndPosition = textBox.GetVisualTextEndPosition();
       if (textStartPosition > offset || textEndPosition < offset) continue;
       const rect = textBox.RelativeRectOfSlice(offset, offset);
       x = rect.x;
@@ -197,8 +197,8 @@ class MoveBlockCommand extends TextEditorCommand {
         const range = document.createRange();
         const lastBox = tail(items).box;
         const node = lastBox.node!;
-        range.setStart(node, lastBox.GetRenderedTextEndPosition());
-        range.setEnd(node, lastBox.GetRenderedTextEndPosition());
+        range.setStart(node, lastBox.GetVisualTextEndPosition());
+        range.setEnd(node, lastBox.GetVisualTextEndPosition());
         selection.addRange(range);
         return;
       }

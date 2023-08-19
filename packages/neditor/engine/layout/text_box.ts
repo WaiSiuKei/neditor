@@ -51,8 +51,11 @@ import { ICopyableReference } from '../../base/common/lifecycle';
 import { Context } from './box_generator';
 
 export class TextBox extends Box {
-  private _selectionStartPosition = -1;
-  private _selectionEndPosition = -1;
+  private _selectionStartPosition: Optional<number>;
+  private _selectionEndPosition: Optional<number>;
+  // unicode控制字符引起的偏移，字符存储位置 = 字符可见位置 + 排版偏移
+  private _typesettingOffset: number;
+
   constructor(
     css_computed_style_declaration: ComputedStyleDeclaration,
     paragraph_ref: ICopyableReference<Paragraph>,
@@ -60,6 +63,7 @@ export class TextBox extends Box {
     text_end_position: number,
     has_trailing_line_break: boolean,
     is_product_of_split: boolean,
+    typesettingOffset: number,
     used_style_provider: UsedStyleProvider,
     //         LayoutStatTracker* layout_stat_tracker,
     private ctx: Context,
@@ -84,6 +88,7 @@ export class TextBox extends Box {
     this.should_collapse_trailing_white_space_ = false;
     this.has_trailing_line_break_ = has_trailing_line_break;
     this.is_product_of_split_ = is_product_of_split;
+    this._typesettingOffset = typesettingOffset;
     this.update_size_results_valid_ = false;
     this.ascent_ = 0;
     DCHECK(this.text_start_position_ <= this.text_end_position_);
@@ -105,16 +110,14 @@ export class TextBox extends Box {
   GetTextStartPosition() {
     return this.text_start_position_;
   }
-  // 扣除开头的控制字符
-  GetRenderedTextStartPosition() {
-    return this.text_start_position_ - 1;
+  GetVisualTextStartPosition() {
+    return this.positionInParagraphToVisualPosition(this.text_start_position_);
   }
   GetTextEndPosition() {
     return this.text_end_position_;
   }
-  // 扣除开头的控制字符
-  GetRenderedTextEndPosition() {
-    return this.text_end_position_ - 1;
+  GetVisualTextEndPosition() {
+    return this.positionInParagraphToVisualPosition(this.text_end_position_);
   }
   GetClientRect() {
     const borderBox = this.GetBorderBoxFromRoot(false);
@@ -125,25 +128,27 @@ export class TextBox extends Box {
 
   /**
    * 这里传入的是 visual offset
-   * 需要加上控制字符
    */
-  setSelection(from = -2, to = -2) {
-    // 加上控制字符
-    from += 1;
-    to += 1;
-    DCHECK(from <= to);
-    if (from !== -1) {
-      if (from < this.text_start_position_) debugger
+  setSelection(arg1?: number | undefined, arg2?: number | undefined) {
+    let from: number;
+    let to: number;
+    if (isNil(arg1)) {
+      this._selectionStartPosition = undefined;
+    } else {
+      from = this.visualPositionToPositionInParagraph(arg1);
       DCHECK(from >= this.text_start_position_);
+      this._selectionStartPosition = from;
     }
-    if (to !== -1) {
+    if (isNil(arg2)) {
+      this._selectionEndPosition = undefined;
+    } else {
+      to = this.visualPositionToPositionInParagraph(arg2);
       DCHECK(to <= this.text_end_position_);
+      this._selectionEndPosition = to;
     }
-    this._selectionStartPosition = from;
-    this._selectionEndPosition = to;
   }
   hasSelection() {
-    return this._selectionStartPosition !== -1;
+    return !isNil(this._selectionStartPosition);
   }
 
   unsetSelection() {
@@ -294,7 +299,7 @@ export class TextBox extends Box {
       this.text_start_position_,
       this.text_end_position_,
       length);
-    return Math.max(val - 1, 0);
+    return Math.max(val - this._typesettingOffset, 0);
   }
 
   GetSplitSibling() {
@@ -453,8 +458,8 @@ export class TextBox extends Box {
           used_color);
 
         if (this.hasSelection()) {
-          const anchorOffsetInParagraph = this._selectionStartPosition;
-          const focusOffsetInParagraph = this._selectionEndPosition;
+          const anchorOffsetInParagraph = this._selectionStartPosition!;
+          const focusOffsetInParagraph = this._selectionEndPosition!;
           const start = Math.max(anchorOffsetInParagraph, this.text_start_position_);
           const end = Math.min(focusOffsetInParagraph, this.text_end_position_);
           const startLocation = this.paragraph.GetSubstrWidth(
@@ -790,7 +795,10 @@ export class TextBox extends Box {
       this.css_computed_style_declaration(),
       this.paragraph_ref_.copy(),
       split_start_position,
-      split_end_position, this.has_trailing_line_break_, kIsProductOfSplitTrue,
+      split_end_position,
+      this.has_trailing_line_break_,
+      kIsProductOfSplitTrue,
+      this._typesettingOffset,
       this.used_style_provider()/*, layout_stat_tracker()*/,
       this.ctx);
     box_after_split.node = this.node;
@@ -940,6 +948,13 @@ export class TextBox extends Box {
   // collapsing.
   private non_collapsible_text_width_: Optional<LayoutUnit>;
 
+  private visualPositionToPositionInParagraph(val: number) {
+    return val + this._typesettingOffset;
+  }
+  private positionInParagraphToVisualPosition(val: number) {
+    return val - this._typesettingOffset;
+  }
+
   AbsoluteQuads(quads: QuadF[],
                 mode: MapCoordinatesFlags) {
     NOTIMPLEMENTED();
@@ -947,10 +962,9 @@ export class TextBox extends Box {
     // quads.push_back(LocalRectToAbsoluteQuad(r, mode));
 // });
   }
-  RectOfSlice(anchorOffset: number, focusOffset: number) {
-    // 控制字符
-    const anchorOffsetInParagraph = anchorOffset + 1;
-    const focusOffsetInParagraph = focusOffset + 1;
+  RectOfSlice(visualAnchorOffset: number, visualFocusOffset: number) {
+    const anchorOffsetInParagraph = this.visualPositionToPositionInParagraph(visualAnchorOffset);
+    const focusOffsetInParagraph = this.visualPositionToPositionInParagraph(visualFocusOffset);
     const start = Math.max(anchorOffsetInParagraph, this.text_start_position_);
     const end = Math.min(focusOffsetInParagraph, this.text_end_position_);
     const startLocation = this.paragraph.GetSubstrWidth(
@@ -973,9 +987,8 @@ export class TextBox extends Box {
     return new Rect(offsetX + left, y, Math.abs(endLocation - startLocation), h);
   }
   RelativeRectOfSlice(anchorOffset: number, focusOffset: number) {
-    // 控制字符
-    const anchorOffsetInParagraph = anchorOffset + 1;
-    const focusOffsetInParagraph = focusOffset + 1;
+    const anchorOffsetInParagraph = this.visualPositionToPositionInParagraph(anchorOffset);
+    const focusOffsetInParagraph = this.visualPositionToPositionInParagraph(focusOffset);
     const start = Math.max(anchorOffsetInParagraph, this.text_start_position_);
     const end = Math.min(focusOffsetInParagraph, this.text_end_position_);
     const startLocation = this.paragraph.GetSubstrWidth(

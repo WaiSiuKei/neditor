@@ -256,6 +256,7 @@ export class BoxGenerator extends NodeVisitor {
       }
 
       DCHECK(this.paragraph_store_.value);
+      let prevEndPosition = this.paragraph_store_.value.object.GetTextEndPosition();
       let text_start_position = this.paragraph_store_.value.object.AppendUtf8String(modifiable_text, transform);
       let text_end_position = this.paragraph_store_.value.object.GetTextEndPosition();
 
@@ -268,6 +269,7 @@ export class BoxGenerator extends NodeVisitor {
         text_end_position,
         generates_newline,
         kIsProductOfSplitFalse,
+        prevEndPosition,
         this.context_.used_style_provider/*, context_.layout_stat_tracker*/,
         this.context_);
       textBox.node = text;
@@ -412,6 +414,7 @@ export class BoxGenerator extends NodeVisitor {
       text_position,
       kTriggersLineBreakTrue,
       kIsProductOfSplitFalse,
+      text_position,
       this.context_.used_style_provider,
       this.context_,
       /*this.context_.layout_stat_tracker*/);
