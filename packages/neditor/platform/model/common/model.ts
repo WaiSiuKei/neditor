@@ -1,9 +1,11 @@
 import { isPlainObject } from 'is-plain-object';
 import * as Y from 'yjs';
 import { DCHECK } from '../../../base/check';
+import { tail } from '../../../base/common/array';
+import { devideBy2, plus } from '../../../base/common/bignumber';
 import { Event } from '../../../base/common/event';
 import { IDisposable } from '../../../base/common/lifecycle';
-import { NOTIMPLEMENTED } from '../../../base/common/notreached';
+import { NOTIMPLEMENTED, NOTREACHED } from '../../../base/common/notreached';
 import { isString } from '../../../base/common/type';
 import { EnumAndLiteral, Optional, ValueOf } from '../../../base/common/typescript';
 import { URI } from '../../../base/common/uri';
@@ -186,8 +188,13 @@ export interface IOperationCallback<T extends any> {
 }
 
 export const proxyHandler: ProxyHandler<ReturnType<typeof getNodeStyle>> = {
-  get(target: ReturnType<typeof getNodeStyle>, p: keyof IStyleDeclaration): any {
+  get(target: ReturnType<typeof getNodeStyle>, p: keyof IStyleDeclaration | 'toJSON'): any {
     if (!isString(p)) NOTIMPLEMENTED();
+    if (p === 'toJSON') {
+      return () => {
+        return target.toJSON();
+      };
+    }
     return target.get(p);
   },
   set(target: ReturnType<typeof getNodeStyle>, p: keyof IStyleDeclaration, value: ValueOf<Required<IStyleDeclaration>>): boolean {
@@ -266,7 +273,7 @@ export class BlockNodeModelProxy extends ChildNodeProxy implements IBlockNodeMod
     super(y, model);
     const type = getNodeType(y);
     DCHECK(type === NodeType.Block);
-    this.style = new Proxy(getNodeStyle(y), proxyHandler) as unknown as IBlockStyleDeclaration;
+    this.style = new Proxy(getNodeStyle(y), proxyHandler) as unknown as IBlockStyleDeclaration & { toJSON(): IInlineStyleDeclaration };
   }
   isBlock(): this is BlockNodeModelProxy {
     return true;
@@ -277,34 +284,60 @@ export class BlockNodeModelProxy extends ChildNodeProxy implements IBlockNodeMod
     return this.model.getChildrenNodesOfId(this.id);
   }
   removeChildAt(idx: number): void {
-    debugger;
-    NOTIMPLEMENTED();
+    const children = this.children;
+    const toDelete = children[idx];
+    if (!toDelete) NOTREACHED();
+    this.model.removeNode({ ref: toDelete.id, direction: DirectionType.self });
   }
   insertChildAt(idx: number, child: DescendantModelProxy): void {
     if (isPlainObject(child)) {
-      const children = this.children;
       const ref = this.children[idx];
-      DCHECK(ref);
       let init: INodeInit = Object.create(null);
-      init.type = child.type;
-      init.style = Object.create(null);
-      if (init.type === NodeType.Text) {
-        init.content = (child as TextNodeModelProxy).content;
+      init.style = child.style ? { ...child.style } : Object.create(null);
+      const content = Reflect.get(child, 'content');
+      if (content) {
+        init.type = NodeType.Text;
+        (init as ITextNodeInit).content = content;
       } else {
-        NOTIMPLEMENTED();
+        init.type = NodeType.Block;
       }
-      this.model._internal_addNode({ ref: ref.id, direction: DirectionType.forward }, init);
+      let ret: DescendantModelProxy;
+      if (ref) {
+        ret = this.model.addNode({ ref: ref.id, direction: DirectionType.forward }, init);
+      } else {
+        DCHECK(idx === this.children.length);
+        ret = this.model.addNode({ ref: this.id, direction: DirectionType.inward }, init);
+      }
+      const children = Reflect.get(child, 'children');
+      if (Array.isArray(children)) {
+        DCHECK(isBlockNodeModelProxy(ret));
+        ret.setChildren(...children);
+      }
     } else {
       NOTIMPLEMENTED();
     }
   }
-  appendChildren(...children: DescendantModelProxy[]): void {
-    debugger;
-    NOTIMPLEMENTED();
+  appendChildren(...toAdd: DescendantModelProxy[]): void {
+    let left = tail(this.children)?.order || '0';
+    toAdd.forEach((child, i) => {
+      child.from = this.id;
+      left = devideBy2(plus(left, '1'));
+      child.order = left;
+    });
   }
   setChildren(...children: DescendantModelProxy[]): void {
-    debugger;
-    NOTIMPLEMENTED();
+    const prevChildren = this.children.slice();
+    let left = '0';
+    children.forEach((child, i) => {
+      child.from = this.id;
+      left = devideBy2(plus(left, '1'));
+      child.order = left;
+      const prev = prevChildren.findIndex(i => i.id === child.id);
+      if (prev !== -1) {
+        prevChildren.splice(prev, 1);
+      }
+    });
+    prevChildren.forEach(c => c.from = 'undefined');
   }
   insertAfter(child: DescendantModelProxy, ref: DescendantModelProxy): void {
     debugger;
@@ -329,7 +362,7 @@ export class TextNodeModelProxy extends ChildNodeProxy implements ITextNodeModel
     if (type !== NodeType.Text) {
       debugger;
     }
-    this.style = new Proxy(getNodeStyle(y), proxyHandler) as unknown as IInlineStyleDeclaration;
+    this.style = new Proxy(getNodeStyle(y), proxyHandler) as unknown as IInlineStyleDeclaration & { toJSON(): IInlineStyleDeclaration };
   }
   get content(): string {
     return getNodeContent(this.y);

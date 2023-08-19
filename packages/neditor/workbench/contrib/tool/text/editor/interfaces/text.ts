@@ -16,7 +16,7 @@ export interface BaseText {
 }
 
 export type Text = ExtendedType<'Text', BaseText>
-export type TextInit = Omit<Text, '_newOnlyBrand'>
+export type TextInit = Omit<BaseText, '_newOnlyBrand'>
 
 export interface TextEqualsOptions {
   loose?: boolean;
@@ -88,7 +88,7 @@ export const Text: TextInterface = {
   },
 
   isTextInit(value: any): value is TextInit {
-    return !this.isText(value) && Reflect.has(value, '_textBrand');
+    return !this.isText(value) && Reflect.has(value, 'content');
   },
 
   isTextList(value: any): value is Text[] {

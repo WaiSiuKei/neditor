@@ -132,6 +132,8 @@ export const splitNodes: NodeTransforms['splitNodes'] = (
         const point = afterRef.current || Editor.end(editor, []);
         Transforms.select(editor, point);
       }
+    } catch (e) {
+      debugger
     } finally {
       beforeRef.unref();
       afterRef?.unref();

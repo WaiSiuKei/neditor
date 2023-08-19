@@ -37,6 +37,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
   private treeNodeObservers = new Map<string, Map<IIdentifier, IDisposable>>();
   private treeNodesObservers = new Map<string, IDisposable>();
   private treeRoots = new Map<string, INodeViewModel>();
+  private deletedNodeModels = new Set<string>();
 
   private _root: { value: IRootNodeViewModel };
 
@@ -225,28 +226,66 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
     }));
   }
 
-  private addNode(node: YNode, resourceStr: string) {
+  // private addNode(node: YNode, resourceStr: string) {
+  //   const nodeViewModelMap = this.treeNodeViewModelMap.get(resourceStr)!;
+  //   const id = getNodeId(node);
+  //   nodeViewModelMap.delete(id);
+  //   const style = getNodeStyle(node);
+  //   const type = getNodeType(node);
+  //   const vm = reactive({
+  //     id,
+  //     children: this.getChildren(id, resourceStr),
+  //     style: style ? style.toJSON() : Object.create(null),
+  //     type,
+  //     attrs: Object.create(null),
+  //   }) as INodeViewModel;
+  //   nodeViewModelMap.set(id, vm);
+  //   if (type === NodeType.Text) {
+  //     (vm as ITextNodeViewModel).content = getNodeContent(node);
+  //   }
+  //   this.updateChildren(getNodeFrom(node), resourceStr);
+  //   this.watchNode(node, resourceStr);
+  // }
+
+  private onNodeAdded(resourceStr: string) {
     const nodeViewModelMap = this.treeNodeViewModelMap.get(resourceStr)!;
-    const id = getNodeId(node);
-    nodeViewModelMap.delete(id);
-    const style = getNodeStyle(node);
-    const type = getNodeType(node);
-    const vm = reactive({
-      id,
-      children: this.getChildren(id, resourceStr),
-      style: style ? style.toJSON() : Object.create(null),
-      type,
-      attrs: Object.create(null),
-    }) as INodeViewModel;
-    nodeViewModelMap.set(id, vm);
-    if (type === NodeType.Text) {
-      (vm as ITextNodeViewModel).content = getNodeContent(node);
+    const model = this.getModel(resourceStr).yModel;
+    const nodes = getModelNodes(model);
+    DCHECK(nodes);
+    const nodeArr = nodes.values() as IterableIterator<YNode>;
+    const shouldUpdateChildren = new Set<IIdentifier>;
+    for (const node of nodeArr) {
+      const id = getNodeId(node);
+      const prev = nodeViewModelMap.get(id);
+      if (prev) continue;
+      const style = getNodeStyle(node) as Y.Map<string>;
+      const type = getNodeType(node);
+      const from = getNodeFrom(node);
+      shouldUpdateChildren.add(from);
+      shouldUpdateChildren.add(id);
+      DCHECK(isString(id));
+      const vm = reactive({
+        id,
+        children: [],
+        style: style ? style.toJSON() : Object.create(null),
+        type,
+        attrs: Object.create(null)
+      } as INodeViewModel);
+      if (type === NodeType.Text) {
+        ;(vm as ITextNodeViewModel).content = getNodeContent(node);
+      }
+      nodeViewModelMap.set(id, vm);
+      this.watchNode(node, resourceStr);
     }
-    this.updateChildren(getNodeFrom(node), resourceStr);
-    this.watchNode(node, resourceStr);
+
+    for (const vm of nodeViewModelMap.values()) {
+      if (isBlockNodeViewModel(vm) && shouldUpdateChildren.has(vm.id)) {
+        vm.children = this.getChildren(vm.id, resourceStr);
+      }
+    }
   }
 
-  private removeNode(node: YNode, resourceStr: string) {
+  private onNodeRemoved(node: YNode, resourceStr: string) {
     const nodeViewModelMap = this.treeNodeViewModelMap.get(resourceStr)!;
     const observers = this.treeNodeObservers.get(resourceStr)!;
     // 删除的只能这样处理
@@ -256,6 +295,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
       return;
     }
     nodeViewModelMap.delete(id);
+    this.deletedNodeModels.add(id);
     const from = node._map.get('from')!.content.getContent()[0];
     this.updateChildren(from, resourceStr);
     const observer = observers.get(id);
@@ -266,19 +306,18 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
 
   private watchNodes(nodes: IYNodeModels, resourceStr: string) {
     const observer = (event: Y.YMapEvent<YNode>) => {
-      const { target } = event;
       event.changes.keys.forEach((change, key) => {
         const { action, oldValue } = change;
         switch (action) {
           case 'delete': {
-            this.removeNode(oldValue, resourceStr);
+            this.onNodeRemoved(oldValue, resourceStr);
             break;
           }
           case 'update': {
             break;
           }
           case 'add':
-            this.addNode(target.get(key)!, resourceStr);
+            this.onNodeAdded(resourceStr);
             break;
           default:
             NOTREACHED();
@@ -303,6 +342,7 @@ export class CanvasViewModel extends Disposable implements ICanvasViewModel {
   }
 
   private updateChildren(id: IIdentifier, resourceStr: string) {
+    if (this.deletedNodeModels.has(id)) return;
     const vm = this.getViewModelNodeOfResourceById(id, resourceStr);
     DCHECK(vm);
     if (!isBlockNodeViewModel(vm) && !isRootNodeViewModel(vm)) NOTREACHED();

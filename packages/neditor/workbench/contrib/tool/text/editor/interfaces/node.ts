@@ -339,15 +339,19 @@ export const Node: NodeInterface = {
   },
 
   extractProps(node: Node): NodeProps {
-    if (Element.isAncestor(node)) {
-      const { children, ...properties } = node;
-
-      return properties;
-    } else {
-      const { content, ...properties } = node;
-
-      return properties;
-    }
+    // if (Element.isAncestor(node)) {
+    //   const { children, ...properties } = node;
+    //
+    //   return properties;
+    // } else {
+    //   const { content, ...properties } = node;
+    //
+    //   return properties;
+    // }
+    return {
+      type: Reflect.get(node, 'type'),
+      style: Reflect.get(node, 'style').toJSON(),
+    };
   },
 
   first(root: MaybePlainObjectNode, path: Path): NodeEntry {
@@ -538,7 +542,7 @@ export const Node: NodeInterface = {
       // If we're allowed to go downward and we haven't descended yet, do.
       if (
         !visited.has(n) &&
-        !Text.isText(n) &&
+        (!Text.isText(n) && !Text.isTextInit(n)) &&
         n.children.length !== 0 &&
         (pass == null || pass([n, p]) === false)
       ) {
@@ -618,7 +622,7 @@ export const Node: NodeInterface = {
   },
 
   removeChildAt(element: Ancestor, idx: number): void {
-    Reflect.get(element, 'removeChildAt', idx).call(element);
+    Reflect.get(element, 'removeChildAt').call(element, idx);
   },
   insertChildAt(element: Ancestor, idx: number, child: Descendant): void {
     Reflect.get(element, 'insertChildAt').call(element, idx, child);

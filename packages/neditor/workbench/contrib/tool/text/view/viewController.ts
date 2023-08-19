@@ -20,11 +20,7 @@ import { TextTransforms } from '../editor/interfaces/transforms/text';
 import { CanvasEditor } from './canvasEditorInterface';
 import { LineFeed } from './common';
 import { ITextEditorService, TextEditorKeybindingService, TextEditorService } from './platform';
-import './commands/deleteBackward';
-import './commands/extendLine';
-import './commands/moveInline';
-import './commands/moveBlock';
-import './commands/selectAll';
+import './commands';
 
 const EscKeybinding = createSimpleKeybinding(KeyCode.Escape, OS);
 
@@ -102,19 +98,22 @@ export class ViewController extends Disposable {
       const { operation } = options;
       if (!operation) NOTIMPLEMENTED();
       if (Operation.isSelectionOperation(operation)) {
-        return this.handleSyncSelectionToDOM();
+        return this.syncSelectionToDOM();
+      }
+      if (Operation.isNodeOperation(operation)) {
+        this.syncSelectionToDOM();
       }
       if (Operation.isTextOperation(operation)) {
         return this.handleTextOperation(operation);
       }
-      console.log('op', options?.operation?.type, options?.operation);
+      console.log('op', performance.now(), options?.operation?.type, options?.operation);
     };
     this._register(toDisposable(() => this.editor.onChange = () => {}));
   }
   //#endregion
 
   //#region editor operations
-  handleSyncSelectionToDOM(force = false) {
+  syncSelectionToDOM(force = false) {
     const rangeOfSlate = this.editor.selection;
     DCHECK(rangeOfSlate);
 
@@ -160,7 +159,7 @@ export class ViewController extends Disposable {
      * step2 按空格，这时选中了第一个，即「啊」
      * 这时 selection 不变，但是光标位置变了，所以要强制刷一下
      */
-    this.handleSyncSelectionToDOM(true);
+    this.syncSelectionToDOM(true);
   }
   //#endregion
 

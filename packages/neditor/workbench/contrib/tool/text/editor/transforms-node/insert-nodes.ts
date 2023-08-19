@@ -1,4 +1,3 @@
-import { NOTIMPLEMENTED } from '../../../../../../base/common/notreached';
 import { NodeTransforms } from '../interfaces/transforms/node';
 import { Editor } from '../interfaces/editor';
 import { DescendantInit, Node } from '../interfaces/node';
