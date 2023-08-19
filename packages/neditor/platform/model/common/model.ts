@@ -217,6 +217,7 @@ export const proxyHandler: ProxyHandler<ReturnType<typeof getNodeStyle>> = {
 };
 
 class NodeProxy {
+  // 通过 new 创建的，即这是 class instance
   readonly _newOnlyBrand: undefined;
   readonly id: IIdentifier;
   constructor(
@@ -327,6 +328,7 @@ export class BlockNodeModelProxy extends ChildNodeProxy implements IBlockNodeMod
   }
   setChildren(...children: DescendantModelProxy[]): void {
     const prevChildren = this.children.slice();
+    const detached = new Set<DescendantModelProxy>();
     let left = '0';
     children.forEach((child, i) => {
       child.from = this.id;
@@ -337,7 +339,15 @@ export class BlockNodeModelProxy extends ChildNodeProxy implements IBlockNodeMod
         prevChildren.splice(prev, 1);
       }
     });
-    prevChildren.forEach(c => c.from = 'undefined');
+    prevChildren.forEach(c => {
+      c.from = 'undefined';
+      detached.add(c);
+    });
+    setTimeout(() => {
+      detached.forEach(c => {
+        if (!c.from) console.log('detached', c);
+      });
+    });
   }
   insertAfter(child: DescendantModelProxy, ref: DescendantModelProxy): void {
     debugger;
@@ -374,7 +384,6 @@ export class TextNodeModelProxy extends ChildNodeProxy implements ITextNodeModel
   isText(): this is TextNodeModelProxy {
     return true;
   }
-  readonly _textBrand: undefined;
   setContent(val: string) {
     this.content = val;
   }

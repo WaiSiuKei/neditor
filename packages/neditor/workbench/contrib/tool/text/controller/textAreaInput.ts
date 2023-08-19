@@ -312,6 +312,14 @@ export class TextAreaInput extends Disposable {
         return;
       }
 
+      // 由快捷键逻辑来处理
+      if (e.inputType === 'insertLineBreak') {
+        return;
+      }
+      if (e.inputType === 'deleteContentBackward') {
+        return;
+      }
+
       const newState = TextAreaState.readFromTextArea(this._textArea, this._textAreaState);
       const typeInput = TextAreaState.deduceInput(this._textAreaState, newState, /*couldBeEmojiInput*/this._OS === OperatingSystem.Macintosh);
 
@@ -333,6 +341,7 @@ export class TextAreaInput extends Disposable {
         || typeInput.replaceNextCharCnt !== 0
         || typeInput.positionDelta !== 0
       ) {
+        console.log('[fire_type]', typeInput.text.codePointAt(0), typeInput.text);
         this._onType.fire(typeInput);
       }
     }));

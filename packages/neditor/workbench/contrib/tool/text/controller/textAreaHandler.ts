@@ -5,12 +5,10 @@ import { createFastDomNode, FastDomNode } from '@neditor/core/base/browser/fastD
 import { Disposable, toDisposable } from '@neditor/core/base/common/lifecycle';
 import { toTramsform } from '../../../../../base/browser/css';
 import { IKeyboardEvent } from '../../../../../base/browser/keyboardEvent';
-import { ResolvedKeybinding } from '../../../../../base/common/keyCodes';
 import { NOTREACHED } from '../../../../../base/common/notreached';
 import { OS } from '../../../../../base/common/platform';
 import { Optional } from '../../../../../base/common/typescript';
 import { ICanvasView, IPhysicalCursorPosition } from '../../../../../canvas/view/view';
-import { IKeyboardInputEvent } from '../../../../../platform/input/browser/event';
 import { IPasteData, ITextAreaInputHost, TextAreaInput, TextAreaWrapper } from './textAreaInput';
 import { _debugComposition, ITypeData, TextAreaState } from './textAreaState';
 import { ViewController } from '../view/viewController';
@@ -196,7 +194,6 @@ export class TextAreaHandler extends Disposable {
     this.render();
   }
 
-  // TODO: composition 可能要让 IME 的候选区跟随移动
   // The textarea might contain some content when composition starts.
   //
   // When we make the textarea visible, it always has a height of 1 line,
