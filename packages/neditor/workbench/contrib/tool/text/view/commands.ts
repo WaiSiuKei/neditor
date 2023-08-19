@@ -7,7 +7,7 @@ import { TextBox } from '../../../../../engine/layout/text_box';
 import { Editor, Element, Range, Text, Transforms } from '../editor';
 import { registerTextEditorCommand, TextEditorCommand } from './platform';
 
-class SplitBlockCommand extends TextEditorCommand {
+registerTextEditorCommand(new class SplitBlockCommand extends TextEditorCommand {
   constructor() {
     super({
       id: 'splitBlock',
@@ -21,11 +21,8 @@ class SplitBlockCommand extends TextEditorCommand {
       Editor.insertBreak(editor);
     });
   }
-}
-
-registerTextEditorCommand(new SplitBlockCommand());
-
-class DeleteBackwardCommand extends TextEditorCommand {
+});
+registerTextEditorCommand(new class DeleteBackwardCommand extends TextEditorCommand {
   constructor() {
     super({
       id: 'deleteBackward',
@@ -45,11 +42,8 @@ class DeleteBackwardCommand extends TextEditorCommand {
       }
     });
   }
-}
-
-registerTextEditorCommand(new DeleteBackwardCommand());
-
-class ExtendLineBackwardCommand extends TextEditorCommand {
+});
+registerTextEditorCommand(new class ExtendLineBackwardCommand extends TextEditorCommand {
   constructor() {
     super({
       id: 'extendLineBackward',
@@ -65,8 +59,8 @@ class ExtendLineBackwardCommand extends TextEditorCommand {
       reverse: true,
     });
   }
-}
-class ExtendLineForwardCommand extends TextEditorCommand {
+});
+registerTextEditorCommand(new class ExtendLineForwardCommand extends TextEditorCommand {
   constructor() {
     super({
       id: 'extendLineForward',
@@ -78,16 +72,79 @@ class ExtendLineForwardCommand extends TextEditorCommand {
   runTextEditorCommand(editor: Editor, canvas: ICanvas, args: any): void | Promise<void> {
     Transforms.move(editor, { unit: 'line', edge: 'focus' });
   }
-}
+});
+registerTextEditorCommand(new class MoveBackwardCommand extends TextEditorCommand {
+  constructor() {
+    super({
+      id: 'moveBackward',
+      kbOpts: {
+        primary: KeyCode.LeftArrow
+      }
+    });
+  }
+  runTextEditorCommand(editor: Editor, canvas: ICanvas, args: any): void | Promise<void> {
+    const { selection } = editor;
+    const isRTL = false;
+    if (selection && Range.isCollapsed(selection)) {
+      Transforms.move(editor, { reverse: !isRTL });
+    } else {
+      Transforms.collapse(editor, { edge: 'start' });
+    }
+  }
+});
+registerTextEditorCommand(new class MoveForwardCommand extends TextEditorCommand {
+  constructor() {
+    super({
+      id: 'moveForward',
+      kbOpts: {
+        primary: KeyCode.RightArrow
+      }
+    });
+  }
+  runTextEditorCommand(editor: Editor, canvas: ICanvas, args: any): void | Promise<void> {
+    const { selection } = editor;
+    const isRTL = false;
+    if (selection && Range.isCollapsed(selection)) {
+      Transforms.move(editor, { reverse: isRTL });
+    } else {
+      Transforms.collapse(editor, { edge: 'end' });
+    }
+  }
+});
+registerTextEditorCommand(new class SelectAllCommand extends TextEditorCommand {
+  constructor() {
+    super({
+      id: 'selectAll',
+      kbOpts: {
+        primary: KeyMod.CtrlCmd | KeyCode.KEY_A
+      }
+    });
+  }
+  runTextEditorCommand(editor: Editor, canvas: ICanvas, args: any): void | Promise<void> {
+    const lastParagrapn = tail(editor.children);
+    DCHECK(Element.isElement(lastParagrapn));
+    const lastSpan = tail(lastParagrapn.children);
+    DCHECK(Text.isText(lastSpan));
+    const range = {
+      anchor: {
+        path: [0, 0],
+        offset: 0,
+      },
+      focus: {
+        path: [editor.children.length - 1, lastParagrapn.children.length - 1],
+        offset: lastSpan.content.length,
+      },
+    };
 
-registerTextEditorCommand(new ExtendLineBackwardCommand());
-registerTextEditorCommand(new ExtendLineForwardCommand());
-
+    // Update the selection with the new range
+    Transforms.select(editor, range);
+  }
+});
+//#region move block
 enum BlockDirection {
   up,
   down,
 }
-
 class MoveBlockCommand extends TextEditorCommand {
   runTextEditorCommand(editor: Editor, canvas: ICanvas, dir: BlockDirection): void | Promise<void> {
     const { view } = canvas;
@@ -160,7 +217,7 @@ class MoveBlockCommand extends TextEditorCommand {
     selection.addRange(range);
   }
 }
-class MoveBlockBackwardCommand extends MoveBlockCommand {
+registerTextEditorCommand(new class MoveBlockBackwardCommand extends MoveBlockCommand {
   constructor() {
     super({
       id: 'moveBlockBackward',
@@ -170,8 +227,8 @@ class MoveBlockBackwardCommand extends MoveBlockCommand {
       }
     });
   }
-}
-class MoveBlockForwardCommand extends MoveBlockCommand {
+});
+registerTextEditorCommand(new class MoveBlockForwardCommand extends MoveBlockCommand {
   constructor() {
     super({
       id: 'moveBlockForward',
@@ -181,82 +238,5 @@ class MoveBlockForwardCommand extends MoveBlockCommand {
       }
     });
   }
-}
-
-registerTextEditorCommand(new MoveBlockBackwardCommand());
-registerTextEditorCommand(new MoveBlockForwardCommand());
-
-class MoveBackwardCommand extends TextEditorCommand {
-  constructor() {
-    super({
-      id: 'moveBackward',
-      kbOpts: {
-        primary: KeyCode.LeftArrow
-      }
-    });
-  }
-  runTextEditorCommand(editor: Editor, canvas: ICanvas, args: any): void | Promise<void> {
-    const { selection } = editor;
-    const isRTL = false;
-    if (selection && Range.isCollapsed(selection)) {
-      Transforms.move(editor, { reverse: !isRTL });
-    } else {
-      Transforms.collapse(editor, { edge: 'start' });
-    }
-  }
-}
-
-class MoveForwardCommand extends TextEditorCommand {
-  constructor() {
-    super({
-      id: 'moveForward',
-      kbOpts: {
-        primary: KeyCode.RightArrow
-      }
-    });
-  }
-  runTextEditorCommand(editor: Editor, canvas: ICanvas, args: any): void | Promise<void> {
-    const { selection } = editor;
-    const isRTL = false;
-    if (selection && Range.isCollapsed(selection)) {
-      Transforms.move(editor, { reverse: isRTL });
-    } else {
-      Transforms.collapse(editor, { edge: 'end' });
-    }
-  }
-}
-
-registerTextEditorCommand(new MoveBackwardCommand());
-registerTextEditorCommand(new MoveForwardCommand());
-
-class SelectAllCommand extends TextEditorCommand {
-  constructor() {
-    super({
-      id: 'selectAll',
-      kbOpts: {
-        primary: KeyMod.CtrlCmd | KeyCode.KEY_A
-      }
-    });
-  }
-  runTextEditorCommand(editor: Editor, canvas: ICanvas, args: any): void | Promise<void> {
-    const lastParagrapn = tail(editor.children);
-    DCHECK(Element.isElement(lastParagrapn));
-    const lastSpan = tail(lastParagrapn.children);
-    DCHECK(Text.isText(lastSpan));
-    const range = {
-      anchor: {
-        path: [0, 0],
-        offset: 0,
-      },
-      focus: {
-        path: [editor.children.length - 1, lastParagrapn.children.length - 1],
-        offset: lastSpan.content.length,
-      },
-    };
-
-    // Update the selection with the new range
-    Transforms.select(editor, range);
-  }
-}
-
-registerTextEditorCommand(new SelectAllCommand());
+});
+//#endregion
