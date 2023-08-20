@@ -189,7 +189,7 @@ export class TextTool extends BaseTool {
     const anchorY = this.anchorY!;
     const { clientX, clientY } = e;
     if (anchorX === clientX && anchorY === clientY) {
-      return this._updateCollapsedSelect(e);
+      return this._updateCollapsedSelection(e);
     }
     const firstAsMin = anchorY <= clientY;
     const minX = firstAsMin ? anchorX : clientX;
@@ -278,7 +278,7 @@ export class TextTool extends BaseTool {
     if (selection.focusOffset < 0) NOTREACHED();
   }
 
-  private _updateCollapsedSelect(e: IMouseInputEvent) {
+  private _updateCollapsedSelection(e: IMouseInputEvent) {
     const { clientX, clientY } = e;
     const { targetPath } = e;
     const lastOne = tail(targetPath);

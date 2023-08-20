@@ -83,6 +83,8 @@ export class CursorUpdater extends Disposable {
         const items = this.view.layoutManager.getRTreeItemsByParagraph(paragraph);
         for (let item of items) {
           const textBox = item.box;
+          // 排除同一段落内的其他 inline
+          if (textBox.node !== end) continue;
           const textStartPosition = textBox.GetVisualTextStartPosition();
           const textEndPosition = textBox.GetVisualTextEndPosition();
           if (textStartPosition > endOffset || textEndPosition < endOffset) continue;
