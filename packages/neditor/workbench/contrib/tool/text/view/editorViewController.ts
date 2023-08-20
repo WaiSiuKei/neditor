@@ -156,6 +156,16 @@ export class EditorViewController extends Disposable {
 
       const selection = document.getSelection();
       const range = document.createRange();
+      // while (!anchorEl.firstChild) {
+      //   // 空 span，需要跳过
+      //   anchorEl = anchorEl.nextElementSibling;
+      //   DCHECK(anchorEl);
+      // }
+      // while (!focusEl.firstChild) {
+      //   // 空 span，需要跳过
+      //   focusEl = focusEl.nextElementSibling;
+      //   DCHECK(focusEl);
+      // }
       range.setStart(anchorEl.firstChild!, anchor.offset);
       range.setEnd(focusEl.firstChild!, focus.offset);
       selection.addRange(range);

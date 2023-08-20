@@ -26,7 +26,6 @@ export const point: EditorInterface['point'] = (editor, at, options = {}) => {
       );
     }
 
-    if (!node.content) debugger;
     return { path, offset: edge === 'end' ? node.content.length : 0 };
   }
 

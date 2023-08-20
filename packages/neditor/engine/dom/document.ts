@@ -346,7 +346,6 @@ export class Document extends ContainerNode {
     if (n.IsElement()) {
       const id = n.id;
       if (!id) return;
-      DCHECK(!this.elements_by_id.has(id));
       this.elements_by_id.set(id, n);
     }
   }
@@ -357,7 +356,7 @@ export class Document extends ContainerNode {
       if (!id) return;
       const record = this.elements_by_id.get(id);
       DCHECK(record);
-      this.elements_by_id.delete(id);
+      if (record === n) this.elements_by_id.delete(id);
     }
   }
 

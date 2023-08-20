@@ -57,6 +57,7 @@ export class EditorView extends Disposable {
     this._textCursor = this._register(new TextCursor(document.body, this.canvas.view));
     this._cursorUpdater = new CursorUpdater(
       this.canvas.view,
+      this._editor,
       this._drawCursor.bind(this),
     );
   }

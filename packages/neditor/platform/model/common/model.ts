@@ -6,7 +6,7 @@ import { devideBy2, plus } from '../../../base/common/bignumber';
 import { Event } from '../../../base/common/event';
 import { IDisposable } from '../../../base/common/lifecycle';
 import { NOTIMPLEMENTED, NOTREACHED } from '../../../base/common/notreached';
-import { isString } from '../../../base/common/type';
+import { isNil, isString } from '../../../base/common/type';
 import { EnumAndLiteral, Optional, ValueOf } from '../../../base/common/typescript';
 import { URI } from '../../../base/common/uri';
 import { ScopedIdentifier } from '../../../canvas/canvasCommon/scope';
@@ -297,11 +297,11 @@ export class BlockNodeModelProxy extends ChildNodeProxy implements IBlockNodeMod
       let init: INodeInit = Object.create(null);
       init.style = child.style ? { ...child.style } : Object.create(null);
       const content = Reflect.get(child, 'content');
-      if (content) {
+      if (isNil(content)) {
+        init.type = NodeType.Block;
+      } else {
         init.type = NodeType.Text;
         (init as ITextNodeInit).content = content;
-      } else {
-        init.type = NodeType.Block;
       }
       let ret: DescendantModelProxy;
       if (ref) {

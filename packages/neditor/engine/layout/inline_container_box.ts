@@ -374,43 +374,45 @@ export class InlineContainerBox extends ContainerBox {
   }
 
   TrySplitAtSecondBidiLevelRun() {
-    let kInvalidLevel = -1;
-    let last_level = kInvalidLevel;
-
-    let child_box_iterator = 0;
-    const last = this.child_boxes().length - 1;
-    while (child_box_iterator < last) {
-      const child_box = this.child_boxes()[child_box_iterator];
-      let current_level = child_box.GetBidiLevel() || last_level;
-
-      // If the last level isn't equal to the current level, then check on whether
-      // or not the last level is kInvalidLevel. If it is, then no initial value
-      // has been set yet. Otherwise, the intersection of two bidi levels has been
-      // found where a split should occur.
-      if (last_level != current_level) {
-        if (last_level == kInvalidLevel) {
-          last_level = current_level;
-        } else {
-          break;
-        }
-      }
-
-      // Try to split the child box's internals.
-      if (child_box.TrySplitAtSecondBidiLevelRun()) {
-        child_box_iterator = this.InsertSplitSiblingOfDirectChild(child_box_iterator);
-        break;
-      }
-
-      ++child_box_iterator;
-    }
-
-    // If the iterator reached the end, then no split was found.
-    if (child_box_iterator == last) {
-      return false;
-    }
-
-    this.SplitAtIterator(child_box_iterator);
-    return true;
+    // 暂时不支持 rtl ltr 混合
+    return false;
+    // let kInvalidLevel = -1;
+    // let last_level = kInvalidLevel;
+    //
+    // let child_box_iterator = 0;
+    // const last = this.child_boxes().length - 1;
+    // while (child_box_iterator < last) {
+    //   const child_box = this.child_boxes()[child_box_iterator];
+    //   let current_level = child_box.GetBidiLevel() || last_level;
+    //
+    //   // If the last level isn't equal to the current level, then check on whether
+    //   // or not the last level is kInvalidLevel. If it is, then no initial value
+    //   // has been set yet. Otherwise, the intersection of two bidi levels has been
+    //   // found where a split should occur.
+    //   if (last_level != current_level) {
+    //     if (last_level == kInvalidLevel) {
+    //       last_level = current_level;
+    //     } else {
+    //       break;
+    //     }
+    //   }
+    //
+    //   // Try to split the child box's internals.
+    //   if (child_box.TrySplitAtSecondBidiLevelRun()) {
+    //     child_box_iterator = this.InsertSplitSiblingOfDirectChild(child_box_iterator);
+    //     break;
+    //   }
+    //
+    //   ++child_box_iterator;
+    // }
+    //
+    // // If the iterator reached the end, then no split was found.
+    // if (child_box_iterator == last) {
+    //   return false;
+    // }
+    //
+    // this.SplitAtIterator(child_box_iterator);
+    // return true;
   }
 
   GetBidiLevel() {
