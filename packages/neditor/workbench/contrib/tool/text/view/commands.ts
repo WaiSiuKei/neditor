@@ -181,7 +181,14 @@ class MoveBlockCommand extends TextEditorCommand {
     DCHECK(boxIdx);
     DCHECK(x);
     let nextBox: TextBox | undefined;
-    if (boxIdx === 0 && dir === BlockDirection.up || boxIdx === items.length - 1 && dir === BlockDirection.down) {
+    // 段首跳到上一个段落 or 段尾跳到下一个段落
+    let jumpSiblingParagraph = boxIdx === 0 && dir === BlockDirection.up || boxIdx === items.length - 1 && dir === BlockDirection.down;
+    const firstItem = items[0];
+    const lastItem = tail(items);
+    // 如果两边的box上边界或者下边界相同，代表这是有多个 inline 的单行
+    // 这时按上下键需要跳到另一个段落
+    if (firstItem.minY === lastItem.minY || firstItem.maxY === lastItem.maxY) jumpSiblingParagraph = true;
+    if (jumpSiblingParagraph) {
       const paragraphs = Array.from(pContainer.childNodes)
         .filter(n => n?.IsElement())
         .map(p => canvas.view.layoutManager.getParagraphOfNode(p!.firstChild!.firstChild!)!);
