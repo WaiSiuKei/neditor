@@ -2,8 +2,9 @@ import { DCHECK } from '../../../../../base/check';
 import { tail } from '../../../../../base/common/array';
 import { KeyCode, KeyMod } from '../../../../../base/common/keyCodes';
 import { NOTREACHED } from '../../../../../base/common/notreached';
+import { isNil } from '../../../../../base/common/type';
 import { ICanvas } from '../../../../../canvas/canvas/canvas';
-import { TextBox } from '../../../../../engine/layout/text_box';
+import { ITextBoxRTreeItem } from '../../../../../engine/layout/r_tree';
 import { Editor, Element, Range, Text, Transforms } from '../editor';
 import { registerTextEditorCommand, TextEditorCommand } from './platform';
 
@@ -165,29 +166,45 @@ class MoveBlockCommand extends TextEditorCommand {
 
     const paragraph = view.layoutManager.getParagraphOfNode(text);
     if (!paragraph) NOTREACHED();
-    const items = view.layoutManager.getRTreeItemsByParagraph(paragraph);
-    let boxIdx: number | undefined;
+    const lines = view.layoutManager.getContentOfParagraph(paragraph);
+    DCHECK(lines.length > 0);
+    let lineIndex: number | undefined;
     let x: number | undefined;
-    for (const item of items) {
+    // inline 可能会折行显示
+    // 先找出所在的行
+    for (const line of lines) {
+      if (!isNil(lineIndex)) break;
+      for (const item of line) {
+        const textBox = item.box;
+        if (textBox.node !== text) {
+          continue;
+        }
+        const textStartPosition = textBox.GetVisualTextStartPosition();
+        const textEndPosition = textBox.GetVisualTextEndPosition();
+        if (textStartPosition > offset || textEndPosition < offset) continue;
+        lineIndex = lines.indexOf(line);
+        break;
+      }
+    }
+    // 再找出 cursor 在当前行的显示位置
+    DCHECK(lineIndex);
+    let boxOffset = 0;
+    for (const item of lines[lineIndex]) {
       const textBox = item.box;
       const textStartPosition = textBox.GetVisualTextStartPosition();
-      const textEndPosition = textBox.GetVisualTextEndPosition();
-      if (textStartPosition > offset || textEndPosition < offset) continue;
-      const rect = textBox.RelativeRectOfSlice(offset, offset);
-      x = rect.x;
-      boxIdx = items.indexOf(item);
+      const rect = textBox.RelativeRectOfSlice(textStartPosition, offset);
+      x = rect.width + boxOffset;
       break;
     }
-    DCHECK(boxIdx);
     DCHECK(x);
-    let nextBox: TextBox | undefined;
+    let isFirstLine = lineIndex === 0;
+    let isLastLine = lineIndex === lines.length - 1;
+    let nextLine: ITextBoxRTreeItem[] = [];
     // 段首跳到上一个段落 or 段尾跳到下一个段落
-    let jumpSiblingParagraph = boxIdx === 0 && dir === BlockDirection.up || boxIdx === items.length - 1 && dir === BlockDirection.down;
-    const firstItem = items[0];
-    const lastItem = tail(items);
-    // 如果两边的box上边界或者下边界相同，代表这是有多个 inline 的单行
-    // 这时按上下键需要跳到另一个段落
-    if (firstItem.minY === lastItem.minY || firstItem.maxY === lastItem.maxY) jumpSiblingParagraph = true;
+    let jumpSiblingParagraph = isFirstLine && dir === BlockDirection.up || isLastLine && dir === BlockDirection.down;
+    if (lines.length === 1) {
+      DCHECK(jumpSiblingParagraph);
+    }
     if (jumpSiblingParagraph) {
       const paragraphs = Array.from(pContainer.childNodes)
         .filter(n => n?.IsElement())
@@ -195,35 +212,64 @@ class MoveBlockCommand extends TextEditorCommand {
       const idxOfCurrentParagraph = paragraphs.indexOf(paragraph);
       const nextParagraph = paragraphs[dir === BlockDirection.up ? idxOfCurrentParagraph - 1 : idxOfCurrentParagraph + 1];
       if (!nextParagraph && dir === BlockDirection.up) {
+        // 已到顶部，跳到整篇文字开头
         const range = document.createRange();
-        const node = items[0].box.node!;
+        const currentLine = lines[lineIndex];
+        const firstInline = currentLine[0];
+        const node = firstInline.box.node!;
         range.setStart(node, 0);
         range.setEnd(node, 0);
         selection.addRange(range);
         return;
       }
       if (!nextParagraph && dir === BlockDirection.down) {
+        // 已到底部，跳到整篇文字结尾
         const range = document.createRange();
-        const lastBox = tail(items).box;
+        const currentLine = lines[lineIndex];
+        const lastInline = tail(currentLine);
+        const lastBox = lastInline.box;
         const node = lastBox.node!;
         range.setStart(node, lastBox.GetVisualTextEndPosition());
         range.setEnd(node, lastBox.GetVisualTextEndPosition());
         selection.addRange(range);
         return;
       }
-      const itemsOfSiblingParagraph = view.layoutManager.getRTreeItemsByParagraph(nextParagraph);
-      nextBox = dir === BlockDirection.up ? tail(itemsOfSiblingParagraph).box : itemsOfSiblingParagraph[0].box;
+      const linesOfSiblingParagraph = view.layoutManager.getContentOfParagraph(nextParagraph);
+      DCHECK(linesOfSiblingParagraph.length > 0);
+      nextLine = dir === BlockDirection.up ? tail(linesOfSiblingParagraph) : linesOfSiblingParagraph[0];
     } else {
-      const nextItem = items[dir === BlockDirection.up ? boxIdx - 1 : boxIdx + 1];
-      nextBox = nextItem.box;
+      nextLine = lines[dir === BlockDirection.up ? lineIndex - 1 : lineIndex + 1];
     }
-    DCHECK(nextBox);
-    const idx = nextBox.GetTextPositionAtVisualLocation(x);
+    DCHECK(nextLine && nextLine.length);
+    let usedWidth = 0;
     const range = document.createRange();
-    const node = nextBox.node!;
-    range.setStart(node, idx);
-    range.setEnd(node, idx);
-    selection.addRange(range);
+    for (const item of nextLine) {
+      const box = item.box;
+      const start = box.GetVisualTextStartPosition();
+      const end = box.GetVisualTextEndPosition();
+      const rect = box.RelativeRectOfSlice(start, end);
+      if (usedWidth + rect.width < x) {
+        usedWidth += rect.width;
+        continue;
+      }
+      const pos = box.GetTextPositionAtVisualLocation(x - usedWidth);
+      const node = box.node!;
+      range.setStart(node, pos);
+      range.setEnd(node, pos);
+      selection.addRange(range);
+      return;
+    }
+    // 上一行比这一行更长，导致无法精确匹配
+    // 这时跳到最后一个 inline 最后
+    {
+      const lastItem = tail(nextLine);
+      const box = lastItem.box;
+      const end = box.GetVisualTextEndPosition();
+      const node = box.node!;
+      range.setStart(node, end);
+      range.setEnd(node, end);
+      selection.addRange(range);
+    }
   }
 }
 registerTextEditorCommand(new class MoveBlockBackwardCommand extends MoveBlockCommand {

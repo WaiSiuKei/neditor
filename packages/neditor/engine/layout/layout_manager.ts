@@ -369,6 +369,33 @@ export class LayoutManager implements DocumentObserver {
     const items = this.textRTree.all().filter(item => item.box.paragraph === p);
     return items.sort((a, b) => a.minY < b.minY ? -1 : 1);
   }
+  getContentOfParagraph(p: Paragraph): ITextBoxRTreeItem[][] {
+    const allItems = this.textRTree.all();
+    const oneItemInsideParagraph = allItems.find(item => item.box.paragraph === p);
+    DCHECK(oneItemInsideParagraph);
+    const oneBoxInsideParagraph = oneItemInsideParagraph.box;
+    const oneInlineContainerBox = oneBoxInsideParagraph.parent();
+    DCHECK(oneInlineContainerBox);
+    DCHECK(oneInlineContainerBox.isInlineContainerBox());
+    const boxThatHoldsManyLines = oneInlineContainerBox.parent();
+    DCHECK(boxThatHoldsManyLines);
+    let lines: ITextBoxRTreeItem[][] = [];
+    let line: ITextBoxRTreeItem[] = [];
+    for (const inlineContainer of boxThatHoldsManyLines.child_boxes()) {
+      if (LayoutUnit.isZero(inlineContainer.left())) {
+        line = [];
+        lines.push(line);
+      }
+      DCHECK(inlineContainer.isInlineContainerBox());
+      for (const child of inlineContainer.child_boxes()) {
+        DCHECK(child.isTextBox());
+        const item = allItems.find(i => i.box === child);
+        DCHECK(item);
+        line.push(item);
+      }
+    }
+    return lines;
+  }
 
   getParagraphOfNode(node: DOMNode): Optional<Paragraph> {
     const box = node.GetLayoutObject().box;

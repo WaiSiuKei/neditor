@@ -316,6 +316,9 @@ export abstract class Box extends Disposable {
   AsInlineContainerBox(): Optional<InlineContainerBox> {
     return undefined;
   }
+  isInlineContainerBox(): this is InlineContainerBox {
+    return false;
+  }
 
   GetMarginCollapsingStatus(): MarginCollapsingStatus {
     // return MarginCollapsingStatus.kCollapseMargins;

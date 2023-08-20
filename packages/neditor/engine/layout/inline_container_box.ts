@@ -81,6 +81,9 @@ export class InlineContainerBox extends ContainerBox {
   AsInlineContainerBox() {
     return this;
   }
+  isInlineContainerBox() {
+    return true;
+  }
 
   GetLevel() { return Level.kInlineLevel; }
   TryAddChild(child_box: Box): boolean {

@@ -83,50 +83,52 @@ export class CursorUpdater extends Disposable {
       } else if (end.IsText()) {
         const paragraph = this.view.layoutManager.getParagraphOfNode(end);
         if (!paragraph) NOTREACHED();
-        const items = this.view.layoutManager.getRTreeItemsByParagraph(paragraph);
-        for (let item of items) {
-          const textBox = item.box;
-          // 排除同一段落内的其他 inline
-          if (textBox.node !== end) continue;
-          const textStartPosition = textBox.GetVisualTextStartPosition();
-          const textEndPosition = textBox.GetVisualTextEndPosition();
-          if (textStartPosition > endOffset || textEndPosition < endOffset) continue;
-          if (textEndPosition === endOffset) {
-            let canShowAtEdge = (() => {
-              // 现在是最后一行
-              if (item === tail(items)) {
-                this.lastPlacedAtParagraphEnd = true;
-                return true;
-              }
+        const lines = this.view.layoutManager.getContentOfParagraph(paragraph);
+        for (const line of lines) {
+          for (const item of line) {
+            const textBox = item.box;
+            // 排除同一段落内的其他 inline
+            if (textBox.node !== end) continue;
+            const textStartPosition = textBox.GetVisualTextStartPosition();
+            const textEndPosition = textBox.GetVisualTextEndPosition();
+            if (textStartPosition > endOffset || textEndPosition < endOffset) continue;
+            if (textEndPosition === endOffset) {
+              let canShowAtEdge = (() => {
+                // 现在是最后一行
+                if (line === tail(lines)) {
+                  this.lastPlacedAtParagraphEnd = true;
+                  return true;
+                }
 
-              // 上次也是显示在行尾。支持在行尾上下移动光标的情况
-              // if (this.lastPlacedAtLineEnd) return true;
+                // 上次也是显示在行尾。支持在行尾上下移动光标的情况
+                // if (this.lastPlacedAtLineEnd) return true;
 
-              // span 的结尾
-              const parent = end.parentElement;
-              DCHECK(parent);
-              if (parent.tagName === HTMLSpanElement.kTagName) {
-                return true;
-              }
+                // span 的结尾
+                const parent = end.parentElement;
+                DCHECK(parent);
+                if (parent.tagName === HTMLSpanElement.kTagName) {
+                  return true;
+                }
 
-              // 之前有显示（但不在同一行的开头，需要支持在行首上下移动光标）
-              if (this.lastCursorPosition) {
-                const r = textBox.RectOfSlice(textStartPosition, textStartPosition);
-                return r.y === this.lastCursorPosition.inlineStart && r.x !== this.lastCursorPosition.blockStart;
-              }
-              return false;
-            })();
-            if (!canShowAtEdge) continue;
+                // 之前有显示（但不在同一行的开头，需要支持在行首上下移动光标）
+                if (this.lastCursorPosition) {
+                  const r = textBox.RectOfSlice(textStartPosition, textStartPosition);
+                  return r.y === this.lastCursorPosition.inlineStart && r.x !== this.lastCursorPosition.blockStart;
+                }
+                return false;
+              })();
+              if (!canShowAtEdge) continue;
+            }
+            // this.lastPlacedAtLineEnd = textEndPosition === endOffset;
+            const rect = textBox.RectOfSlice(endOffset, endOffset);
+            this.lastCursorPosition = {
+              blockStart: rect.x,
+              inlineSize: rect.height,
+              inlineStart: rect.y,
+            };
+            this.update(this.lastCursorPosition);
+            break;
           }
-          // this.lastPlacedAtLineEnd = textEndPosition === endOffset;
-          const rect = textBox.RectOfSlice(endOffset, endOffset);
-          this.lastCursorPosition = {
-            blockStart: rect.x,
-            inlineSize: rect.height,
-            inlineStart: rect.y,
-          };
-          this.update(this.lastCursorPosition);
-          break;
         }
       } else {
         NOTIMPLEMENTED();

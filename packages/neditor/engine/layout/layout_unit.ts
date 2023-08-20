@@ -9,6 +9,9 @@ export class LayoutUnit {
   static kFixedPointRatio = 64;
   static zero = new LayoutUnit(0);
 
+  static isZero(l: LayoutUnit) {
+    return l.value_ === 0;
+  }
   static Max(a0: LayoutUnit, ...args: LayoutUnit[]) {
     let max = a0;
     for (let arg of args) {
