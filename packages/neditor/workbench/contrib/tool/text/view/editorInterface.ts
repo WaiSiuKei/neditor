@@ -4,15 +4,31 @@ import { Optional } from '../../../../../base/common/typescript';
 import { ICanvas } from '../../../../../canvas/canvas/canvas';
 import { getScope } from '../../../../../canvas/viewModel/path';
 import { HTMLSpanElement } from '../../../../../engine/dom/html_span_element';
-import { BlockNodeModelProxy, DescendantModelProxy } from '../../../../../platform/model/common/model';
-import { Editor, Path, Point, Range, Descendant, Node, Text } from '../editor';
+import { BlockNodeModelProxy, DescendantModelProxy, TextNodeModelProxy } from '../../../../../platform/model/common/model';
+import { Editor, Path, Point, Range, Descendant, Node, Text, createEditor } from '../editor';
 import { DOMElement, DOMNode, DOMPoint, DOMRange, DOMSelection, isDOMElement, isDOMSelection, normalizeDOMPoint } from '../utils/dom';
 
 export class EditorInterface {
+  public state: Editor;
   constructor(
-    private editor: Editor,
-    private canvas: ICanvas
-  ) {}
+    private canvas: ICanvas,
+    ...args: Parameters<typeof createEditor>
+  ) {
+    this.state = createEditor(...args);
+  }
+
+  get el() {
+    return this.state.el;
+  }
+
+  get root() {
+    return this.state.root;
+  }
+
+  get selection() {
+    return this.state.selection;
+  }
+
   toSlateRange<T extends boolean>(
     domRange: DOMRange | DOMSelection,
     options: {
@@ -20,7 +36,7 @@ export class EditorInterface {
       suppressThrow: T
     }
   ): T extends true ? Range | null : Range {
-    const { editor } = this;
+    const { state } = this;
     const { exactMatch, suppressThrow } = options;
     const el = isDOMSelection(domRange)
       ? domRange.anchorNode
@@ -105,9 +121,9 @@ export class EditorInterface {
       Range.isExpanded(range) &&
       Range.isForward(range) &&
       isDOMElement(focusNode) &&
-      Editor.void(editor, { at: range.focus, mode: 'highest' })
+      Editor.void(state, { at: range.focus, mode: 'highest' })
     ) {
-      range = Editor.unhangRange(editor, range, { voids: true });
+      range = Editor.unhangRange(state, range, { voids: true });
     }
 
     return (range as unknown) as T extends true ? Range | null : Range;
@@ -145,14 +161,20 @@ export class EditorInterface {
     // COMPAT: If someone is clicking from one Slate editor into another,
     // the select event fires twice, once for the old editor's `element`
     // first, and then afterwards for the correct `element`. (2017/03/03)
-    const slateNode = this.toSlateNode(textNode!);
+    const slateNode = this.toSlateNode(textNode);
+    if (!slateNode) {
+      if (suppressThrow) {
+        return null as T extends true ? Point | null : Point;
+      }
+      throw new Error(
+        `Cannot resolve a Slate point from DOM point: ${domPoint}`
+      );
+    }
     const path = this.findPath(slateNode);
     return { path, offset } as T extends true ? Point | null : Point;
   }
 
-  toSlateNode(domNode: DOMNode) {
-    const { editor } = this;
-
+  toSlateNode(domNode: DOMNode): Optional<BlockNodeModelProxy | TextNodeModelProxy> {
     let domEl = isDOMElement(domNode) ? domNode : domNode.parentElement;
 
     DCHECK(domEl);
@@ -160,13 +182,15 @@ export class EditorInterface {
     DCHECK(id);
     const scope = getScope(domEl);
     const node = this.canvas.getScopedModel(scope).getNodeById(id);
-    DCHECK(node && (node.isBlock() || node.isText()));
+    if (node) {
+      DCHECK(node && (node.isBlock() || node.isText()));
+    }
     return node;
   }
 
   toNode(path: Path): Node {
     const toVisit = path.slice();
-    let ret: Node = this.editor.root;
+    let ret: Node = this.state.root;
     toVisit.forEach(idx => {
       DCHECK(!Text.isText(ret));
       const children = ret.children;
@@ -178,7 +202,7 @@ export class EditorInterface {
   }
 
   findPath(node: Descendant): Path {
-    const { editor } = this;
+    const { state } = this;
 
     const path: Path = [];
     let child = node as DescendantModelProxy;
@@ -186,7 +210,7 @@ export class EditorInterface {
     const model = this.canvas.model;
 
     while (true) {
-      if (child.id === (editor.root as BlockNodeModelProxy).id) return path;
+      if (child.id === (state.root as BlockNodeModelProxy).id) return path;
       const parent = model.getParentNodeOfId(child.id);
 
       DCHECK(parent && parent.isBlock());

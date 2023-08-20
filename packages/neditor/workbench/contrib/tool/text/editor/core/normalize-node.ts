@@ -18,7 +18,7 @@ export const normalizeNode: WithEditorFirstArg<Editor['normalizeNode']> = (
 
   // Ensure that block and inline nodes have at least one text child.
   if (Element.isElement(node) && node.children.length === 0) {
-    const child = { content: '' };
+    const child = { content: '', type: 'text' as const };
     Transforms.insertNodes(editor, child, {
       at: path.concat(0),
       voids: true,
@@ -59,14 +59,14 @@ export const normalizeNode: WithEditorFirstArg<Editor['normalizeNode']> = (
       // Ensure that inline nodes are surrounded by text nodes.
       if (editor.isInline(child)) {
         if (prev == null || !Text.isText(prev)) {
-          const newChild = { content: '' };
+          const newChild = { content: '', type: 'text' as const };
           Transforms.insertNodes(editor, newChild, {
             at: path.concat(n),
             voids: true,
           });
           n++;
         } else if (isLast) {
-          const newChild = { content: '' };
+          const newChild = { content: '', type: 'text' as const };
           Transforms.insertNodes(editor, newChild, {
             at: path.concat(n + 1),
             voids: true,

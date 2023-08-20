@@ -1,31 +1,21 @@
+import * as Y from 'yjs';
+import { DCHECK } from '../../../base/check';
 import { cmp } from '../../../base/common/bignumber';
 import { Emitter, Event } from '../../../base/common/event';
 import { Disposable, IDisposable, toDisposable } from '../../../base/common/lifecycle';
-import { NOTIMPLEMENTED, NOTREACHED } from '../../../base/common/notreached';
+import { NOTREACHED } from '../../../base/common/notreached';
 import { deepClone, keys } from '../../../base/common/objects';
+import { isObject, isString } from '../../../base/common/type';
 import { Optional } from '../../../base/common/typescript';
 import { URI } from '../../../base/common/uri';
 import { ScopedIdentifier } from '../../../canvas/canvasCommon/scope';
 import { IIdentifier } from '../../../common/common';
-import {
-  getModelNodes,
-  IDocumentModel,
-  IYDocumentModel,
-  IYNodeModels
-} from '../../../common/model';
-import { getNodeFrom, getNodeId, getNodeOrder, getNodeType, NodeType, YNode, YNodeValue } from '../../../common/node';
+import { getModelNodes, IDocumentModel, IYDocumentModel, IYNodeModels } from '../../../common/model';
+import { getNodeContent, getNodeFrom, getNodeId, getNodeOrder, getNodeType, NodeType, YNode, YNodeValue } from '../../../common/node';
 import { DirectionType, ILocation } from './location';
-import { AncestorModelProxy, BlockNodeModelProxy, Descendant, DescendantModelProxy, IModelBase, IModelOperationContext, IModelService, INodeInit, NodeModelProxy, TextNodeModelProxy, toOptionalProxy, toProxy } from './model';
-import {
-  insertNodeOperation,
-  removeNodeOperation,
-  reorderNodeOperation,
-  reparentNodeOperation,
-} from './operation/nodes';
-import * as Y from 'yjs';
-import { isObject, isString } from '../../../base/common/type';
+import { AncestorModelProxy, DescendantModelProxy, IModelBase, IModelOperationContext, IModelService, INodeInit, NodeModelProxy, toOptionalProxy, toProxy } from './model';
 import { IModelContentChangedEvent, ModelContentChangedEvent } from './modelEvents';
-import { DCHECK } from '../../../base/check';
+import { insertNodeOperation, removeNodeOperation, reorderNodeOperation, reparentNodeOperation, } from './operation/nodes';
 
 export class ModelOperator<T extends IDocumentModel> extends Disposable implements IModelBase<T> {
   static MODEL_ID = 0;
@@ -234,6 +224,16 @@ export class ModelOperator<T extends IDocumentModel> extends Disposable implemen
   removeNode(at: ILocation) {
     this._updateContextGuard();
     removeNodeOperation(at)(this);
+  }
+
+  removeEmptyTextNodes() {
+    this._updateContextGuard();
+    const nodes = getModelNodes(this._yModel);
+    for (let node of nodes.values()) {
+      if (getNodeType(node) === NodeType.Text && !getNodeContent(node)) {
+        this.removeNode({ ref: getNodeId(node), direction: DirectionType.self });
+      }
+    }
   }
 
   removeNodes(ids: IIdentifier[]) {

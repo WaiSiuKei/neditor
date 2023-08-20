@@ -10,7 +10,7 @@ export const insertText: EditorInterface['insertText'] = (
 
   if (selection) {
     if (marks) {
-      const node = { content: text, ...marks };
+      const node = { content: text, type: 'text' as const, ...marks };
       Transforms.insertNodes(editor, node, {
         at: options.at,
         voids: options.voids,

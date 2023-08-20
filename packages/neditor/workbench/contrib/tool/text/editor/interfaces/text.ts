@@ -16,7 +16,10 @@ export interface BaseText {
 }
 
 export type Text = ExtendedType<'Text', BaseText>
-export type TextInit = Omit<BaseText, '_newOnlyBrand'>
+export type TextInit = {
+  readonly content: string;
+  readonly type: 'text'
+}
 
 export interface TextEqualsOptions {
   loose?: boolean;
@@ -63,6 +66,7 @@ export interface TextInterface {
 
   setContent(t: Text, val: string): void;
   getParent(t: Text): Element;
+  remove(t: Text): void;
 }
 
 // eslint-disable-next-line no-redeclare
@@ -88,7 +92,7 @@ export const Text: TextInterface = {
   },
 
   isTextInit(value: any): value is TextInit {
-    return !this.isText(value) && Reflect.has(value, 'content');
+    return !this.isText(value) && Reflect.has(value, 'content') && Reflect.get(value, 'type') === 'text';
   },
 
   isTextList(value: any): value is Text[] {
@@ -191,5 +195,8 @@ export const Text: TextInterface = {
   },
   getParent(t: Text): Element {
     return Reflect.get(t, 'getParent').call(t);
+  },
+  remove(t: Text): void {
+    return Reflect.get(t, 'remove').call(t);
   }
 };

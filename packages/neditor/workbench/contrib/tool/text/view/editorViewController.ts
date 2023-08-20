@@ -25,24 +25,22 @@ import './commands';
 const EscKeybinding = createSimpleKeybinding(KeyCode.Escape, OS);
 
 export class EditorViewController extends Disposable {
-  _canvasEditor: EditorInterface;
   _contextKeyService: IContextKeyService;
   _instantiationService: IInstantiationService;
   constructor(
-    private editor: Editor,
+    private editor: EditorInterface,
     private canvas: ICanvas,
     private onEsc: () => void,
     @IInstantiationService instantiationService: IInstantiationService,
     @IContextKeyService contextKeyService: IContextKeyService,
   ) {
     super();
-    this._canvasEditor = new EditorInterface(this.editor, this.canvas);
     this._registerDOMEvent();
     const serviceCollection = new ServiceCollection();
     const textEditorService = new TextEditorService();
-    textEditorService.addEditor(editor);
+    textEditorService.addEditor(editor.state);
 
-    this._contextKeyService = this._register(contextKeyService.createScoped(this.editor.el as IContextKeyServiceTarget));
+    this._contextKeyService = this._register(contextKeyService.createScoped(this.editor.state.el as IContextKeyServiceTarget));
     serviceCollection.set(ITextEditorService, textEditorService);
     serviceCollection.set(IKeybindingService, new SyncDescriptor(TextEditorKeybindingService));
     serviceCollection.set(IContextKeyService, this._contextKeyService);
@@ -80,20 +78,20 @@ export class EditorViewController extends Disposable {
   private _onDOMSelectionChange() {
     const domSelection = this.canvas.view.document.getSelection();
     if (domSelection.anchorNode) {
-      const range = this._canvasEditor.toSlateRange(domSelection, {
+      const range = this.editor.toSlateRange(domSelection, {
         exactMatch: false,
         suppressThrow: true,
       });
 
       DCHECK(range);
-      Transforms.select(this.editor, range);
+      Transforms.select(this.editor.state, range);
     } else {
-      Transforms.deselect(this.editor);
+      Transforms.deselect(this.editor.state);
     }
   }
 
   private _registerEditorEvent() {
-    this.editor.onChange = (options?: { operation?: Operation }) => {
+    this.editor.state.onChange = (options?: { operation?: Operation }) => {
       if (!options) NOTIMPLEMENTED();
       const { operation } = options;
       if (!operation) NOTIMPLEMENTED();
@@ -101,15 +99,24 @@ export class EditorViewController extends Disposable {
         return this.syncSelectionToDOM();
       }
       if (Operation.isNodeOperation(operation)) {
-        this.syncSelectionToDOM();
+        /**
+         * 在 splitNode、mergeNode 之后，selection 可能不变但是 inline span 渲染位置可能改变
+         */
+        this.syncSelectionToDOM(true);
       }
       if (Operation.isTextOperation(operation)) {
-        return this.handleTextOperation();
+        /**
+         * compositionType 的时候
+         * step1 输入「a」，编辑器插入「a」，候选的有「啊...」等汉字
+         * step2 按空格，这时选中了第一个，即「啊」
+         * 这时 selection 不变，最后的字符从「a」变为 「啊」，光标位置变了，所以要强制刷一下
+         */
+        this.syncSelectionToDOM(true);
       }
       // console.log('op', performance.now(), options?.operation?.type, options?.operation);
       // console.log('selection', JSON.stringify(this.editor.selection));
     };
-    this._register(toDisposable(() => this.editor.onChange = () => {}));
+    this._register(toDisposable(() => this.editor.state.onChange = () => {}));
   }
   //#endregion
 
@@ -119,12 +126,17 @@ export class EditorViewController extends Disposable {
     DCHECK(rangeOfSlate);
 
     const domSelection = this.canvas.view.document.getSelection();
-    const rangeOfDOM = this._canvasEditor.toSlateRange(domSelection, {
+    /**
+     * 修改了 slate 的设计
+     * 原本 slate 会在 splitNode 之后保留空的 inline，所以下面的代码会查到 range
+     * 现在去掉空的 textNode 之后，下面会查不到
+     * 遇到这种情况肯定需要刷新
+     */
+    const rangeOfDOM = this.editor.toSlateRange(domSelection, {
       exactMatch: false,
       suppressThrow: true,
     });
-    DCHECK(rangeOfDOM);
-    if (!Range.equals(rangeOfSlate, rangeOfDOM) || force) {
+    if (!rangeOfDOM || !Range.equals(rangeOfSlate, rangeOfDOM) || force) {
       const { anchor, focus } = rangeOfSlate;
       const anchorP = this.editor.root.children[anchor.path[0]] as DescendantModelProxy;
       DCHECK(anchorP.isBlock());
@@ -149,24 +161,14 @@ export class EditorViewController extends Disposable {
       selection.addRange(range);
     }
   }
-
-  handleTextOperation() {
-    /**
-     * compositionType 的时候
-     * step1 输入「a」，编辑器插入「a」，候选的有「啊...」等汉字
-     * step2 按空格，这时选中了第一个，即「啊」
-     * 这时 selection 不变，最后的字符从「a」变为 「啊」，光标位置变了，所以要强制刷一下
-     */
-    this.syncSelectionToDOM(true);
-  }
   //#endregion
 
   //#region DOM events
   public type(text: string): void {
     DCHECK(text !== LineFeed);
     this.canvas.transform(() => {
-      Editor.deleteFragment(this.editor);
-      TextTransforms.insertText(this.editor, text);
+      Editor.deleteFragment(this.editor.state);
+      TextTransforms.insertText(this.editor.state, text);
     });
   }
 
@@ -174,8 +176,8 @@ export class EditorViewController extends Disposable {
     DCHECK(!replaceNextCharCnt);
     DCHECK(!positionDelta);
     this.canvas.transform(() => {
-      TextTransforms.delete(this.editor, { unit: 'character', distance: replacePrevCharCnt, reverse: true });
-      TextTransforms.insertText(this.editor, text);
+      TextTransforms.delete(this.editor.state, { unit: 'character', distance: replacePrevCharCnt, reverse: true });
+      TextTransforms.insertText(this.editor.state, text);
     });
   }
 

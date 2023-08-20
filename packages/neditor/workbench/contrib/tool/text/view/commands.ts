@@ -19,6 +19,8 @@ registerTextEditorCommand(new class SplitBlockCommand extends TextEditorCommand 
   runTextEditorCommand(editor: Editor, canvas: ICanvas, args: any): void | Promise<void> {
     canvas.transform(() => {
       Editor.insertBreak(editor);
+      // 不然 cobalt 那边会有异常
+      canvas.model.removeEmptyTextNodes();
     });
   }
 });

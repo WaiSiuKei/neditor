@@ -75,6 +75,7 @@ export interface IModelBase<T extends IDocumentModel> extends IDisposable {
    * @param at - 位置
    */
   removeNode(at: ILocation): void;
+  removeEmptyTextNodes(): void;
   /**
    * 删除多个节点
    * @param ids
@@ -389,6 +390,9 @@ export class TextNodeModelProxy extends ChildNodeProxy implements ITextNodeModel
   }
   getParent() {
     return this.model.getParentNodeOfId(this.id);
+  }
+  remove() {
+    this.model.removeNode({ ref: this.id, direction: DirectionType.self });
   }
 }
 

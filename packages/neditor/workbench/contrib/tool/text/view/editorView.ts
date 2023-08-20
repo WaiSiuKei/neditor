@@ -7,13 +7,13 @@ import { BlockNodeModelProxy } from '../../../../../platform/model/common/model'
 import { IPhysicalCursorPosition } from '../common';
 import { CursorUpdater } from './cursor/cursorUpdater';
 import { TextCursor } from './cursor/textCursor';
-import { createEditor, Editor } from '../editor';
+import { EditorInterface } from './editorInterface';
 import { TextAreaHandler } from './type/textAreaHandler';
 import { EditorViewController } from './editorViewController';
 import { Element } from '../../../../../engine/dom/element';
 
 export class EditorView extends Disposable {
-  _editor: Editor;
+  _editor: EditorInterface;
   _viewController: EditorViewController;
   _textAreaHandler: TextAreaHandler;
   _textCursor: TextCursor;
@@ -27,10 +27,12 @@ export class EditorView extends Disposable {
   ) {
     super();
 
-    const editor = createEditor({
-      root: node,
-      el: dom.AsElement()!.AsHTMLElement()!,
-    });
+    const editor = new EditorInterface(
+      this.canvas,
+      {
+        root: node,
+        el: dom.AsElement()!.AsHTMLElement()!,
+      });
     this._editor = editor;
     Reflect.set(window, 'slate', this._editor);
 
