@@ -3,13 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { IntervalTimer } from '@neditor/core/base/common/async';
 import './textCursor.css';
-import { Disposable } from '@neditor/core/base/common/lifecycle';
-import { Optional } from '@neditor/core/base/common/typescript';
-import { createFastDomNode, FastDomNode } from '@neditor/core/base/browser/fastDomNode';
-import { toTramsform } from '../../../../base/browser/css';
-import { ICanvasView } from '../../view';
+import { toTramsform } from '../../../../../../base/browser/css';
+import { createFastDomNode, FastDomNode } from '../../../../../../base/browser/fastDomNode';
+import { IntervalTimer } from '../../../../../../base/common/async';
+import { Disposable, toDisposable } from '../../../../../../base/common/lifecycle';
+import { Optional } from '../../../../../../base/common/typescript';
+import { ICanvasView } from '../../../../../../canvas/view/view';
 
 export interface IViewCursorRenderData {
   top: number;
@@ -19,7 +19,6 @@ export interface IViewCursorRenderData {
 }
 
 export class TextCursor extends Disposable {
-
   static readonly BLINK_INTERVAL = 500;
 
   private _domNode: FastDomNode<HTMLElement>;
@@ -40,8 +39,10 @@ export class TextCursor extends Disposable {
     this._domNode.setDisplay('none');
     this._domNode.setTop(0);
     this._domNode.setLeft(0);
+    this._register(toDisposable(() => this._domNode.domNode.remove()));
 
     this._cursorFlatBlinkInterval = new IntervalTimer();
+    this._register(this._cursorFlatBlinkInterval);
 
     this._updateDomClassName();
   }

@@ -1,7 +1,6 @@
 import './view.css';
 import { Disposable } from '@neditor/core/base/common/lifecycle';
 import { NOTIMPLEMENTED } from '@neditor/core/base/common/notreached';
-import { Optional } from '@neditor/core/base/common/typescript';
 import { Selection } from '@neditor/core/engine/editing/selection';
 import { HitTestOptions, DOMHitTestResult, LayoutManager } from '@neditor/core/engine/layout/layout_manager';
 import { Emitter, Event } from '../../base/common/event';
@@ -10,21 +9,18 @@ import { IContextKeyService } from '../../platform/contextkey/common/contextkey'
 import { TInputEventType } from '../../platform/input/browser/event';
 import { HitTestLevel } from '../../platform/input/common/input';
 import { IKeybindingService } from '../../platform/keybinding/common/keybinding';
-import { ICanvasState, IMVVMStatus } from '../canvas/canvas';
+import { ICanvasState } from '../canvas/canvas';
 import { CanvasContextKeys } from '../canvas/canvasContextKeys';
 import { ICanvasViewModel } from '../viewModel/viewModel';
 import { IPointerHandlerHelper } from './controller/mouseHandler';
 import { PointerHandler } from './controller/pointerHandler';
-import { CursorUpdater } from './cursorUpdater';
 import { Canvas } from './parts/canvas/canvas';
-import { TextCursor } from './parts/cursor/textCursor';
 import { Overlay } from './parts/overlay/overlay';
-import { CursorStyle, IPhysicalCursorPosition, ICanvasView, IOutlineInit } from './view';
+import { CursorStyle, ICanvasView } from './view';
 import { ViewController } from './viewController';
 import { ViewOutgoingEvents } from './viewOutgoingEvents';
 
 export class View extends Disposable implements ICanvasView {
-  private _textCursor: TextCursor;
   private _canvas: Canvas;
   private _overlay: Overlay;
   private _selection!: Selection;
@@ -34,13 +30,9 @@ export class View extends Disposable implements ICanvasView {
   private _onCameraChagned = new Emitter<void>();
   public onCameraChagned = this._onCameraChagned.event;
 
-  private _onCursorMoved = new Emitter<Optional<IPhysicalCursorPosition>>();
-  public onCursorMoved = this._onCursorMoved.event;
-
   constructor(
     public domNode: HTMLElement,
     public viewModel: ICanvasViewModel,
-    public mvvm: IMVVMStatus,
     viewUserInputEvents: ViewOutgoingEvents,
     @IContextKeyService private _contextKeyService: IContextKeyService,
     @IKeybindingService private _keybindingService: IKeybindingService,
@@ -52,10 +44,8 @@ export class View extends Disposable implements ICanvasView {
     let viewController = new ViewController(viewUserInputEvents);
     this._canvas = this._register(new Canvas(this.domNode, this, viewModel));
     this._overlay = this._register(new Overlay(this.domNode));
-    this._textCursor = this._register(new TextCursor(this.domNode, this));
     Event.once(this._canvas.onMounted)(() => {
       const selection = this.document.getSelection();
-      this._register(new CursorUpdater(this, this.mvvm));
       this._selection = this._register(selection);
       this._register(selection.onDidChange(() => this.layoutManager.onSelectionChanged(selection)));
       this._register(new PointerHandler(viewController, this._createPointerHandlerHelper()));
@@ -98,19 +88,6 @@ export class View extends Disposable implements ICanvasView {
     if (cursor !== toSet) {
       target.style.cursor = toSet;
     }
-  }
-  drawCursor(position: Optional<IPhysicalCursorPosition>): void {
-    if (!position) {
-      this._textCursor.update();
-    } else {
-      this._textCursor.update({
-        left: position.blockStart,
-        top: position.inlineStart,
-        width: 1.5,
-        height: position.inlineSize,
-      });
-    }
-    this._onCursorMoved.fire(position);
   }
 
   setHitTestLevel(level: HitTestLevel) {

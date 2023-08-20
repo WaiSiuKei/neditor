@@ -1,4 +1,4 @@
-import { commonPrefixLength, commonSuffixLength, containsEmoji, containsFullWidthCharacter } from '@neditor/core/base/common/strings';
+import { commonPrefixLength, commonSuffixLength } from '../../../../../../base/common/strings';
 
 export const _debugComposition = false;
 

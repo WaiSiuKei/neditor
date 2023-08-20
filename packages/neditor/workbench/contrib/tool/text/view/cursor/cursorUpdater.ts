@@ -1,9 +1,10 @@
-import { tail } from '../../base/common/array';
-import { Disposable } from '../../base/common/lifecycle';
-import { NOTIMPLEMENTED, NOTREACHED } from '../../base/common/notreached';
-import { Optional } from '../../base/common/typescript';
-import { IMVVMStatus } from '../canvas/canvas';
-import { CursorStyle, ICanvasView, IPhysicalCursorPosition } from './view';
+import { tail } from '../../../../../../base/common/array';
+import { Disposable } from '../../../../../../base/common/lifecycle';
+import { NOTIMPLEMENTED, NOTREACHED } from '../../../../../../base/common/notreached';
+import { Optional } from '../../../../../../base/common/typescript';
+import { IMVVMStatus } from '../../../../../../canvas/canvas/canvas';
+import { CursorStyle, ICanvasView } from '../../../../../../canvas/view/view';
+import { IPhysicalCursorPosition } from '../../common';
 
 export class CursorUpdater extends Disposable {
   lastCursorPosition: Optional<IPhysicalCursorPosition>;
@@ -11,15 +12,15 @@ export class CursorUpdater extends Disposable {
   lastPlacedAtParagraphEnd = false;
   constructor(
     public view: ICanvasView,
-    public mvvm: IMVVMStatus,
+    public update: (pos: Optional<IPhysicalCursorPosition>) => void,
   ) {
     super();
 
     const selection = view.document.getSelection();
-    this._register(selection.onDidChange(async () => {
-      await this.mvvm.maybeWaitForReLayout();
+    this._register(selection.onDidChange(() => {
       this._updateSelectionDisplay();
     }));
+    this._updateSelectionDisplay();
   }
 
   private _updateSelectionDisplay() {
@@ -111,7 +112,7 @@ export class CursorUpdater extends Disposable {
             inlineSize: rect.height,
             inlineStart: rect.y,
           };
-          this.view.drawCursor(this.lastCursorPosition);
+          this.update(this.lastCursorPosition);
           break;
         }
       } else {
@@ -119,7 +120,7 @@ export class CursorUpdater extends Disposable {
       }
     } else {
       this.view.setCursor(CursorStyle.arrow);
-      this.view.drawCursor(undefined);
+      this.update(undefined);
     }
   }
 }

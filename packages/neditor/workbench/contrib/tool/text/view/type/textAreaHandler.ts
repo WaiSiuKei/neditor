@@ -3,15 +3,16 @@ import { isFirefox, isEdge } from '@neditor/core/base/browser/browser';
 import * as browser from '@neditor/core/base/browser/browser';
 import { createFastDomNode, FastDomNode } from '@neditor/core/base/browser/fastDomNode';
 import { Disposable, toDisposable } from '@neditor/core/base/common/lifecycle';
-import { toTramsform } from '../../../../../base/browser/css';
-import { IKeyboardEvent } from '../../../../../base/browser/keyboardEvent';
-import { NOTREACHED } from '../../../../../base/common/notreached';
-import { OS } from '../../../../../base/common/platform';
-import { Optional } from '../../../../../base/common/typescript';
-import { ICanvasView, IPhysicalCursorPosition } from '../../../../../canvas/view/view';
+import { toTramsform } from '../../../../../../base/browser/css';
+import { IKeyboardEvent } from '../../../../../../base/browser/keyboardEvent';
+import { NOTREACHED } from '../../../../../../base/common/notreached';
+import { OS } from '../../../../../../base/common/platform';
+import { Optional } from '../../../../../../base/common/typescript';
+import { ICanvasView } from '../../../../../../canvas/view/view';
+import { IPhysicalCursorPosition } from '../../common';
 import { IPasteData, ITextAreaInputHost, TextAreaInput, TextAreaWrapper } from './textAreaInput';
 import { _debugComposition, ITypeData, TextAreaState } from './textAreaState';
-import { ViewController } from '../view/viewController';
+import { EditorViewController } from '../editorViewController';
 
 class VisibleTextAreaData {
   public readonly top: number;
@@ -32,7 +33,7 @@ class VisibleTextAreaData {
 const canUseZeroSizeTextarea = (isEdge || isFirefox);
 
 export class TextAreaHandler extends Disposable {
-  private readonly _viewController: ViewController;
+  private readonly _viewController: EditorViewController;
   private textAreaTop: number = 0;
   private textAreaLeft: number = 0;
   private textAreaSize: number = 0;
@@ -42,7 +43,7 @@ export class TextAreaHandler extends Disposable {
   private readonly _textAreaInput: TextAreaInput;
 
   constructor(
-    viewController: ViewController,
+    viewController: EditorViewController,
     private view: ICanvasView,
   ) {
     super();
@@ -63,8 +64,6 @@ export class TextAreaHandler extends Disposable {
     this.textAreaCover = createFastDomNode(document.createElement('div'));
     this.textAreaCover.setPosition('absolute');
     this._register(toDisposable(() => this.textAreaCover.domNode.remove()));
-
-    this._register(view.onCursorMoved((pos) => this.handleCursorMoved(pos)));
 
     const textAreaInputHost: ITextAreaInputHost = {
       getScreenReaderContent(): TextAreaState {

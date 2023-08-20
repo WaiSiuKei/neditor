@@ -136,7 +136,7 @@ export class Canvas extends Disposable implements ICanvas {
     listenersToRemove.push(model.onWillDispose(() => this.setModel(undefined)));
 
     const mvvm = new MVVMStatus(model);
-    const view = this._createView(viewModel, mvvm);
+    const view = this._createView(viewModel);
     mvvm.setView(view);
     view.domNode.setAttribute('data-uri', model.uri.toString());
 
@@ -144,7 +144,7 @@ export class Canvas extends Disposable implements ICanvas {
     this._historyHelper = this._instantiationService.createInstance(HistoryHelper, model);
   }
 
-  protected _createView(vm: ICanvasViewModel, mvvm: MVVMStatus): ICanvasView {
+  protected _createView(vm: ICanvasViewModel): ICanvasView {
     const viewUserInputEvents = new ViewOutgoingEvents();
     const eventCallback = this.passToEventFilter.bind(this);
     let view: ICanvasView;
@@ -169,7 +169,7 @@ export class Canvas extends Disposable implements ICanvas {
     viewUserInputEvents.onMouseDropCanceled = eventCallback;
     viewUserInputEvents.onMouseDrop = eventCallback;
 
-    view = this._instantiationService.createInstance(View, this._domElement, vm, mvvm, viewUserInputEvents);
+    view = this._instantiationService.createInstance(View, this._domElement, vm, viewUserInputEvents);
     return view;
   }
 

@@ -8,7 +8,7 @@ import { BlockNodeModelProxy, DescendantModelProxy } from '../../../../../platfo
 import { Editor, Path, Point, Range, Descendant, Node, Text } from '../editor';
 import { DOMElement, DOMNode, DOMPoint, DOMRange, DOMSelection, isDOMElement, isDOMSelection, normalizeDOMPoint } from '../utils/dom';
 
-export class CanvasEditor {
+export class EditorInterface {
   constructor(
     private editor: Editor,
     private canvas: ICanvas

@@ -1,15 +1,13 @@
 import { ICanvas } from '@neditor/core/canvas/canvas/canvas';
 import { CursorStyle } from '@neditor/core/canvas/view/view';
-import { IKeyboardInputEvent, IMouseInputEvent, InputEvents, InputEventType } from '@neditor/core/platform/input/browser/event';
+import { IMouseInputEvent, InputEvents, InputEventType } from '@neditor/core/platform/input/browser/event';
 import { BaseTool } from '@neditor/core/platform/tool/browser/baseTool';
 import { ITool, IToolFactory, IToolService, ToolActivationShortcut } from '@neditor/core/platform/tool/common/tool';
 import randomColor from 'randomcolor';
 import { toPX } from '../../../../base/browser/css';
-import { IKeyboardEvent } from '../../../../base/browser/keyboardEvent';
 import { DCHECK } from '../../../../base/check';
 import { tail } from '../../../../base/common/array';
-import { dispose } from '../../../../base/common/lifecycle';
-import { NOTIMPLEMENTED, NOTREACHED } from '../../../../base/common/notreached';
+import { NOTREACHED } from '../../../../base/common/notreached';
 import { deepClone } from '../../../../base/common/objects';
 import { assertValue } from '../../../../base/common/type';
 import { Optional } from '../../../../base/common/typescript';
@@ -22,14 +20,9 @@ import { Node } from '../../../../engine/dom/node';
 import { NodeTraversal } from '../../../../engine/dom/node_traversal';
 import { ITextBoxRTreeItem } from '../../../../engine/layout/r_tree';
 import { HitTestLevel } from '../../../../platform/input/common/input';
-import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation';
-import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding';
 import { DirectionType } from '../../../../platform/model/common/location';
 import { INodeInit, isTextNodeModelProxy, RootNodeId } from '../../../../platform/model/common/model';
-import { TextAreaHandler } from './controller/textAreaHandler';
-import { createEditor, Editor, Transforms } from './editor';
-import { ViewController } from './view/viewController';
-import * as Y from 'yjs';
+import { EditorView } from './view/editorView';
 
 function isInlineText(n: Node) {
   if (n.IsText()) return true;
@@ -50,11 +43,9 @@ function getParagraphContainer(n: Node): Node {
 }
 
 export class TextTool extends BaseTool {
-  _editor?: Editor;
-  _viewController?: ViewController;
   anchorY: Optional<number>;
   anchorX: Optional<number>;
-  private _textAreaHandler: Optional<TextAreaHandler>;
+  _editorView: Optional<EditorView>;
 
   get id(): string {
     return TextToolID;
@@ -150,7 +141,6 @@ export class TextTool extends BaseTool {
     }
 
     if (prevAnchor && curAnchor) {
-      DCHECK(this._editor);
       if (prevAnchor === curAnchor) {
         return;
       }
@@ -171,17 +161,6 @@ export class TextTool extends BaseTool {
   }
 
   private _disposeEditor() {
-    if (!this._editor) return;
-    this._editor = undefined;
-    if (this._viewController) {
-      dispose(this._viewController);
-      this._viewController = undefined;
-    }
-
-    if (this._textAreaHandler) {
-      this._textAreaHandler.dispose();
-      this._textAreaHandler = undefined;
-    }
     if (this._paragraphId) {
       const model = this.canvas.model.getNodeById(this._paragraphId);
       DCHECK(model);
@@ -195,6 +174,10 @@ export class TextTool extends BaseTool {
     }
     this._paragraphId = undefined;
     this._paragraphContainerId = undefined;
+    if (this._editorView) {
+      this._editorView.dispose();
+      this._editorView = undefined;
+    }
   }
 
   private _triggerEndEditing() {
@@ -336,7 +319,6 @@ export class TextTool extends BaseTool {
   }
 
   private _initEditor(anchor: Node) {
-    DCHECK(!this._editor);
     DCHECK(anchor.IsText());
     this.canvas.setSelectedElements([]);
     // text -> span -> p -> div
@@ -351,39 +333,13 @@ export class TextTool extends BaseTool {
     const doc = this.canvas.view.document;
     const dom = doc.getElementById(id);
     DCHECK(dom);
-    const editor = createEditor({
-      root: node,
-      el: dom.AsElement()!.AsHTMLElement()!,
-    });
-    this._editor = editor;
-    Reflect.set(window, 'slate', this._editor);
-    Reflect.set(window, 'edit', () => {
-      this.canvas.transform(() => {
-        const start = Editor.start(editor, []);
-        start.offset += 1;
-        Transforms.select(editor, start);
-        Editor.insertBreak(editor);
-      });
-    });
-
-    this._viewController = this.canvas.invokeWithinContext(accessor => {
-      const instantiationService = accessor.get(IInstantiationService);
-      return instantiationService.createInstance(
-        ViewController,
-        editor,
-        this.canvas,
-        this._triggerEndEditing.bind(this),
-      );
-    });
-    this._textAreaHandler = new TextAreaHandler(
-      this._viewController,
-      this.canvas.view,
+    DCHECK(!this._editorView);
+    this._editorView = new EditorView(
+      node,
+      dom,
+      this.canvas,
+      this._triggerEndEditing.bind(this),
     );
-    document.body.append(
-      this._textAreaHandler.textArea.domNode,
-      this._textAreaHandler.textAreaCover.domNode,
-    );
-    this._textAreaHandler.focusTextArea();
   }
 
   _paragraphContainerId: Optional<IIdentifier>;

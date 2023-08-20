@@ -1,4 +1,3 @@
-import { ICanvasState } from '../../../canvas/canvas';
 import { getCommonBounds } from '../../../element/bounds';
 import { CanvasElement } from '../../../element/types';
 import { RenderConfig } from '../../type';

@@ -139,4 +139,26 @@ const a: IDocumentModel = {
   }
 };
 
-export default a;
+const b: IDocumentModel = {
+  'nodes': {
+    'root': { 'id': 'root', 'type': 'root' },
+    'div1': {
+      'id': 'div1', 'type': 'block',
+      'style': { 'width': '300px', 'height': 'auto', 'top': '100px', 'left': '50px', 'position': 'relative', 'backgroundColor': 'white', 'padding': '10px', 'borderColor': '#add6ff', 'borderStyle': 'solid', 'borderWidth': '1px' },
+      'from': 'root', 'order': '0.5'
+    },
+    'p1': { 'id': 'p1', 'type': 'block', 'style': { 'width': 'auto', 'height': 'auto', 'position': 'relative', 'display': 'block', 'lineHeight': '40px', 'overflowWrap': 'break-word', 'whiteSpace': 'pre-wrap' }, 'from': 'div1', 'order': '0.1' },
+    'title1': { 'id': 'title1', 'type': 'text', 'style': { 'display': 'inline', 'position': 'relative', 'fontFamily': '"source han sans"', 'fontSize': '28px', 'color': 'black' }, 'content': 'Ti', 'from': 'p1', 'order': '0.5' },
+    '88d293a7-f1a8-4452-8b41-6ba6ec7cbf96': {
+      'id': '88d293a7-f1a8-4452-8b41-6ba6ec7cbf96',
+      'style': { 'display': 'inline', 'position': 'relative', 'fontFamily': '"source han sans"', 'fontSize': '28px', 'color': 'black' },
+      'type': 'text',
+      'content': 'tle',
+      'from': 'p1',
+      'order': '0.75'
+    },
+    'p2': { 'id': 'p2', 'type': 'block', 'style': { 'width': 'auto', 'height': 'auto', 'position': 'relative', 'display': 'block', 'lineHeight': '20px', 'overflowWrap': 'break-word', 'whiteSpace': 'pre-wrap' }, 'from': 'div1', 'order': '0.2' },
+    'text1': { 'id': 'text1', 'type': 'text', 'style': { 'display': 'inline', 'position': 'relative', 'fontFamily': '"source han sans"', 'fontSize': '14px', 'color': 'black' }, 'content': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco', 'from': 'p2', 'order': '0.1' },
+  }
+};
+export default b;

@@ -13,7 +13,7 @@ import { KeyCode } from '@neditor/core/base/common/keyCodes';
 import { Disposable, IDisposable } from '@neditor/core/base/common/lifecycle';
 import { OperatingSystem } from '@neditor/core/base/common/platform';
 import { isHighSurrogate } from '@neditor/core/base/common/strings';
-import { NOTIMPLEMENTED } from '../../../../../base/common/notreached';
+import { NOTIMPLEMENTED } from '../../../../../../base/common/notreached';
 import { _debugComposition, ITextAreaWrapper, ITypeData, TextAreaState } from './textAreaState';
 import { inputLatency } from '@neditor/core/base/browser/performance';
 import { Mimes } from '@neditor/core/base/common/mime';

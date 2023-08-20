@@ -13,19 +13,19 @@ import { SyncDescriptor } from '../../../../../platform/instantiation/common/des
 import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation';
 import { ServiceCollection } from '../../../../../platform/instantiation/common/serviceCollection';
 import { IKeybindingService } from '../../../../../platform/keybinding/common/keybinding';
-import { DescendantModelProxy, isTextNodeModelProxy } from '../../../../../platform/model/common/model';
+import { DescendantModelProxy } from '../../../../../platform/model/common/model';
 import { IToolService } from '../../../../../platform/tool/common/tool';
 import { Editor, Operation, Range, Text, TextOperation, Transforms } from '../editor';
 import { TextTransforms } from '../editor/interfaces/transforms/text';
-import { CanvasEditor } from './canvasEditorInterface';
+import { EditorInterface } from './editorInterface';
 import { LineFeed } from './common';
 import { ITextEditorService, TextEditorKeybindingService, TextEditorService } from './platform';
 import './commands';
 
 const EscKeybinding = createSimpleKeybinding(KeyCode.Escape, OS);
 
-export class ViewController extends Disposable {
-  _canvasEditor: CanvasEditor;
+export class EditorViewController extends Disposable {
+  _canvasEditor: EditorInterface;
   _contextKeyService: IContextKeyService;
   _instantiationService: IInstantiationService;
   constructor(
@@ -36,7 +36,7 @@ export class ViewController extends Disposable {
     @IContextKeyService contextKeyService: IContextKeyService,
   ) {
     super();
-    this._canvasEditor = new CanvasEditor(this.editor, this.canvas);
+    this._canvasEditor = new EditorInterface(this.editor, this.canvas);
     this._registerDOMEvent();
     const serviceCollection = new ServiceCollection();
     const textEditorService = new TextEditorService();
