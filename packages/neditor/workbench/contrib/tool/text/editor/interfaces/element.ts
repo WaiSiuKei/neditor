@@ -48,11 +48,11 @@ export interface ElementInterface {
    * Check if a value implements the `Element` interface and has elementKey with selected value.
    * Default it check to `type` key value
    */
-  isElementType: <T extends Element>(
-    value: any,
-    elementVal: string,
-    elementKey?: string
-  ) => value is T;
+  // isElementType: <T extends Element>(
+  //   value: any,
+  //   elementVal: string,
+  //   elementKey?: string
+  // ) => value is T;
 
   /**
    * Check if an element matches set of properties.
@@ -91,16 +91,17 @@ export const Element: ElementInterface = {
     return (props as Partial<Element>).children !== undefined;
   },
 
-  isElementType: <T extends Element>(
-    value: any,
-    elementVal: string,
-    elementKey: string = 'type'
-  ): value is T => {
-    return isElement(value) && value[elementKey] === elementVal;
-  },
+  // isElementType: <T extends Element>(
+  //   value: any,
+  //   elementVal: string,
+  //   elementKey: string = 'type'
+  // ): value is T => {
+  //   return isElement(value) && value[elementKey] === elementVal;
+  // },
 
   matches(element: Element, props: Partial<Element>): boolean {
-    for (const key in props) {
+    for (const k in props) {
+      let key = k as keyof Element;
       if (key === 'children') {
         continue;
       }

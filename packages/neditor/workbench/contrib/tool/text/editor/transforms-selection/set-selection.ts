@@ -14,7 +14,8 @@ export const setSelection: SelectionTransforms['setSelection'] = (
     return
   }
 
-  for (const k in props) {
+  for (const key in props) {
+    const k = key as keyof Range;
     if (
       (k === 'anchor' &&
         props.anchor != null &&

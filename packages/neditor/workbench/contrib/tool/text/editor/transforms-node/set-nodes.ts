@@ -95,14 +95,18 @@ export const setNodes: NodeTransforms['setNodes'] = (
           continue
         }
 
+        // @ts-ignore
         if (compare(props[k], node[k])) {
           hasChanges = true
           // Omit new properties from the old properties list
+          // @ts-ignore
           if (node.hasOwnProperty(k)) properties[k] = node[k]
           // Omit properties that have been removed from the new properties list
           if (merge) {
+            // @ts-ignore
             if (props[k] != null) newProperties[k] = merge(node[k], props[k])
           } else {
+            // @ts-ignore
             if (props[k] != null) newProperties[k] = props[k]
           }
         }

@@ -25,7 +25,6 @@
       "@types/big.js"
     ],
     "strict": true,
-    "suppressImplicitAnyIndexErrors": true,
     "jsx": "react",
   },
   "exclude": [

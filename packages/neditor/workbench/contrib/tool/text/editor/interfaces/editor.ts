@@ -672,7 +672,7 @@ export interface EditorInterface {
    * If the selection is currently collapsed, the removal will be stored on
    * `editor.marks` and applied to the text inserted next.
    */
-  removeMark: (editor: Editor, key: string) => void;
+  removeMark: (editor: Editor, key: keyof EditorMarks) => void;
 
   /**
    * Manually set if the editor should currently be normalizing.

@@ -4,7 +4,7 @@ import { Text } from '../interfaces/text'
 import { Range } from '../interfaces/range'
 import { Transforms } from '../interfaces/transforms'
 import { FLUSHING } from '../utils/weak-maps'
-import { Editor, EditorInterface } from '../interfaces/editor'
+import { Editor, EditorInterface, EditorMarks } from '../interfaces/editor';
 
 export const removeMark: EditorInterface['removeMark'] = (editor, key) => {
   const { selection } = editor
@@ -34,7 +34,7 @@ export const removeMark: EditorInterface['removeMark'] = (editor, key) => {
         voids: true,
       })
     } else {
-      const marks = { ...(Editor.marks(editor) || {}) }
+      const marks = { ...(Editor.marks(editor) || {}) } as EditorMarks;
       delete marks[key]
       editor.marks = marks
       if (!FLUSHING.get(editor)) {

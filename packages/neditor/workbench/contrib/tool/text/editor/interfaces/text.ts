@@ -104,8 +104,9 @@ export const Text: TextInterface = {
   },
 
   matches(text: Text, props: Partial<Text>): boolean {
-    for (const key in props) {
-      if (key === 'text') {
+    for (const k in props) {
+      let key = k as keyof Text;
+      if (key === 'content') {
         continue;
       }
 

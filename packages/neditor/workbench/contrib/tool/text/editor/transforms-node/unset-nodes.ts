@@ -13,6 +13,7 @@ export const unsetNodes: NodeTransforms['unsetNodes'] = (
   const obj = {}
 
   for (const key of props) {
+    // @ts-ignore
     obj[key] = null
   }
 

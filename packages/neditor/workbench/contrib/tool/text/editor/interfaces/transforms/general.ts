@@ -213,11 +213,14 @@ const applyToDraft = (editor: Editor, selection: Selection, op: Operation) => {
           throw new Error(`Cannot set the "${key}" property of nodes!`);
         }
 
+        // @ts-ignore
         const value = newProperties[key];
 
         if (value == null) {
+          // @ts-ignore
           delete node[key];
         } else {
+          // @ts-ignore
           node[key] = value;
         }
       }
@@ -225,6 +228,7 @@ const applyToDraft = (editor: Editor, selection: Selection, op: Operation) => {
       // properties that were previously defined, but are now missing, must be deleted
       for (const key in properties) {
         if (!newProperties.hasOwnProperty(key)) {
+          // @ts-ignore
           delete node[key];
         }
       }
@@ -250,7 +254,8 @@ const applyToDraft = (editor: Editor, selection: Selection, op: Operation) => {
           selection = { ...newProperties };
         }
 
-        for (const key in newProperties) {
+        for (const k in newProperties) {
+          const key = k as keyof typeof newProperties;
           const value = newProperties[key];
 
           if (value == null) {
