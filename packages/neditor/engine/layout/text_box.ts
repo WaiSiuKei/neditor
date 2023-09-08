@@ -1,6 +1,8 @@
 // Although the CSS 2.1 specification assumes that the text is simply a part of
 import { Color } from '../../base/common/color';
-import { RGBAColorValue } from '../cssom/rgba_color_value';
+import { Path } from '../../base/graphics/path';
+import { Vector2d } from '../../base/graphics/types';
+import { PathValue } from '../cssom/path_value';
 import { RectF } from '../math/rect_f';
 import { Background } from '../render_tree/background';
 import { SolidColorBrush } from '../render_tree/brush';
@@ -35,7 +37,7 @@ import { Font } from '../render_tree/font';
 import { DoesAllowTextWrapping, DoesCollapseWhiteSpace } from './white_space_processing';
 import { Vector2dF } from '../math/vector2d_f';
 import { PropertyListValue } from '../cssom/property_list_value';
-import { TextNode, TextNodeBuilder } from '../render_tree/text_node';
+import { GlyphInfo, TextNode, TextNodeBuilder } from '../render_tree/text_node';
 import { Node } from '../render_tree/node';
 import { DCHECK_LT } from '@neditor/core/base/check_op';
 import { ShadowValue } from '../cssom/shadow_value';
@@ -55,6 +57,19 @@ export class TextBox extends Box {
   private _selectionEndPosition: Optional<number>;
   // unicode控制字符引起的偏移，字符存储位置 = 字符可见位置 + 排版偏移
   private _typesettingOffset: number;
+  private glyphInfo: Array<{
+    transposeX: number,
+    transposeY: number
+    i: number,
+    rotation: number,
+    p0: Vector2d,
+    p1: Vector2d,
+    char?: string,
+    width?: number,
+    height?: number
+    glyphWidth?: number
+  }> = [];
+  offsetToGlyph = new LayoutUnit();
 
   constructor(
     css_computed_style_declaration: ComputedStyleDeclaration,
@@ -105,6 +120,10 @@ export class TextBox extends Box {
   }
   override isTextBox() {
     return true;
+  }
+
+  SetGlyphOffset(val: LayoutUnit) {
+    this.offsetToGlyph = val.CLONE();
   }
 
   GetTextStartPosition() {
@@ -211,22 +230,93 @@ export class TextBox extends Box {
         this.set_margin_right(new LayoutUnit());
         this.set_margin_bottom(new LayoutUnit());
 
-        let font_metrics =
-          this.used_font_.GetFontMetrics(text_fonts);
-
-        let used_line_height_provider = new UsedLineHeightProvider(
-          font_metrics, this.computed_style()!.font_size);
+        let font_metrics = this.used_font_.GetFontMetrics(text_fonts);
+        let used_line_height_provider = new UsedLineHeightProvider(font_metrics, this.computed_style()!.font_size);
         line_height.Accept(used_line_height_provider);
         this.set_height(new LayoutUnit(font_metrics.em_box_height()));
-        this.baseline_offset_from_top_ =
-          used_line_height_provider.baseline_offset_from_top();
+        this.baseline_offset_from_top_ = used_line_height_provider.baseline_offset_from_top();
         this.line_height_ = used_line_height_provider.used_line_height();
         this.inline_top_margin_ = used_line_height_provider.half_leading();
         this.ascent_ = font_metrics.ascent();
       }
     }
 
-    this.set_width(this.GetLeadingWhiteSpaceWidth().ADD(this.non_collapsible_text_width_).ADD(this.GetTrailingWhiteSpaceWidth()));
+    DCHECK(this.GetLeadingWhiteSpaceWidth().toFloat() === 0);
+    DCHECK(this.GetTrailingWhiteSpaceWidth().toFloat() === 0);
+    let text_path = this.computed_style().text_path;
+    if (!text_path.EQ(KeywordValue.GetNone())) {
+      const start = this.GetNonCollapsibleTextStartPosition();
+      const end = this.GetNonCollapsibleTextEndPosition();
+      let text_fonts: Font[] = [];
+      let line_height = this.computed_style()!.line_height;
+      let height: number | undefined;
+      let text_path_val = text_path.AsPathValue()!;
+      // Algorithm for calculating glyph positions:
+      // 1. Get the begging point of the glyph on the path using the offsetToGlyph,
+      // 2. Get the ending point of the glyph on the path using the offsetToGlyph plus glyph width,
+      // 3. Calculate the rotation, width, and midpoint of the glyph using the start and end points,
+      // 4. Add glyph width to the offsetToGlyph and repeat
+      let offsetToGlyph = this.offsetToGlyph.toFloat();
+      for (let i = start; i <= end; i++) {
+        const charStartPoint = _getPointAtLength(offsetToGlyph, text_path_val);
+        DCHECK(charStartPoint);
+        const glyphWidth = this.used_font_.GetTextWidth(
+          this.paragraph.GetText(),
+          i,
+          1,
+          this.paragraph.IsRTL(i),
+          text_fonts
+        );
+        const charEndPoint = _getPointAtLength(offsetToGlyph + glyphWidth, text_path_val);
+        DCHECK(charEndPoint);
+        if (!height) {
+          let font_metrics = this.used_font_.GetFontMetrics(text_fonts);
+          let used_line_height_provider = new UsedLineHeightProvider(font_metrics, this.computed_style()!.font_size);
+          line_height.Accept(used_line_height_provider);
+          height = font_metrics.em_box_height();
+        }
+
+        const width = Path.getLineLength(
+          charStartPoint.x,
+          charStartPoint.y,
+          charEndPoint.x,
+          charEndPoint.y
+        );
+
+        const midpoint = Path.getPointOnLine(
+          width / 2.0,
+          charStartPoint.x,
+          charStartPoint.y,
+          charEndPoint.x,
+          charEndPoint.y
+        );
+
+        const rotation = Math.atan2(
+          charEndPoint.y - charStartPoint.y,
+          charEndPoint.x - charStartPoint.x
+        );
+        this.glyphInfo.push({
+          transposeX: midpoint.x,
+          transposeY: midpoint.y,
+          i,
+          char: this.paragraph.RetrieveUtf8SubString(i, i + 1),
+          rotation: rotation,
+          p0: charStartPoint,
+          p1: charEndPoint,
+          width,
+          glyphWidth,
+          height,
+        });
+
+        offsetToGlyph += glyphWidth;
+        DCHECK(height);
+      }
+      if (this.split_sibling_) {
+        this.split_sibling_.offsetToGlyph = new LayoutUnit(offsetToGlyph);
+      }
+      this.set_width(this.non_collapsible_text_width_);
+      // this.set_width(this.GetLeadingWhiteSpaceWidth().ADD(this.non_collapsible_text_width_).ADD(this.GetTrailingWhiteSpaceWidth()));
+    }
   }
 
   TryWrapAt(wrap_at_policy: WrapAtPolicy,
@@ -445,17 +535,36 @@ export class TextBox extends Box {
         let text_start_position = this.GetVisibleTextStartPosition();
         let text_length = this.GetVisibleTextLength();
 
-        let glyph_buffer =
-          this.used_font_.CreateGlyphBuffer(
-            this.paragraph.GetText(),
-            text_start_position,
-            text_length,
-            this.paragraph.IsRTL(text_start_position));
+        let glyph_buffer = this.used_font_.CreateGlyphBuffer(
+          this.paragraph.GetText(),
+          text_start_position,
+          text_length,
+          this.paragraph.IsRTL(text_start_position)
+        );
+
+        let glyphs: Optional<GlyphInfo[]>;
+        if (this.glyphInfo.length) {
+          glyphs = [];
+          this.glyphInfo.forEach(g => {
+            glyphs!.push({
+              ...g,
+              buffer: this.used_font_.CreateGlyphBuffer(
+                this.paragraph.GetText(),
+                g.i,
+                1,
+                this.paragraph.IsRTL(g.i)
+              )
+            });
+          });
+        }
 
         let text_node_builder = new TextNodeBuilder(
           new Vector2dF(this.truncated_text_offset_from_left_, this.ascent_),
           glyph_buffer,
-          used_color);
+          used_color,
+          undefined,
+          glyphs
+        );
 
         if (this.hasSelection()) {
           const anchorOffsetInParagraph = this._selectionStartPosition!;
@@ -1039,5 +1148,15 @@ function AddTextShadows(builder: TextNodeBuilder,
     builder.shadows.push(
       new Shadow(offset, shadow_blur_sigma, shadow_color));
   }
+}
+
+function _getPointAtLength(length: number, text_path: PathValue) {
+  const totalLength = text_path.length;
+  // -1px for rounding of the last symbol
+  if (length - 1 > totalLength) {
+    return null;
+  }
+
+  return Path.getPointAtLengthOfDataArray(length, text_path.segments);
 }
 

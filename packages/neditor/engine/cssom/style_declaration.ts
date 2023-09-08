@@ -527,9 +527,9 @@ export abstract class StyleDeclaration implements CobaltCSSStyleDeclaration {
   abstract GetDeclaredPropertyValueStringByKey(key: PropertyKey): string
   abstract setProperty(property_name: string, property_value: string): void
   removeProperty(property_name: string): void {
-    const retval = this.GetPropertyValue(property_name)
+    const retval = this.GetPropertyValue(property_name);
     if (retval) {
-      this.setProperty(property_name, '')
+      this.setProperty(property_name, '');
     }
   }
   GetPropertyValue(property_name: string): string {
@@ -1426,6 +1426,13 @@ export abstract class StyleDeclaration implements CobaltCSSStyleDeclaration {
     text_overflow) {
     this.SetPropertyValueStringByKey(PropertyKey.kTextOverflowProperty, text_overflow,
     );
+  }
+
+  get textPath() {
+    return this.GetDeclaredPropertyValueStringByKey(PropertyKey.kTextPathProperty);
+  }
+  set textPath(text_path) {
+    this.SetPropertyValueStringByKey(PropertyKey.kTextPathProperty, text_path,);
   }
 
   get textShadow() {

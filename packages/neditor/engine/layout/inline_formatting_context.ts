@@ -34,6 +34,7 @@ export class InlineFormattingContext extends FormattingContext {
   private font_size_: PropertyValue;
   private text_indent_offset_: LayoutUnit;
   private ellipsis_width_: LayoutUnit;
+  private text_path_: PropertyValue;
   // The inline formatting context only keeps the last line box, which may be
   // NULL if no child boxes were seen.
   private line_box_: Optional<LineBox>;
@@ -45,6 +46,7 @@ export class InlineFormattingContext extends FormattingContext {
   private preferred_min_width_: LayoutUnit = new LayoutUnit;
 
   private ellipses_coordinates_: Vector2dF[] = [];
+  private glyph_offset_: LayoutUnit = new LayoutUnit();
   constructor(
     line_height: PropertyValue,
     font_metrics: FontMetrics,
@@ -53,7 +55,8 @@ export class InlineFormattingContext extends FormattingContext {
     text_align: PropertyValue,
     font_size: PropertyValue,
     text_indent_offset: LayoutUnit,
-    ellipsis_width: LayoutUnit
+    ellipsis_width: LayoutUnit,
+    text_path: PropertyValue,
   ) {
     super();
     this.line_height_ = line_height;
@@ -64,6 +67,7 @@ export class InlineFormattingContext extends FormattingContext {
     this.font_size_ = font_size;
     this.text_indent_offset_ = text_indent_offset;
     this.ellipsis_width_ = ellipsis_width;
+    this.text_path_ = text_path;
     this.line_count_ = 0;
     this.CreateLineBox();
   }
@@ -160,7 +164,13 @@ export class InlineFormattingContext extends FormattingContext {
       this.text_align_,
       this.font_size_,
       line_indent_offset.CLONE(),
-      this.ellipsis_width_);
+      this.ellipsis_width_,
+      this.text_path_,
+      (val: LayoutUnit) => {
+        this.glyph_offset_ = val;
+      },
+      () => this.glyph_offset_,
+    );
   }
   private DestroyLineBox() {
     if (!this.line_box_) {

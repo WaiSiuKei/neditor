@@ -1,4 +1,5 @@
 import { Optional } from '../../base/common/typescript';
+import { Vector2d } from '../../base/graphics/types';
 import { Vector2dF } from '../math/vector2d_f';
 import { Background } from './background';
 import { GlyphBuffer } from './glyph_buffer';
@@ -13,7 +14,7 @@ export class TextNodeBuilder {
 
   // All of the glyph data needed to render the text.
   glyph_buffer: GlyphBuffer;
-
+  glyphs: Optional<Array<GlyphInfo>>;
   // The foreground color of the text.
   color: ColorRGBA;
 
@@ -22,19 +23,31 @@ export class TextNodeBuilder {
   shadows: Shadow[] = [];
 
   // The background color of the text.
-  background: Background | undefined
+  background: Background | undefined;
 
   constructor(
     offset: Vector2dF,
     glyph_buffer: GlyphBuffer,
     color: ColorRGBA,
-    background?: Optional<Background>
+    background?: Optional<Background>,
+    glyphs?: Optional<GlyphInfo[]>,
   ) {
     this.offset = offset;
     this.glyph_buffer = glyph_buffer;
     this.color = color;
     this.background = background;
+    this.glyphs = glyphs;
   }
+}
+
+export interface GlyphInfo {
+  buffer: GlyphBuffer,
+  transposeX: number,
+  transposeY: number
+  i: number,
+  rotation: number,
+  p0: Vector2d,
+  p1: Vector2d,
 }
 
 // A single line of text or a directional run as specified by Unicode

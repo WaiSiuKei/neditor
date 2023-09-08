@@ -519,6 +519,7 @@ class CalculateComputedStyleContext {
       case PropertyKey.kTextAlignProperty:
       case PropertyKey.kTextDecorationLineProperty:
       case PropertyKey.kTextOverflowProperty:
+      case PropertyKey.kTextPathProperty:
       case PropertyKey.kTextTransformProperty:
       // case PropertyKey.kTransitionDelayProperty:
       // case PropertyKey.kTransitionDurationProperty:
@@ -557,6 +558,7 @@ class CalculateComputedStyleContext {
       case PropertyKey.kTextDecorationProperty:
       // case PropertyKey.kTransitionProperty:
       case PropertyKey.kUnicodeRangeProperty:
+        debugger;
         NOTREACHED();
         break;
     }

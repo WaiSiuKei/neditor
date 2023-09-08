@@ -11,6 +11,7 @@ import { DCHECK } from '@neditor/core/base/check';
 import type { DeclaredStyleDeclaration } from '@neditor/core/engine/cssom/declared_style_declaration';
 import type { CobaltCSSStyleDeclaration } from '@neditor/core/engine/cssom/style_declaration';
 import { inlineVisitor } from '@neditor/css-parser/gen/inlineVisitor';
+import { PathValue } from '../cssom/path_value';
 import { StringValue } from '../cssom/string_value';
 import { GetPropertyKey, PropertyKey } from '../cssom/property_definitions';
 import { unpack } from './shorthandToLonghand';
@@ -64,6 +65,8 @@ export class Visitor implements inlineVisitor<void> {
     if (ctx.children!.length === 1) {
       ctx.children![0].accept(this);
       this.currentValue = this.terms[0];
+    } else if (this.currentKey === 'text-path') {
+      this.currentValue = new PathValue(ctx.text);
     } else {
       NOTIMPLEMENTED();
     }

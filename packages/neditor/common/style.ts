@@ -114,6 +114,7 @@ const BlockLevelStyleDeclarationSample = {
   whiteSpace: '',
   lineHeight: '',
   position: '',
+  textPath: '',
   // textAlign: '',
   // 'text-align': '',
   // 'text-align-last': '',

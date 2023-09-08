@@ -167,18 +167,20 @@ export class AnonymousBlockBox extends BlockContainerBox {
     let ellipsis_width =
       this.AreEllipsesEnabled() ? this.used_font_.GetEllipsisWidth() : 0;
 
+    const cs = this.computed_style()!;
     // Lay out child boxes in the normal flow.
     //   https://www.w3.org/TR/CSS21/visuren.html#normal-flow
     let inline_formatting_context =
       new InlineFormattingContext(
-        this.computed_style()!.line_height,
+        cs.line_height,
         this.used_font_.GetFontMetrics(),
         child_layout_params,
         this.base_direction(),
-        this.computed_style()!.text_align,
-        this.computed_style()!.font_size,
-        GetUsedLength(this.computed_style()!.text_indent),
-        new LayoutUnit(ellipsis_width)
+        cs.text_align,
+        cs.font_size,
+        GetUsedLength(cs.text_indent),
+        new LayoutUnit(ellipsis_width),
+        cs.text_path,
       );
 
     let child_box_iterator = 0;

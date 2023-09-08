@@ -29,7 +29,7 @@ import { WrapAtPolicy, WrapOpportunityPolicy, WrapResult } from './line_wrapping
 import { DCHECK } from '@neditor/core/base/check';
 import { isNil } from '@neditor/core/base/common/type';
 import { KeywordValue } from '../cssom/keyword_value';
-import { NOTREACHED } from '@neditor/core/base/common/notreached';
+import { NOTIMPLEMENTED, NOTREACHED } from '@neditor/core/base/common/notreached';
 import { UsedLineHeightProvider } from './used_style';
 
 export enum HorizontalAlignment {
@@ -41,6 +41,8 @@ export enum HorizontalAlignment {
 type ChildBoxes = Box[]
 
 export class LineBox {
+  static id = 1;
+  id = LineBox.id++;
   top_: LayoutUnit;
   position_children_relative_to_baseline_: boolean;
   line_height_: PropertyValue;
@@ -53,6 +55,7 @@ export class LineBox {
   font_size_: PropertyValue;
   indent_offset_: LayoutUnit;
   ellipsis_width_: LayoutUnit;
+  text_path_: PropertyValue;
 
   has_overflowed_: boolean;
   at_end_: boolean;
@@ -98,6 +101,9 @@ export class LineBox {
     font_size: PropertyValue,
     indent_offset: LayoutUnit,
     ellipsis_width: LayoutUnit,
+    text_path: PropertyValue,
+    private set_glyph_offset: (val: LayoutUnit) => void,
+    private get_glyph_offset: () => LayoutUnit
   ) {
     this.top_ = top;
     this.position_children_relative_to_baseline_ =
@@ -113,6 +119,7 @@ export class LineBox {
     this.font_size_ = font_size;
     this.indent_offset_ = indent_offset;
     this.ellipsis_width_ = ellipsis_width;
+    this.text_path_ = text_path;
     this.has_overflowed_ = false;
     this.at_end_ = false;
     this.num_absolutely_positioned_boxes_before_first_box_justifying_line_ = 0;
@@ -219,7 +226,6 @@ export class LineBox {
       this.BeginEstimateStaticPositionForAbsolutelyPositionedChild(child_box);
       return;
     }
-
     this.UpdateSizePreservingTrailingWhiteSpace(child_box);
     this.BeginAddChildInternal(child_box);
   }
@@ -324,12 +330,22 @@ export class LineBox {
   }
 
   GetAvailableWidth(): LayoutUnit {
-    return this.layout_params_.containing_block_size.width().SUB(this.shrink_to_fit_width_);
+    if (this.text_path_.EQ(KeywordValue.GetNone())) {
+      return this.layout_params_.containing_block_size.width().SUB(this.shrink_to_fit_width_);
+    }
+    DCHECK(this.text_path_.IsPathValue());
+    return this.text_path_.lengthUnit.SUB(this.shrink_to_fit_width_);
   }
   UpdateSizePreservingTrailingWhiteSpace(child_box: Box) {
     child_box.SetShouldCollapseLeadingWhiteSpace(
       this.ShouldCollapseLeadingWhiteSpaceInNextChildBox());
     child_box.SetShouldCollapseTrailingWhiteSpace(false);
+    if (child_box.isInlineContainerBox()) {
+      child_box.SetGlyphOffset(this.get_glyph_offset());
+    }
+    if (child_box.isTextBox()) {
+      child_box.SetGlyphOffset(this.get_glyph_offset());
+    }
     child_box.UpdateSize(this.layout_params_);
   }
   ShouldCollapseLeadingWhiteSpaceInNextChildBox(): boolean {
@@ -638,6 +654,7 @@ export class LineBox {
     // Horizontal margins, borders, and padding are respected between boxes.
     //   https://www.w3.org/TR/CSS21/visuren.html#inline-formatting
     this.shrink_to_fit_width_.ADD_ASSIGN(child_box.GetMarginBoxWidth());
+    this.set_glyph_offset(this.shrink_to_fit_width_.CLONE());
 
     this.child_boxes_.push(child_box);
   }

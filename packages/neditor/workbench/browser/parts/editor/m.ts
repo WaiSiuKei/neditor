@@ -140,115 +140,73 @@ const a: IDocumentModel = {
 };
 
 const b: IDocumentModel = {
-  "nodes": {
-    "root": {
-      "id": "root",
-      "type": "root"
+  'nodes': {
+    'root': {
+      'id': 'root',
+      'type': 'root'
     },
-    "div1": {
-      "id": "div1",
-      "type": "block",
-      "style": {
-        "width": "300px",
-        "height": "auto",
-        "top": "100px",
-        "left": "50px",
-        "position": "relative",
-        "backgroundColor": "white",
-        "padding": "10px",
-        "borderColor": "#add6ff",
-        "borderStyle": "solid",
-        "borderWidth": "1px"
+    'div1': {
+      'id': 'div1',
+      'type': 'block',
+      'style': {
+        'width': '250px',
+        'height': 'auto',
+        'top': '100px',
+        'left': '50px',
+        'position': 'relative',
+        'backgroundColor': 'white',
+        'padding': '10px',
+        'borderColor': '#add6ff',
+        'borderStyle': 'solid',
+        'borderWidth': '1px'
       },
-      "from": "root",
-      "order": "0.5"
+      'from': 'root',
+      'order': '0.5'
     },
-    "p1": {
-      "id": "p1",
-      "type": "block",
-      "style": {
-        "width": "auto",
-        "height": "auto",
-        "position": "relative",
-        "display": "block",
-        "lineHeight": "40px",
-        "overflowWrap": "break-word",
-        "whiteSpace": "pre-wrap"
+    'p1': {
+      'id': 'p1',
+      'type': 'block',
+      'style': {
+        'width': 'auto',
+        'height': 'auto',
+        'position': 'relative',
+        'display': 'block',
+        'lineHeight': '20px',
+        'overflowWrap': 'break-word',
+        'whiteSpace': 'pre-wrap',
+        'textPath': 'M 0 0 C 0 50 200 50 200 0'
       },
-      "from": "div1",
-      "order": "0.1"
+      'from': 'div1',
+      'order': '0.1'
     },
-    "title1": {
-      "id": "title1",
-      "type": "text",
-      "style": {
-        "display": "inline",
-        "position": "relative",
-        "fontFamily": "\"source han sans\"",
-        "fontSize": "28px",
-        "color": "black"
+    'part1': {
+      'id': 'part1',
+      'type': 'text',
+      'style': {
+        'display': 'inline',
+        'position': 'relative',
+        'fontFamily': '"source han sans"',
+        'fontSize': '17px',
+        'color': 'black'
       },
-      "content": "Tit",
-      "from": "p1",
-      "order": "0.5"
+      'content': 'Lorem ',
+      'from': 'p1',
+      'order': '0.5'
     },
-    "p2": {
-      "id": "p2",
-      "type": "block",
-      "style": {
-        "width": "auto",
-        "height": "auto",
-        "position": "relative",
-        "display": "block",
-        "lineHeight": "20px",
-        "overflowWrap": "break-word",
-        "whiteSpace": "pre-wrap"
+    'part2': {
+      'id': 'part2',
+      'style': {
+        'display': 'inline',
+        'position': 'relative',
+        'fontFamily': '"source han sans"',
+        'fontSize': '17px',
+        'color': 'black'
       },
-      "from": "div1",
-      "order": "0.2"
-    },
-    "text1": {
-      "id": "text1",
-      "type": "text",
-      "style": {
-        "display": "inline",
-        "position": "relative",
-        "fontFamily": "\"source han sans\"",
-        "fontSize": "14px",
-        "color": "black"
-      },
-      "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco",
-      "from": "p2",
-      "order": "0.1"
-    },
-    "e6264d97-d6c8-46e0-a70d-ca2d7f7a2ab4": {
-      "id": "e6264d97-d6c8-46e0-a70d-ca2d7f7a2ab4",
-      "style": {
-        "display": "inline",
-        "position": "relative",
-        "fontFamily": "\"source han sans\"",
-        "fontSize": "28px",
-        "color": "black"
-      },
-      "type": "text",
-      "content": "l",
-      "from": "p1",
-      "order": "0.75"
-    },
-    "95c3c975-ae16-4adf-b769-1da9ac0364a6": {
-      "id": "95c3c975-ae16-4adf-b769-1da9ac0364a6",
-      "style": {
-        "display": "inline",
-        "position": "relative",
-        "fontFamily": "\"source han sans\"",
-        "fontSize": "28px",
-        "color": "black"
-      },
-      "type": "text",
-      "content": "e",
-      "from": "p1",
-      "order": "0.875"
+      'type': 'text',
+      'content': 'ipsum dolor sit ametw',
+      'from': 'p1',
+      'order': '0.75'
     }
   }
-}
+};
 export default b;

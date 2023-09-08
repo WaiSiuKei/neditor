@@ -98,6 +98,7 @@ export enum PropertyKey {
   kTextDecorationLineProperty,
   kTextIndentProperty,
   kTextOverflowProperty,
+  kTextPathProperty,
   kTextShadowProperty,
   kTextTransformProperty,
   kTopProperty,
@@ -750,6 +751,19 @@ class NonTrivialGlobalVariables {
       ImpactsBoxGeneration.kImpactsBoxGenerationNo, ImpactsBoxSizes.kImpactsBoxSizesYes,
       ImpactsBoxCrossReferences.kImpactsBoxCrossReferencesNo, KeywordValue.GetClip());
 
+    // 自定义的 textPath 属性
+    this.SetPropertyDefinition(
+      PropertyKey.kTextPathProperty,
+      'text-path',
+      Inherited.kInheritedYes,
+      Animatable.kAnimatableNo,
+      ImpactsChildComputedStyle.kImpactsChildComputedStyleNo,
+      ImpactsBoxGeneration.kImpactsBoxGenerationNo,
+      ImpactsBoxSizes.kImpactsBoxSizesYes,
+      ImpactsBoxCrossReferences.kImpactsBoxCrossReferencesNo,
+      KeywordValue.GetNone()
+    );
+
     // https://www.w3.org/TR/css-text-decor-3/#text-shadow-property
     this.SetPropertyDefinition(PropertyKey.kTextShadowProperty, 'text-shadow', Inherited.kInheritedYes,
       Animatable.kAnimatableNo, ImpactsChildComputedStyle.kImpactsChildComputedStyleNo,
@@ -997,7 +1011,7 @@ class NonTrivialGlobalVariables {
         }
       }
       if (this.properties[i].inherited === Inherited.kInheritedYes) {
-        this.inherited_properties.push(i)
+        this.inherited_properties.push(i);
       }
     }
   }
@@ -1221,6 +1235,10 @@ export function GetPropertyKey(property_name: string): PropertyKey {
       if (LowerCaseEqualsASCII(property_name,
         GetPropertyName(PropertyKey.kMinWidthProperty))) {
         return PropertyKey.kMinWidthProperty;
+      }
+      if (LowerCaseEqualsASCII(property_name,
+        GetPropertyName(PropertyKey.kTextPathProperty))) {
+        return PropertyKey.kTextPathProperty;
       }
       if (LowerCaseEqualsASCII(property_name,
         GetPropertyName(PropertyKey.kTransformProperty))) {

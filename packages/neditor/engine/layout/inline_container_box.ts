@@ -54,6 +54,8 @@ export class InlineContainerBox extends ContainerBox {
   // // HTMLElement to retain access to all of its layout boxes after they are
   // // split.
   split_sibling_: Ptr<InlineContainerBox>;
+
+  glyph_offset_ = new LayoutUnit;
   constructor(
     css_computed_style_declaration: ComputedStyleDeclaration,
     used_style_provider: UsedStyleProvider,
@@ -144,6 +146,10 @@ export class InlineContainerBox extends ContainerBox {
     this.is_split_on_right_ = is_split_on_right;
   }
 
+  SetGlyphOffset(val: LayoutUnit) {
+    this.glyph_offset_ = val.CLONE();
+  }
+
   UpdateContentSizeAndMargins(
     layout_params: LayoutParams) {
     // Lay out child boxes as one line without width constraints and white space
@@ -160,7 +166,15 @@ export class InlineContainerBox extends ContainerBox {
       layout_params,
       BaseDirection.kLeftToRightBaseDirection,
       KeywordValue.GetLeft(),
-      this.computed_style().font_size, new LayoutUnit(), new LayoutUnit());
+      this.computed_style().font_size,
+      new LayoutUnit(),
+      new LayoutUnit(),
+      this.computed_style().text_path,
+      (val) => {
+        this.glyph_offset_ = val;
+      },
+      () => this.glyph_offset_
+    );
 
     for (let box of this.child_boxes()) {
       line_box.BeginAddChildAndMaybeOverflow(box);

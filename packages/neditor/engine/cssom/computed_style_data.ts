@@ -167,6 +167,7 @@ export class ComputedStyleData {
       case PropertyKey.kTextDecorationProperty:
       case PropertyKey.kTextIndentProperty:
       case PropertyKey.kTextOverflowProperty:
+      case PropertyKey.kTextPathProperty:
       case PropertyKey.kTextShadowProperty:
       case PropertyKey.kTextTransformProperty:
       case PropertyKey.kTopProperty:
@@ -494,6 +495,10 @@ export class ComputedStyleData {
 
   get text_overflow() {
     return this.GetPropertyValueReference(PropertyKey.kTextOverflowProperty);
+  }
+
+  get text_path() {
+    return this.GetPropertyValueReference(PropertyKey.kTextPathProperty);
   }
 
   get text_shadow() {

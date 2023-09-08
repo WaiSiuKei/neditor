@@ -12,6 +12,7 @@ import { CanvasKit, makePaint, makePath, MakePathFromSVGString } from '@neditor/
 // cleared to ARGB(0,0,0,0).
 import { Canvas, Paint, Surface } from 'canvaskit-wasm';
 import { DCHECK } from '../../../base/check';
+import { radiansToDegrees } from '../../../base/common/math';
 import { AccessorCallback, Optional } from '../../../base/common/typescript';
 import { baseGetTypeId } from '../../base/type_id';
 import { Matrix3F } from '../../math/matrix3_f';
@@ -19,6 +20,7 @@ import { PointAtOffsetFromOrigin, PointF } from '../../math/point_f';
 import { RectF } from '../../math/rect_f';
 import { Size } from '../../math/size';
 import { IsOnlyScaleAndTranslate } from '../../math/transform_2d';
+import { Vector2dF } from '../../math/vector2d_f';
 import { Border, BorderStyle } from '../../render_tree/border';
 import { Brush, ColorStopList, LinearGradientBrush, RadialGradientBrush, SolidColorBrush } from '../../render_tree/brush';
 import { BrushVisitor } from '../../render_tree/brush_visitor';
@@ -238,6 +240,7 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
   VisitTextNode(text_node: TextNode): void {
     TRACE_EVENT0('cobalt::renderer', 'Visit(TextNode)');
     this.withScaleAndTranslate(() => {
+      console.log('node', text_node);
       const { draw_state_ } = this;
       DCHECK_EQ(1.0, draw_state_.opacity);
 
@@ -279,13 +282,39 @@ export class RenderTreeNodeVisitor extends NodeVisitor {
         this.DrawRectWithBrush(colorBrush, rect);
       }
 
-      // Finally render the main text.
-      let offset = text_node.data().offset.CLONE();
-      this.RenderText(
-        text_node.data().glyph_buffer as GlyphBuffer,
-        text_node.data().color,
-        PointAtOffsetFromOrigin(offset),
-        blur_zero_sigma);
+      const { glyphs } = text_node.data();
+      if (glyphs) {
+        const off = glyphs[0].p0.x;
+        for (var i = 0; i < glyphs.length; i++) {
+          draw_state_.render_target.save();
+
+          var p0 = glyphs[i].p0;
+
+          draw_state_.render_target.translate(p0.x - off, p0.y);
+          draw_state_.render_target.rotate(radiansToDegrees(glyphs[i].rotation), 1, 1);
+          this.RenderText(
+            glyphs[i].buffer as GlyphBuffer,
+            text_node.data().color,
+            PointAtOffsetFromOrigin(new Vector2dF(0, 0)),
+            blur_zero_sigma);
+          draw_state_.render_target.restore();
+        }
+      } else {
+        //// To assist with debugging visually, uncomment following
+        //
+        // if (i % 2) context.strokeStyle = 'cyan';
+        // else context.strokeStyle = 'green';
+        // var p1 = glyphInfo[i].p1;
+        // context.moveTo(p0.x, p0.y);
+        // context.lineTo(p1.x, p1.y);
+        // context.stroke();
+        let offset = text_node.data().offset.CLONE();
+        this.RenderText(
+          text_node.data().glyph_buffer as GlyphBuffer,
+          text_node.data().color,
+          PointAtOffsetFromOrigin(offset),
+          blur_zero_sigma);
+      }
     });
   }
   VisitImageNode(image_node: ImageNode): void {
