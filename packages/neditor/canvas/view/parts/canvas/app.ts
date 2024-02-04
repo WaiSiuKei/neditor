@@ -3,7 +3,7 @@ import { HTMLSpanElement } from '../../../../engine/dom/html_span_element';
 import {
   IBlockNodeViewModel,
   ICanvasViewModel,
-  INodeViewModel, IRootNodeViewModel,
+  IModelNode, IRootNode,
   isBlockNodeViewModel,
   isTextNodeViewModel,
   ITextNodeViewModel
@@ -11,7 +11,7 @@ import {
 import { createApp } from './adapter/app';
 import { NOTIMPLEMENTED } from '../../../../base/common/notreached';
 import { Document } from '../../../../engine/dom/document';
-import { NodeType } from '../../../../common/node';
+import { RecordType } from '../../../../common/node';
 import { AttrNameOfComponentType, AttrNameOfId, AttrNameOfRoot, AttrNameOfScope } from '../../../viewModel/path';
 
 export function mountAPP(vm: ICanvasViewModel, document: Document) {

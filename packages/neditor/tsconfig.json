@@ -8,7 +8,8 @@
       "DOM.Iterable",
       "ES6",
       "ES2015",
-      "ESNext"
+      "ESNext",
+      "ES2015.Proxy"
     ],
     "sourceMap": false,
     "declaration": false,

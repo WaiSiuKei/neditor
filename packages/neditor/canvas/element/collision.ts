@@ -1,5 +1,5 @@
 import { NOTIMPLEMENTED } from '../../base/common/notreached';
-import { NodeType } from '../../common/node';
+import { RecordType } from '../../common/node';
 import { ICanvasState } from '../canvas/canvas';
 import * as GA from '../ga';
 import * as GADirection from '../gadirections';

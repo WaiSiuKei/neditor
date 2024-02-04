@@ -17,12 +17,12 @@ import { IEventFilter, InputEvents, } from '@neditor/core/platform/input/browser
 import { IToolService } from '@neditor/core/platform/tool/common/tool';
 import { ICanvasService } from '../../platform/canvas/common/canvas';
 import { NOTIMPLEMENTED, NOTREACHED } from '../../base/common/notreached';
-import { ICanvasModel, IModelService, IOperationCallback, RootNodeId } from '../../platform/model/common/model';
+import { ICanvasModelMutator, IModelService, IOperationCallback, RootNodeId } from '../../platform/model/common/model';
 import { RootScope, Scope } from '../canvasCommon/scope';
 import { ICanvasViewModel } from '../viewModel/viewModel';
 import { Emitter, Event } from '../../base/common/event';
 import { isNil } from '../../base/common/type';
-import { IDocumentModel } from '../../common/model';
+import { IDocument } from '../../common/record';
 import { CanvasViewModel } from '../viewModel/viewModelImpl';
 import { HistoryHelper } from './historyHelper';
 import { IContextKeyService } from '../../platform/contextkey/common/contextkey';
@@ -33,7 +33,7 @@ import { IModelContentChangedEvent } from '../../platform/model/common/modelEven
 class MVVMStatus extends Disposable implements IMVVMStatus {
   protected _pendingReLayout = true;
   protected _waiting: Optional<DeferredPromise<void>>;
-  constructor(model: ICanvasModel) {
+  constructor(model: ICanvasModelMutator) {
     super();
     this._register(model.onDidChangeContent(() => {
       this._pendingReLayout = true;
@@ -59,13 +59,13 @@ class MVVMStatus extends Disposable implements IMVVMStatus {
 }
 
 class ModelData {
-  public readonly model: ICanvasModel;
+  public readonly model: ICanvasModelMutator;
   public readonly viewModel: ICanvasViewModel;
   public readonly view: ICanvasView;
   public readonly mvvm: MVVMStatus;
   public readonly listenersToRemove: IDisposable[];
 
-  constructor(model: ICanvasModel, viewModel: ICanvasViewModel, view: ICanvasView, mvvm: MVVMStatus, listenersToRemove: IDisposable[]) {
+  constructor(model: ICanvasModelMutator, viewModel: ICanvasViewModel, view: ICanvasView, mvvm: MVVMStatus, listenersToRemove: IDisposable[]) {
     this.model = model;
     this.viewModel = viewModel;
     this.view = view;
@@ -122,7 +122,7 @@ export class Canvas extends Disposable implements ICanvas {
 
     Reflect.set(window, 'canvas', this);
   }
-  protected _attachModel(model: Optional<ICanvasModel>): void {
+  protected _attachModel(model: Optional<ICanvasModelMutator>): void {
     if (!model) {
       this._modelData = undefined;
       return;
@@ -201,7 +201,7 @@ export class Canvas extends Disposable implements ICanvas {
     return this._modelData?.mvvm!;
   }
 
-  private _detachModel(): ICanvasModel | null {
+  private _detachModel(): ICanvasModelMutator | null {
     if (!this._modelData) {
       return null;
     }
@@ -247,7 +247,7 @@ export class Canvas extends Disposable implements ICanvas {
     }
   }
 
-  getScopedModel(scope: Scope): ICanvasModel {
+  getScopedModel(scope: Scope): ICanvasModelMutator {
     if (scope.EQ(RootScope)) return this.model!;
     debugger;
     NOTIMPLEMENTED();
@@ -265,7 +265,7 @@ export class Canvas extends Disposable implements ICanvas {
   isFocused(): boolean {
     return this.view.isFocused();
   }
-  setModel(model: Optional<ICanvasModel>): void {
+  setModel(model: Optional<ICanvasModelMutator>): void {
     if (isNil(this._modelData) && isNil(model)) {
       // Current model is the new model
       return;
@@ -285,7 +285,7 @@ export class Canvas extends Disposable implements ICanvas {
 
     this._onDidChangeModel.fire(e);
   }
-  updateModel(value: IDocumentModel): void {
+  updateModel(value: IDocument): void {
     this.viewModel!.internal_disconnect(this.model!.uri.toString());
     this.view!.internal_disconnect();
     this.model!.replaceModel(value);

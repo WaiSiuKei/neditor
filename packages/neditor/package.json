@@ -27,8 +27,7 @@
     "slate-react": "^0.98.1",
     "tailwindcss": "3.2.7",
     "vue": "3.2.39",
-    "w3c-keyname": "2.2.6",
-    "yjs": "13.6.6"
+    "w3c-keyname": "2.2.6"
   },
   "devDependencies": {
     "@esbuild-plugins/node-globals-polyfill": "0.1.1",

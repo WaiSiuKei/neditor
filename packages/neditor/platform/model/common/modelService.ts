@@ -1,19 +1,20 @@
 import { URI } from '../../../base/common/uri';
 import { Disposable, IDisposable } from '../../../base/common/lifecycle';
-import { ICanvasModel, IModelChangeParticipant, IModelService, UpdateMode } from './model';
+import { IUndoRedoService } from '../../undoRedo/common/undoRedo';
+import { SingleModelEditStackElement } from './editorStack';
+import { IDocumentModel, IModelChangeParticipant, IModelService, UpdateMode } from './model';
 import { Emitter, Event } from '../../../base/common/event';
 import { ModelChangeParticipant } from './modelChangeParticipant';
 import { IInstantiationService } from '../../instantiation/common/instantiation';
-import { IDocumentModel } from '../../../common/model';
+import { IDocument } from '../../../common/record';
 import { NOTIMPLEMENTED, NOTREACHED } from '../../../base/common/notreached';
 import { IModelContentChangedEvent } from './modelEvents';
-import { Optional } from '../../../base/common/typescript';
-import { UndoRedoSource } from '../../undoRedo/common/undoRedo';
 import { ScopedIdentifier } from '../../../canvas/canvasCommon/scope';
 import { ICanvasService } from '../../canvas/common/canvas';
-import { CanvasModel } from './modelImpl';
+import { DocumentModel } from './modelImpl';
 import { registerSingleton } from '../../instantiation/common/extensions';
-import * as Y from 'yjs';
+import { Patch, produce } from './reactivity/patch';
+import { toRaw } from './reactivity/reactive';
 
 function MODEL_ID(resource: URI): string {
   return resource.toString();
@@ -22,7 +23,6 @@ function MODEL_ID(resource: URI): string {
 class DisposedModelInfo {
   constructor(
     public readonly uri: URI,
-    // public readonly initialUndoRedoSnapshot: ResourceEditStackSnapshot | null,
     public readonly time: number, // public readonly sharesUndoRedoStack: boolean, // public readonly heapSize: number, // public readonly sha1: string, // public readonly versionId: number, // public readonly alternativeVersionId: number,
   ) {
   }
@@ -32,20 +32,18 @@ export class ModelService extends Disposable implements IModelService {
   // public static MAX_MEMORY_FOR_CLOSED_FILES_UNDO_STACK = 20 * 1024 * 1024;
   public _serviceBrand: undefined;
   private id = performance.now();
-  doc = new Y.Doc();
 
-  private readonly _onModelAdded: Emitter<ICanvasModel> = this._register(new Emitter<ICanvasModel>());
+  private readonly _onModelAdded: Emitter<IDocumentModel> = this._register(new Emitter<IDocumentModel>());
 
-  public readonly onModelAdded: Event<ICanvasModel> = this._onModelAdded.event;
-  private readonly _onModelRemoved: Emitter<ICanvasModel> = this._register(new Emitter<ICanvasModel>());
+  public readonly onModelAdded: Event<IDocumentModel> = this._onModelAdded.event;
+  private readonly _onModelRemoved: Emitter<IDocumentModel> = this._register(new Emitter<IDocumentModel>());
 
-  public readonly onModelRemoved: Event<ICanvasModel> = this._onModelRemoved.event;
+  public readonly onModelRemoved: Event<IDocumentModel> = this._onModelRemoved.event;
 
   /**
    * All the models known in the system.
    */
-  private readonly _models = new Map<string, ICanvasModel>();
-  // protected readonly fragments = new Map<string, FragmentModel>();
+  private readonly _models = new Map<string, IDocumentModel>();
   private readonly _disposedModels: Map<string, DisposedModelInfo>;
   private _disposedModelsHeapSize: number;
 
@@ -54,7 +52,8 @@ export class ModelService extends Disposable implements IModelService {
   // 简单的批量更新模式嵌套管理, beginUpdate 入栈，endUpdate 出栈
   protected updateStackDepth = 0;
   public updateMode = UpdateMode.None;
-  private modelVersionBeforeChange = new Map<ICanvasModel, number>();
+  private changesGroupedByModel = new Map<IDocumentModel, Patch[]>();
+  private modelVersionBeforeChange = new Map<IDocumentModel, number>();
 
   constructor(@IInstantiationService private instantiationService: IInstantiationService) {
     super();
@@ -63,7 +62,8 @@ export class ModelService extends Disposable implements IModelService {
     this.modelChangeParticipant = new ModelChangeParticipant();
   }
 
-  public updateModel(model: ICanvasModel, value: IDocumentModel): void {
+  public updateModel(model: IDocumentModel,
+                     value: IDocument): void {
     this.instantiationService.invokeFunction(accessor => {
       const canvasesService = accessor.get(ICanvasService);
       const editors = canvasesService.listCanvases();
@@ -75,15 +75,10 @@ export class ModelService extends Disposable implements IModelService {
       // editor.replaceModel(value);
       this.reset();
     });
-    // Otherwise find a diff between the values and update model
-    // model.pushStackElement();
-    // model.pushEOL(textBuffer.getEOL() === '\r\n' ? EndOfLineSequence.CRLF : EndOfLineSequence.LF);
-    // model.pushEditOperations([], ModelService._computeEdits(model, textBuffer), () => []);
-    // model.pushStackElement();
-    // disposable.dispose();
   }
 
-  public createModel(value: IDocumentModel, resource?: URI): ICanvasModel {
+  public createModel(value: IDocument,
+                     resource?: URI): IDocumentModel {
     const model = this._doCreateModel(value, resource);
 
     this._onModelAdded.fire(model);
@@ -91,9 +86,10 @@ export class ModelService extends Disposable implements IModelService {
     return model;
   }
 
-  private _doCreateModel(value: IDocumentModel, resource: URI | undefined): ICanvasModel {
+  private _doCreateModel(value: IDocument,
+                         resource: URI | undefined): IDocumentModel {
     // create & save the model
-    const model = this.instantiationService.createInstance(CanvasModel, value, this.doc, resource);
+    const model = this.instantiationService.createInstance(DocumentModel, value, resource);
     if (resource && this._disposedModels.has(MODEL_ID(resource))) {
       NOTIMPLEMENTED();
     }
@@ -124,7 +120,7 @@ export class ModelService extends Disposable implements IModelService {
     return this._models.get(modelId);
   }
 
-  private _onWillDispose(model: ICanvasModel): void {
+  private _onWillDispose(model: IDocumentModel): void {
     const modelId = MODEL_ID(model.uri);
     this._models.delete(modelId);
     this._onModelRemoved.fire(model);
@@ -134,17 +130,9 @@ export class ModelService extends Disposable implements IModelService {
     return this.modelChangeParticipant.addSaveParticipant(participant);
   }
 
-  runChangeParticipants(model: ICanvasModel, changes: IModelContentChangedEvent) {
+  runChangeParticipants(model: IDocumentModel,
+                        changes: IModelContentChangedEvent) {
     this.modelChangeParticipant.participate(model, changes);
-  }
-
-  getModelUniversally(resourceStr: string): Optional<ICanvasModel> {
-    return this._models.get(resourceStr);
-  }
-
-  getAllModels(): ICanvasModel[] {
-    const m: ICanvasModel[] = Array.from(this._models.values());
-    return m;
   }
 
   beginUpdate(): void {
@@ -153,6 +141,10 @@ export class ModelService extends Disposable implements IModelService {
 
   endUpdate(): void {
     this.updateStackDepth--;
+  }
+
+  isInRecursion(): boolean {
+    return this.updateStackDepth > 1;
   }
 
   isUpdating(): boolean {
@@ -164,29 +156,89 @@ export class ModelService extends Disposable implements IModelService {
     this.updateMode = UpdateMode.None;
   }
 
-  transform<T>(undoRedoSource: UndoRedoSource, cb: () => T, beforeCursorState: ScopedIdentifier[], getAfterCursorState: () => ScopedIdentifier[]) {
+  transform<T>(cb: () => T,
+               beforeCursorState: ScopedIdentifier[],
+               getAfterCursorState: () => ScopedIdentifier[]): T {
     if (this.updateMode === UpdateMode.None) {
       this.updateMode = UpdateMode.Transform;
+    } else if (this.updateMode === UpdateMode.Transform) {
+      // 嵌套
+      return this.doUpdate(cb);
     }
     const ret = this.doUpdate(cb);
+    this.commitEditStack(beforeCursorState, getAfterCursorState());
+    this.changesGroupedByModel.clear();
     this.updateMode = UpdateMode.None;
     return ret;
+  }
+
+  changeWithoutHistory(cb: () => void): void {
+    this.doUpdate(cb);
+  }
+
+  private commitEditStack(beforeScursorState: ScopedIdentifier[],
+                          afterCursorState: ScopedIdentifier[]) {
+    this.instantiationService.invokeFunction(accessor => {
+      const singleEdits = [];
+      for (const [model, changes] of this.changesGroupedByModel) {
+        if (changes.length) {
+          const e = new SingleModelEditStackElement(model.uri.toString(), model, beforeScursorState);
+          e.append(changes, model.getVersionId(), afterCursorState);
+          singleEdits.push(e);
+        }
+      }
+
+      if (!singleEdits.length) return;
+      const undoRedoService = accessor.get<IUndoRedoService>(IUndoRedoService);
+
+      if (singleEdits.length === 1) {
+        undoRedoService.pushElement(singleEdits[0]);
+      } else {
+        NOTIMPLEMENTED();
+      }
+    });
   }
 
   private doUpdate<T>(cb: () => T) {
     this.beginUpdate();
 
-    let ret = this.doc.transact(() => {
+    if (!this.isInRecursion()) {
+      this.changesGroupedByModel.clear();
+      this._models.forEach(i => {
+        this.changesGroupedByModel.set(i, []);
+      });
+      this._models.forEach(model => {
+        model.beforeMutation();
+      });
+    }
+
+    let ret: T | undefined;
+    const patches = produce(() => {
+      // catch cb 报错，避免后续操作不执行
       try {
-        return cb();
+        ret = cb();
       } catch (e) {
         console.error(e);
-        NOTREACHED();
       }
     });
-    this.endUpdate();
 
-    return ret;
+    const allModels = Array.from(this._models.values());
+    for (const p of patches) {
+      const m = allModels.find(model => toRaw(model.document) === toRaw(p.root));
+      if (!m) NOTREACHED();
+      const arr = this.changesGroupedByModel.get(m);
+      if (!arr) NOTREACHED();
+      arr.push(p);
+    }
+
+    if (!this.isInRecursion()) {
+      for (const [model, changes] of this.changesGroupedByModel) {
+        model.afterMutation(changes);
+      }
+    }
+
+    this.endUpdate();
+    return ret!;
   }
 }
 

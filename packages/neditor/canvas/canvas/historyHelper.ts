@@ -1,13 +1,13 @@
 import { Optional } from '../../base/common/typescript';
 import { UndoRedoSource } from '../../platform/undoRedo/common/undoRedo';
 import { IInstantiationService } from '../../platform/instantiation/common/instantiation';
-import { ICanvasModel, IModelService, IOperationCallback } from '../../platform/model/common/model';
+import { ICanvasModelMutator, IModelService, IOperationCallback } from '../../platform/model/common/model';
 import { ICanvasService } from '../../platform/canvas/common/canvas';
 import { ICanvasViewModel } from '../viewModel/viewModel';
 
 export class HistoryHelper {
   private undoRedoSource: UndoRedoSource;
-  constructor(private model: ICanvasModel,
+  constructor(private model: ICanvasModelMutator,
               @IInstantiationService private instantiationService: IInstantiationService,
               @ICanvasService private canvasesService: ICanvasService,
               @IModelService private modelService: IModelService) {

@@ -1,8 +1,8 @@
-import { Disposable, IDisposable, toDisposable } from "../../../base/common/lifecycle";
-import { ICanvasModel, IModelChangeParticipant } from "./model";
-import { IModelContentChangedEvent } from "./modelEvents";
-import { NOTIMPLEMENTED } from "../../../base/common/notreached";
-import { insert } from "../../../base/common/array";
+import { Disposable, IDisposable, toDisposable } from '../../../base/common/lifecycle';
+import { IDocumentModel, IModelChangeParticipant } from './model';
+import { IModelContentChangedEvent } from './modelEvents';
+import { NOTIMPLEMENTED } from '../../../base/common/notreached';
+import { insert } from '../../../base/common/array';
 
 export class ModelChangeParticipant extends Disposable {
   private readonly saveParticipants: IModelChangeParticipant[] = [];
@@ -17,7 +17,8 @@ export class ModelChangeParticipant extends Disposable {
     return toDisposable(() => remove());
   }
 
-  participate(model: ICanvasModel, changes: IModelContentChangedEvent) {
+  participate(model: IDocumentModel,
+              changes: IModelContentChangedEvent) {
     for (const saveParticipant of this.saveParticipants) {
       try {
         saveParticipant.participate(model, changes);

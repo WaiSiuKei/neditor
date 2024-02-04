@@ -1,4 +1,4 @@
-import { NodeType } from '../../common/node';
+import { RecordType } from '../../common/node';
 import { getTypeAttr } from '../viewModel/path';
 import { CanvasElement } from './types';
 

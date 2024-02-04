@@ -1,40 +1,89 @@
-import { URI } from "../../../base/common/uri";
-import { IDisposable } from "../../../base/common/lifecycle";
-import { createDecorator } from "../../instantiation/common/instantiation";
+import { IDisposable } from '../../../base/common/lifecycle';
+import { URI } from '../../../base/common/uri';
+import { createDecorator } from '../../instantiation/common/instantiation';
 
 export const IUndoRedoService = createDecorator<IUndoRedoService>('undoRedoService');
 
 export interface IUndoRedoService {
   readonly _serviceBrand: undefined;
-  canUndo(resource: URI | UndoRedoSource): boolean;
-  undo(resource: URI | UndoRedoSource): Promise<void> | void;
+  pushElement(element: IUndoRedoElement): void;
+  removeElements(resource: URI): void;
+  canUndo(resource: URI): boolean;
+  undo(resource: URI): Promise<void> | void;
 
-  canRedo(resource: URI | UndoRedoSource): boolean;
-  redo(resource: URI | UndoRedoSource): Promise<void> | void;
+  canRedo(resource: URI): boolean;
+  redo(resource: URI): Promise<void> | void;
 }
 
-export class UndoRedoSource {
-  private static _ID = 0;
+export const enum UndoRedoElementType {
+  Resource,
+  Workspace,
+}
 
-  static isInstance(other: any): other is UndoRedoSource {
-    return Reflect.get(other, '__classBland__') === 'UndoRedoSource';
-  }
+export interface IResourceUndoRedoElement {
+  readonly type: UndoRedoElementType.Resource;
+  /**
+   * The resource impacted by this element.
+   */
+  readonly resource: URI;
+  /**
+   * A user presentable label. May be localized.
+   */
+  readonly label: string;
+  /**
+   * A code describing the operation. Will not be localized.
+   */
+  // readonly code: string;
+  /**
+   * Show a message to the user confirming when trying to undo this element
+   */
+  readonly confirmBeforeUndo?: boolean;
+  undo(): Promise<void> | void;
+  redo(): Promise<void> | void;
+}
 
-  public readonly __classBland__ = 'UndoRedoSource';
-  public readonly id: number;
-  private order: number;
+export interface IWorkspaceUndoRedoElement {
+  readonly type: UndoRedoElementType.Workspace;
+  /**
+   * The resources impacted by this element.
+   */
+  readonly resources: readonly URI[];
+  /**
+   * A user presentable label. May be localized.
+   */
+  readonly label: string;
+  /**
+   * A code describing the operation. Will not be localized.
+   */
+  // readonly code: string;
+  /**
+   * Show a message to the user confirming when trying to undo this element
+   */
+  readonly confirmBeforeUndo?: boolean;
+  undo(): Promise<void> | void;
+  redo(): Promise<void> | void;
 
-  constructor() {
-    this.id = UndoRedoSource._ID++;
-    this.order = 1;
-  }
+  /**
+   * If implemented, indicates that this undo/redo element can be split into multiple per resource elements.
+   */
+  split?(): IResourceUndoRedoElement[];
 
-  public nextOrder(): number {
-    if (this.id === 0) {
-      return 0;
-    }
-    return this.order++;
-  }
+  /**
+   * If implemented, will be invoked before calling `undo()` or `redo()`.
+   * This is a good place to prepare everything such that the calls to `undo()` or `redo()` are synchronous.
+   * If a disposable is returned, it will be invoked to clean things up.
+   */
+  prepareUndoRedo?(): Promise<IDisposable> | IDisposable | void;
+}
 
-  public static None = new UndoRedoSource();
+export type IUndoRedoElement = IResourceUndoRedoElement | IWorkspaceUndoRedoElement;
+
+export interface IPastFutureElements {
+  past: IUndoRedoElement[];
+  future: IUndoRedoElement[];
+}
+
+export class ResourceEditStackSnapshot {
+  constructor(public readonly resource: URI,
+              public readonly elements: number[]) {}
 }

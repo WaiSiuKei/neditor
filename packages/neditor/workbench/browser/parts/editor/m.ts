@@ -1,8 +1,8 @@
-import { IDocumentModel } from '../../../../common/model';
+import { IDocument } from '../../../../common/record';
 import { RootNodeId } from '../../../../platform/model/common/model';
-import { NodeType } from '../../../../common/node';
+import { RecordType } from '../../../../common/node';
 
-const a: IDocumentModel = {
+const a: IDocument = {
   nodes: {
     [RootNodeId]: {
       id: RootNodeId,
@@ -139,7 +139,7 @@ const a: IDocumentModel = {
   }
 };
 
-const b: IDocumentModel = {
+const b: IDocument = {
   "nodes": {
     "root": {
       "id": "root",
