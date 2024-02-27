@@ -2,7 +2,7 @@ import { DCHECK } from '../../../../../base/check';
 import { NOTIMPLEMENTED, NOTREACHED } from '../../../../../base/common/notreached';
 import { Optional } from '../../../../../base/common/typescript';
 import { ICanvas } from '../../../../../canvas/canvas/canvas';
-import { getScope } from '../../../../../canvas/viewModel/path';
+import { getScope } from '../../../../../canvas/canvasCommon/path';
 import { HTMLSpanElement } from '../../../../../engine/dom/html_span_element';
 import { BlockNodeModelProxy, DescendantModelProxy, TextNodeModelProxy } from '../../../../../platform/model/common/model';
 import { Editor, Path, Point, Range, Descendant, Node, Text, createEditor } from '../editor';

@@ -1,41 +1,28 @@
-import { Optional } from '../../base/common/typescript';
-import { UndoRedoSource } from '../../platform/undoRedo/common/undoRedo';
-import { IInstantiationService } from '../../platform/instantiation/common/instantiation';
-import { ICanvasModelMutator, IModelService, IOperationCallback } from '../../platform/model/common/model';
-import { ICanvasService } from '../../platform/canvas/common/canvas';
-import { ICanvasViewModel } from '../viewModel/viewModel';
+import { NOTIMPLEMENTED } from '../../base/common/notreached';
+import { IDocumentModel, IModelService, IOperationCallback } from '../../platform/model/common/model';
 
 export class HistoryHelper {
-  private undoRedoSource: UndoRedoSource;
-  constructor(private model: ICanvasModelMutator,
-              @IInstantiationService private instantiationService: IInstantiationService,
-              @ICanvasService private canvasesService: ICanvasService,
+  constructor(private model: IDocumentModel,
               @IModelService private modelService: IModelService) {
-    this.undoRedoSource = new UndoRedoSource();
   }
 
   canUndo() {
-    return this.model.canUndo();
+    return NOTIMPLEMENTED();
   }
 
   canRedo() {
-    return this.model.canRedo();
+    return NOTIMPLEMENTED();
   }
 
   undo() {
-    return this.model.undo();
+    return NOTIMPLEMENTED();
   }
 
   redo() {
-    return this.model.redo();
+    return NOTIMPLEMENTED();
   }
 
   transform<T>(cb: IOperationCallback<T>) {
-    return this.modelService.transform(this.undoRedoSource, cb.bind(null, this.model), [], () => []);
-  }
-
-  getVM(): Optional<ICanvasViewModel> {
-    const editor = this.canvasesService.listCanvases().find(e => e.model!.uri.toString() === this.model.uri.toString());
-    return editor?.viewModel;
+    return this.modelService.transform(cb.bind(null, this.model), [], () => []);
   }
 }

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "vite",
+    "dev": "vite",
     "build": "vite build"
   },
   "dependencies": {
@@ -11,6 +11,7 @@
     "@types/react": "^18.2.20",
     "@vue/reactivity": "^3.3.4",
     "@vue/shared": "3.2.47",
+    "debug": "^4.3.4",
     "big.js": "6.2.1",
     "immer": "^10.0.2",
     "is-plain-object": "^5.0.0",
@@ -33,6 +34,7 @@
     "@esbuild-plugins/node-globals-polyfill": "0.1.1",
     "@esbuild-plugins/node-modules-polyfill": "0.1.4",
     "@originjs/vite-plugin-commonjs": "1.0.3",
+    "@types/debug": "4.1.12",
     "@types/lodash-es": "4.17.6",
     "@types/node": "18.15.3",
     "@types/randomcolor": "0.5.7",

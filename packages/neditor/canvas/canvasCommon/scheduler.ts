@@ -6,10 +6,6 @@ const enum EditingMode {
 
 let editingMode = EditingMode.none;
 
-export function isMutating(): boolean {
-  return editingMode !== EditingMode.none;
-}
-
 export function begin() {
   editingMode = EditingMode.update;
 }

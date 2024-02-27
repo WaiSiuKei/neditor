@@ -12,7 +12,7 @@ import { createApp } from './adapter/app';
 import { NOTIMPLEMENTED } from '../../../../base/common/notreached';
 import { Document } from '../../../../engine/dom/document';
 import { RecordType } from '../../../../common/node';
-import { AttrNameOfComponentType, AttrNameOfId, AttrNameOfRoot, AttrNameOfScope } from '../../../viewModel/path';
+import { AttrNameOfComponentType, AttrNameOfId, AttrNameOfRoot, AttrNameOfScope } from '../../../canvasCommon/path';
 
 export function mountAPP(vm: ICanvasViewModel, document: Document) {
   const body = document.createElement('body');

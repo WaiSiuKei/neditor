@@ -7,8 +7,8 @@ import { toPX } from '../../../../base/browser/css';
 import { DCHECK } from '../../../../base/check';
 import { Optional } from '../../../../base/common/typescript';
 import { ScopedIdentifier } from '../../../../canvas/canvasCommon/scope';
-import { getScopedIdentifier } from '../../../../canvas/viewModel/path';
-import { BlockNodeModelProxy, isBlockNodeModelProxy } from '../../../../platform/model/common/model';
+import { getScopedIdentifier } from '../../../../canvas/canvasCommon/path';
+import { BlockNode } from '../../../../platform/model/common/modelNodeImpl';
 
 class PointerTool extends BaseTool {
   get id(): string {
@@ -52,33 +52,33 @@ class PointerTool extends BaseTool {
   }
 
   handleMouseMove(e: IMouseInputEvent) {
-    const hitElement = this.canvas.getElementAtPosition(e.clientX, e.clientY);
-
-    if (hitElement) {
-      this.canvas.view.setCursor(CursorStyle.move);
-    } else {
-      this.canvas.view.setCursor(CursorStyle.arrow);
-    }
+    // const hitElement = this.canvas.getElementAtPosition(e.clientX, e.clientY);
+    //
+    // if (hitElement) {
+    //   this.canvas.view.setCursor(CursorStyle.move);
+    // } else {
+    //   this.canvas.view.setCursor(CursorStyle.arrow);
+    // }
   }
 
   selected: ScopedIdentifier[] = [];
   handlePointerDown(e: IMouseInputEvent) {
-    const selectedElements = this.canvas.selectedElements;
-    const hitElement = this.canvas.getElementAtPosition(e.clientX, e.clientY);
-    if (hitElement && selectedElements.length === 1 && hitElement === selectedElements[0]) {
-      return;
-    }
-    if (hitElement) {
-      this.selected.push(getScopedIdentifier(hitElement));
-      this.canvas.setSelectedElements([hitElement]);
-    } else {
-      this.selected.length = 0;
-      this.canvas.setSelectedElements([]);
-    }
+    // const selectedElements = this.canvas.selectedElements;
+    // const hitElement = this.canvas.getElementAtPosition(e.clientX, e.clientY);
+    // if (hitElement && selectedElements.length === 1 && hitElement === selectedElements[0]) {
+    //   return;
+    // }
+    // if (hitElement) {
+    //   this.selected.push(getScopedIdentifier(hitElement));
+    //   this.canvas.setSelectedElements([hitElement]);
+    // } else {
+    //   this.selected.length = 0;
+    //   this.canvas.setSelectedElements([]);
+    // }
   }
 
   from: Map<ScopedIdentifier, {
-    node: BlockNodeModelProxy,
+    node: BlockNode,
     x: number,
     y: number,
   }> = new Map;
@@ -86,47 +86,47 @@ class PointerTool extends BaseTool {
   startY: Optional<number>;
   dragging = false;
   handleDragStart(e: IMouseInputEvent) {
-    this.dragging = true;
-    this.startX = e.clientX;
-    this.startY = e.clientY;
-    this.from.clear();
-    this.canvas.setSelectedElements([]);
-    this.selected.forEach(sid => {
-      const model = this.canvas.getScopedModel(sid.scope);
-      const node = model.getNodeById(sid.id);
-      DCHECK(node);
-      DCHECK(isBlockNodeModelProxy(node));
-      this.from.set(sid, {
-        node,
-        x: parseInt(node.style.marginLeft || ''),
-        y: parseInt(node.style.marginTop || ''),
-      });
-    });
+    // this.dragging = true;
+    // this.startX = e.clientX;
+    // this.startY = e.clientY;
+    // this.from.clear();
+    // this.canvas.setSelectedElements([]);
+    // this.selected.forEach(sid => {
+    //   const model = this.canvas.getScopedModel(sid.scope);
+    //   const node = model.getNodeById(sid.id);
+    //   DCHECK(node);
+    //   DCHECK(isBlockNodeModelProxy(node));
+    //   this.from.set(sid, {
+    //     node,
+    //     x: parseInt(node.style.marginLeft || ''),
+    //     y: parseInt(node.style.marginTop || ''),
+    //   });
+    // });
   }
 
   handleDrag(e: IMouseInputEvent) {
-    const { clientX, clientY } = e;
-    DCHECK(this.startX);
-    DCHECK(this.startY);
-    const deltaX = clientX - this.startX;
-    const deltaY = clientY - this.startY;
-    this.canvas.transform(() => {
-      for (let item of this.from.values()) {
-        const { node, x, y } = item;
-        node.style.marginLeft = toPX(x + deltaX);
-        node.style.marginTop = toPX(y + deltaY);
-      }
-    });
+    // const { clientX, clientY } = e;
+    // DCHECK(this.startX);
+    // DCHECK(this.startY);
+    // const deltaX = clientX - this.startX;
+    // const deltaY = clientY - this.startY;
+    // this.canvas.transform(() => {
+    //   for (let item of this.from.values()) {
+    //     const { node, x, y } = item;
+    //     node.style.marginLeft = toPX(x + deltaX);
+    //     node.style.marginTop = toPX(y + deltaY);
+    //   }
+    // });
   }
 
   handleDrop() {
-    this.startX = undefined;
-    this.startY = undefined;
-    this.dragging = false;
-    this.canvas.setSelectedElements(Array.from(this.from.keys()).map(sid => {
-      return this.canvas.view.document.getElementById(sid.id)!;
-    }));
-    this.from.clear();
+    // this.startX = undefined;
+    // this.startY = undefined;
+    // this.dragging = false;
+    // this.canvas.setSelectedElements(Array.from(this.from.keys()).map(sid => {
+    //   return this.canvas.view.document.getElementById(sid.id)!;
+    // }));
+    // this.from.clear();
   }
 
   handleDragEnd() {

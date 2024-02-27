@@ -2,7 +2,6 @@ import { toPX } from '../../../../base/browser/css';
 import { devicePixelRatio } from '../../../../base/browser/devicePixelRatio';
 import { Disposable } from '../../../../base/common/lifecycle';
 import { ICanvasState } from '../../../canvas/canvas';
-import { renderElementsBoxHighlight } from './renderer';
 
 export class Overlay extends Disposable {
   private canvas: HTMLCanvasElement;
@@ -34,10 +33,10 @@ export class Overlay extends Disposable {
     const normalizedCanvasWidth = this.canvas.width / scale;
     const normalizedCanvasHeight = this.canvas.height / scale;
     this.ctx.clearRect(0, 0, normalizedCanvasWidth, normalizedCanvasHeight);
-    renderElementsBoxHighlight(
-      this.ctx,
-      appState,
-      appState.selectedElements,
-    );
+    // renderElementsBoxHighlight(
+    //   this.ctx,
+    //   appState,
+    //   appState.selectedElements,
+    // );
   }
 }

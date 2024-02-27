@@ -3,7 +3,7 @@ import { IDisposable } from '../../../base/common/lifecycle';
 import { Optional } from '../../../base/common/typescript';
 import { URI } from '../../../base/common/uri';
 import { ScopedIdentifier } from '../../../canvas/canvasCommon/scope';
-import { IAncestorNode, IDescendantNode, IModelNode, } from '../../../common/node';
+import { IAncestorNode, IDescendantNode, IModelNode, IRootNode, } from '../../../common/node';
 import { IIdentifier } from '../../../common/record/common';
 import { IDocument, IDocumentRecord, ITextRecord, IBlockRecord, IFragmentRecord } from '../../../common/record';
 import { ITypedRecord } from '../../../common/record/types/base';
@@ -49,14 +49,11 @@ export interface IDocumentModel<T extends IDocument = IDocument> extends IDispos
   getAlternativeVersionId(): number;
   beforeMutation(): void;
   afterMutation(patches: Patch[]): void;
-  // undo(): void;
-  // redo(): void;
-  // canUndo(): boolean;
-  // canRedo(): boolean;
 
   addNode(n: IDescendantNode): void;
   removeNode(n: IDescendantNode): void;
   getNodeById(id: IIdentifier): Optional<IModelNode>;
+  getRoot(): IRootNode;
   // getPreviousSiblingNodeOfId(id: IIdentifier): Optional<IDescendantNode>;
   // getNextSiblingNodeOfId(id: IIdentifier): Optional<IDescendantNode>;
   // getAncestorNodesOfId(id: IIdentifier): IAncestorNode[]; // root 在最前
@@ -67,8 +64,8 @@ export interface IDocumentModel<T extends IDocument = IDocument> extends IDispos
 export interface IModelHistoryContext {
   transform<T>(
     cb: () => T,
-    beforeCursorState: ScopedIdentifier[],
-    getAfterCursorState: () => ScopedIdentifier[],
+    beforeCursorState?: ScopedIdentifier[],
+    getAfterCursorState?: () => ScopedIdentifier[],
   ): T;
   changeWithoutHistory(cb: () => void): void;
 }

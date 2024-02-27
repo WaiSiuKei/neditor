@@ -1,33 +1,21 @@
 import { ServicesAccessor } from '@neditor/core/platform/instantiation/common/instantiation';
-import { DocumentModel } from '../../platform/model/common/modelImpl';
-import { CanvasElement } from '../element/types';
 import { ICanvasView } from '../view/view';
 import { IEventFilter } from '@neditor/core/platform/input/browser/event';
-import { IDocumentModel, INodeInit, IOperationCallback } from '../../platform/model/common/model';
+import { IDocumentModel, IOperationCallback } from '../../platform/model/common/model';
 import { Event } from '../../base/common/event';
 import { Optional } from '../../base/common/typescript';
 import { IDocument } from '../../common/record';
 import { URI } from '../../base/common/uri';
 import { IModelContentChangedEvent } from '../../platform/model/common/modelEvents';
 
-export interface IMVVMStatus {
-  maybeWaitForReLayout(): Promise<void>;
-}
-
 export interface ICanvasState {
-  readonly selectedElements: readonly CanvasElement[];
-  setSelectedElements(els: readonly  CanvasElement[]): void;
   zoom: number;
 }
 
 export interface ICanvas extends ICanvasState {
-  readonly _serviceBrand: undefined;
-
   id: string;
-  readonly model: DocumentModel;
-  // readonly viewModel: ICanvasViewModel;
+  readonly model: IDocumentModel;
   readonly view: ICanvasView;
-  readonly mvvm: IMVVMStatus;
 
   onDidChangeModel: Event<IModelChangedEvent>;
   onDidChangeModelContent: Event<IModelContentChangedEvent>;
@@ -49,14 +37,13 @@ export interface ICanvas extends ICanvasState {
   canRedo(): boolean;
   redo(): void;
 
-  getElementAtPosition(
-    x: number,
-    y: number,
-  ): CanvasElement | null;
+  // getElementAtPosition(
+  //   x: number,
+  //   y: number,
+  // ): CanvasElement | null;
 
   reflow(): void;
 }
-
 
 /**
  * An event describing that an editor has had its model reset (i.e. `editor.setModel()`).

@@ -30,7 +30,6 @@ class EditorPart extends Part implements ICanvasViewsService {
   private loadingPromise = new DeferredPromise<void>();
   constructor(
     @IInstantiationService private instantiationService: IInstantiationService,
-    @IWorkbenchLayoutService layoutService: IWorkbenchLayoutService,
     @IModelService private modelService: IModelService,
   ) {
     super(Parts.EDITOR_PART);

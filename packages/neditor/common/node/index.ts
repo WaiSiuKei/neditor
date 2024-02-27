@@ -1,6 +1,7 @@
 import { IBlockRecord, IRootRecord, ITextRecord } from '../record';
+import { ITypedRecord } from '../record/types/base';
 
-export interface ITypedNode {
+export interface ITypedNode extends ITypedRecord {
   isDescendant(): this is IDescendantNode;
   isAncestor(): this is IAncestorNode;
   insertBefore(ref: IDescendantNode): void;
@@ -10,11 +11,11 @@ export interface ITypedNode {
   attach(): void;
   detach(): void;
 }
-export interface IAsAncestor extends ITypedNode {
+export interface IAsAncestor extends Omit<ITypedNode, 'type'> {
   children: IDescendantNode[];
   appendChildren(...toAdd: IDescendantNode[]): void;
 }
-export interface IAsDescendant extends ITypedNode {
+export interface IAsDescendant extends Omit<ITypedNode, 'type'> {
 }
 
 export interface IRootNode extends IRootRecord, IAsAncestor {

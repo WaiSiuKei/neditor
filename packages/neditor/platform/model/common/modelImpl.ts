@@ -1,18 +1,19 @@
 import { Emitter, Event } from '../../../base/common/event';
 import { Disposable, IDisposable } from '../../../base/common/lifecycle';
 import { NOTIMPLEMENTED } from '../../../base/common/notreached';
+import { keys } from '../../../base/common/objects';
 import { reactive } from '../../../base/common/reactivity';
 import { Optional } from '../../../base/common/typescript';
 import { URI } from '../../../base/common/uri';
 import { generateUuid } from '../../../base/common/uuid';
 import { ScopedIdentifier } from '../../../canvas/canvasCommon/scope';
-import { IDescendantNode, IModelNode } from '../../../common/node';
-import { IDocument } from '../../../common/record';
+import { IDescendantNode, IModelNode, IRootNode } from '../../../common/node';
+import { IDocument, IDocumentRecord } from '../../../common/record';
 import { IIdentifier } from '../../../common/record/common';
 import { RecordType } from '../../../common/record/types/base';
-import { IDocumentModel, IModelOperationContext, IModelService, INodeInit } from './model';
+import { IDocumentModel, IModelOperationContext, IModelService, INodeInit, RootNodeId } from './model';
 import { IModelContentChangedEvent, ModelContentChangedEvent } from './modelEvents';
-import { BlockNode, TextNode } from './modelNodeImpl';
+import { BlockNode, RootNode, TextNode } from './modelNodeImpl';
 import { invert, Patch, redoPatches } from './reactivity/patch';
 
 export class BaseDocumentModel<T extends IDocument> extends Disposable implements IDocumentModel<T> {
@@ -170,7 +171,24 @@ export class BaseDocumentModel<T extends IDocument> extends Disposable implement
 
   protected _processInput(input: T): T {
     // @ts-ignore
-    return reactive(input);
+    const ret = reactive(input);
+    keys(ret.nodes).forEach(k => {
+      const n = ret.nodes[k] as IDocumentRecord;
+      switch (n.type) {
+        case RecordType.Root:
+          this.nodes.set(k, new RootNode(n, this));
+          break;
+        case RecordType.Text:
+          this.nodes.set(k, new TextNode(n, this));
+          break;
+        case RecordType.Block:
+          this.nodes.set(k, new BlockNode(n, this));
+          break;
+        default:
+          NOTIMPLEMENTED();
+      }
+    });
+    return ret as T;
   }
 
   get uri(): URI {
@@ -204,6 +222,10 @@ export class BaseDocumentModel<T extends IDocument> extends Disposable implement
 
   getNodeById(id: IIdentifier): Optional<IModelNode> {
     return this.nodes.get(id);
+  }
+
+  getRoot() {
+    return this.getNodeById(RootNodeId)! as IRootNode;
   }
 
   addNode(n: IDescendantNode) {

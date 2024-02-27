@@ -230,10 +230,6 @@ export class BlockNode extends ParentNode<IBlockRecord> implements IBlockNode {
   }
 }
 
-export function isBlockNode(n: { type: EnumAndLiteral<RecordType> }): n is BlockNode {
-  return n.type === RecordType.Block;
-}
-
 export class TextNode extends BaseNode<ITextRecord> implements ITextNode {
   type: EnumAndLiteral<RecordType.Text> = RecordType.Text;
   constructor(

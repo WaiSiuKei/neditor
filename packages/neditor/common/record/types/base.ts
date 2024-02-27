@@ -1,3 +1,4 @@
+import { EnumAndLiteral } from '../../../base/common/typescript';
 import { IIdentifier } from '../common';
 
 export interface ICommonStyleDeclaration {
@@ -19,7 +20,7 @@ export interface ICommonStyleDeclaration {
 
 export interface ITypedRecord extends ICommonStyleDeclaration {
   readonly id: IIdentifier;
-  readonly type: string;
+  readonly type: EnumAndLiteral<RecordType>;
   from: IIdentifier;
   order: string;
 }

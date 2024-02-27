@@ -4,14 +4,13 @@ import { NOTIMPLEMENTED } from '@neditor/core/base/common/notreached';
 import { Selection } from '@neditor/core/engine/editing/selection';
 import { HitTestOptions, DOMHitTestResult, LayoutManager } from '@neditor/core/engine/layout/layout_manager';
 import { Emitter, Event } from '../../base/common/event';
-import { Matrix } from '../../base/common/geometry';
+import { Matrix3 } from '../../base/common/geometry/matrix3';
 import { IContextKeyService } from '../../platform/contextkey/common/contextkey';
 import { TInputEventType } from '../../platform/input/browser/event';
 import { HitTestLevel } from '../../platform/input/common/input';
 import { IKeybindingService } from '../../platform/keybinding/common/keybinding';
 import { ICanvasState } from '../canvas/canvas';
 import { CanvasContextKeys } from '../canvas/canvasContextKeys';
-import { ICanvasViewModel } from '../viewModel/viewModel';
 import { IPointerHandlerHelper } from './controller/mouseHandler';
 import { PointerHandler } from './controller/pointerHandler';
 import { Canvas } from './parts/canvas/canvas';
@@ -24,7 +23,7 @@ export class View extends Disposable implements ICanvasView {
   private _canvas: Canvas;
   private _overlay: Overlay;
   private _selection!: Selection;
-  mx = Matrix.Identity;
+  mx = Matrix3.Identity();
   get zoom() {return this.mx.a;}
 
   private _onCameraChagned = new Emitter<void>();
@@ -32,7 +31,6 @@ export class View extends Disposable implements ICanvasView {
 
   constructor(
     public domNode: HTMLElement,
-    public viewModel: ICanvasViewModel,
     viewUserInputEvents: ViewOutgoingEvents,
     @IContextKeyService private _contextKeyService: IContextKeyService,
     @IKeybindingService private _keybindingService: IKeybindingService,
@@ -42,7 +40,7 @@ export class View extends Disposable implements ICanvasView {
 
     this.domNode.tabIndex = 1;
     let viewController = new ViewController(viewUserInputEvents);
-    this._canvas = this._register(new Canvas(this.domNode, this, viewModel));
+    this._canvas = this._register(new Canvas(this.domNode, this));
     this._overlay = this._register(new Overlay(this.domNode));
     Event.once(this._canvas.onMounted)(() => {
       const selection = this.document.getSelection();
@@ -59,7 +57,9 @@ export class View extends Disposable implements ICanvasView {
   private _createPointerHandlerHelper(): IPointerHandlerHelper {
     return {
       viewDomNode: this.domNode,
-      hitTest: (posx: number, posy: number, opt: HitTestOptions): DOMHitTestResult[] => {
+      hitTest: (posx: number,
+                posy: number,
+                opt: HitTestOptions): DOMHitTestResult[] => {
         return this.hitTest(posx, posy, opt);
       },
       getTransform: () => {
@@ -75,7 +75,9 @@ export class View extends Disposable implements ICanvasView {
     return this._canvas.layoutManager;
   }
 
-  hitTest(posx: number, posy: number, opt: HitTestOptions): DOMHitTestResult[] {
+  hitTest(posx: number,
+          posy: number,
+          opt: HitTestOptions): DOMHitTestResult[] {
     return this.layoutManager.hitTestDOM(posx, posy, opt);
   }
 
@@ -94,7 +96,8 @@ export class View extends Disposable implements ICanvasView {
     this._contextKeyService.setContext(CanvasContextKeys.hitTestLevel.key, level);
   }
 
-  translate(tx: number, ty: number) {
+  translate(tx: number,
+            ty: number) {
     this.mx.tx = tx;
     this.mx.ty = ty;
     this._onCameraChagned.fire();

@@ -1,14 +1,11 @@
 {
   "name": "neditor",
   "private": true,
+  "packageManager": "pnpm@8.5.0",
   "scripts": {
-    "dev": "cd ./packages/neditor && yarn run start",
+    "dev": "pnpm -F core dev",
     "build": "cd ./packages/neditor && yarn run build"
   },
-  "workspaces": [
-    "packages/*",
-    "third_party/*"
-  ],
   "publishConfig": {
     "access": "public"
   },

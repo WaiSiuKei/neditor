@@ -1,11 +1,9 @@
 import { isArrayShallowEqual } from '../../base/common/array';
-import { DeferredPromise } from '../../base/common/async';
+import { ILayoutService } from '../../platform/layout/common/layout';
+import { LayoutService } from '../../platform/layout/common/layoutService';
 import { TextToolID } from '../../workbench/contrib/tool/text/textTool';
 import { begin, end } from '../canvasCommon/scheduler';
-import { hitTest } from '../element/collision';
-import { CanvasElement } from '../element/types';
-import { getElementsAtPosition } from '../scene/comparisons';
-import { ICanvas, IModelChangedEvent, IMVVMStatus } from './canvas';
+import { ICanvas, IModelChangedEvent } from './canvas';
 import { Disposable, dispose, IDisposable } from '@neditor/core/base/common/lifecycle';
 import { ICanvasView } from '../view/view';
 import { ServiceCollection } from '@neditor/core/platform/instantiation/common/serviceCollection';
@@ -17,76 +15,42 @@ import { IEventFilter, InputEvents, } from '@neditor/core/platform/input/browser
 import { IToolService } from '@neditor/core/platform/tool/common/tool';
 import { ICanvasService } from '../../platform/canvas/common/canvas';
 import { NOTIMPLEMENTED, NOTREACHED } from '../../base/common/notreached';
-import { ICanvasModelMutator, IModelService, IOperationCallback, RootNodeId } from '../../platform/model/common/model';
-import { RootScope, Scope } from '../canvasCommon/scope';
-import { ICanvasViewModel } from '../viewModel/viewModel';
+import { IDocumentModel, IModelService, IOperationCallback, RootNodeId } from '../../platform/model/common/model';
 import { Emitter, Event } from '../../base/common/event';
 import { isNil } from '../../base/common/type';
 import { IDocument } from '../../common/record';
-import { CanvasViewModel } from '../viewModel/viewModelImpl';
 import { HistoryHelper } from './historyHelper';
 import { IContextKeyService } from '../../platform/contextkey/common/contextkey';
 import { IInputService } from '../../platform/input/common/inputService';
 import { CanvasContextKeys } from './canvasContextKeys';
 import { IModelContentChangedEvent } from '../../platform/model/common/modelEvents';
 
-class MVVMStatus extends Disposable implements IMVVMStatus {
-  protected _pendingReLayout = true;
-  protected _waiting: Optional<DeferredPromise<void>>;
-  constructor(model: ICanvasModelMutator) {
-    super();
-    this._register(model.onDidChangeContent(() => {
-      this._pendingReLayout = true;
-    }));
-
-  }
-  setView(view: ICanvasView) {
-    this._register(view.layoutManager.onDidLayout(() => {
-      this._pendingReLayout = false;
-      this._waiting?.complete();
-    }));
-  }
-
-  async maybeWaitForReLayout() {
-    if (!this._pendingReLayout) {
-      return;
-    }
-    if (!this._waiting) {
-      this._waiting = new DeferredPromise<void>();
-    }
-    await this._waiting;
-  }
-}
-
 class ModelData {
-  public readonly model: ICanvasModelMutator;
-  public readonly viewModel: ICanvasViewModel;
+  public readonly model: IDocumentModel;
   public readonly view: ICanvasView;
-  public readonly mvvm: MVVMStatus;
   public readonly listenersToRemove: IDisposable[];
 
-  constructor(model: ICanvasModelMutator, viewModel: ICanvasViewModel, view: ICanvasView, mvvm: MVVMStatus, listenersToRemove: IDisposable[]) {
+  constructor(model: IDocumentModel,
+              view: ICanvasView,
+              listenersToRemove: IDisposable[]
+  ) {
     this.model = model;
-    this.viewModel = viewModel;
     this.view = view;
-    this.mvvm = mvvm;
     this.listenersToRemove = listenersToRemove;
   }
 
   public dispose(): void {
     dispose(this.listenersToRemove);
-    // this.model.onBeforeDetached();
+    this.model.dispose();
     this.view.dispose();
-    this.viewModel.dispose();
-    this.mvvm.dispose();
   }
 }
 
 export class Canvas extends Disposable implements ICanvas {
   static counter = 0;
-  declare _serviceBrand: undefined;
   _contextKeyService: IContextKeyService;
   _instantiationService: IInstantiationService;
+  _layoutService: ILayoutService;
 
   private _modelData: Optional<ModelData>;
   private _historyHelper!: HistoryHelper;
@@ -114,7 +78,7 @@ export class Canvas extends Disposable implements ICanvas {
     const serviceCollection = new ServiceCollection();
     serviceCollection.set(IContextKeyService, this._contextKeyService);
     this._register(this._instantiationService = instantiationService.createChild(serviceCollection));
-    // this.modelUpdater = new ModelUpdater(this);
+    this._register(this._layoutService = this._instantiationService.createInstance(LayoutService, this));
     this._register(new CanvasContextKeysManager(this, contextKeyService, toolService));
 
     inputService.addTrackedCanvas(this);
@@ -122,7 +86,7 @@ export class Canvas extends Disposable implements ICanvas {
 
     Reflect.set(window, 'canvas', this);
   }
-  protected _attachModel(model: Optional<ICanvasModelMutator>): void {
+  protected _attachModel(model: Optional<IDocumentModel>): void {
     if (!model) {
       this._modelData = undefined;
       return;
@@ -130,21 +94,16 @@ export class Canvas extends Disposable implements ICanvas {
 
     const listenersToRemove: IDisposable[] = [];
     listenersToRemove.push(model.onDidChangeContent((e) => this._onDidChangeModelContent.fire(e)));
-
-    const viewModel = new CanvasViewModel(model, this._instantiationService, this.modelService, this);
-    // Someone might destroy the model from under the editor, so prevent any exceptions by setting a null model
     listenersToRemove.push(model.onWillDispose(() => this.setModel(undefined)));
-
-    const mvvm = new MVVMStatus(model);
-    const view = this._createView(viewModel);
-    mvvm.setView(view);
+    this._layoutService.sync(model);
+    const view = this._createView();
     view.domNode.setAttribute('data-uri', model.uri.toString());
 
-    this._modelData = new ModelData(model, viewModel, view, mvvm, listenersToRemove);
+    this._modelData = new ModelData(model, view, listenersToRemove);
     this._historyHelper = this._instantiationService.createInstance(HistoryHelper, model);
   }
 
-  protected _createView(vm: ICanvasViewModel): ICanvasView {
+  protected _createView(): ICanvasView {
     const viewUserInputEvents = new ViewOutgoingEvents();
     const eventCallback = this.passToEventFilter.bind(this);
     let view: ICanvasView;
@@ -169,7 +128,7 @@ export class Canvas extends Disposable implements ICanvas {
     viewUserInputEvents.onMouseDropCanceled = eventCallback;
     viewUserInputEvents.onMouseDrop = eventCallback;
 
-    view = this._instantiationService.createInstance(View, this._domElement, vm, viewUserInputEvents);
+    view = this._instantiationService.createInstance(View, this._domElement, viewUserInputEvents);
     return view;
   }
 
@@ -191,24 +150,17 @@ export class Canvas extends Disposable implements ICanvas {
   get model() {
     return this._modelData?.model!;
   }
-  get viewModel() {
-    return this._modelData?.viewModel!;
-  }
   get view() {
     return this._modelData?.view!;
   }
-  get mvvm() {
-    return this._modelData?.mvvm!;
-  }
 
-  private _detachModel(): ICanvasModelMutator | null {
+  private _detachModel(): IDocumentModel | null {
     if (!this._modelData) {
       return null;
     }
     const model = this._modelData.model;
     const removeDomNode = this._modelData.view ? this._modelData.view.domNode : null;
 
-    this.viewModel!.internal_disconnect(model.uri.toString());
     this.view!.internal_disconnect();
 
     this._modelData?.dispose();
@@ -243,29 +195,16 @@ export class Canvas extends Disposable implements ICanvas {
       return this._historyHelper.transform(cb);
     } finally {
       end();
-      this.view.layoutManager.DoLayoutAndProduceRenderTree();
     }
   }
 
-  getScopedModel(scope: Scope): ICanvasModelMutator {
-    if (scope.EQ(RootScope)) return this.model!;
-    debugger;
-    NOTIMPLEMENTED();
-    // let m: ICanvasModel = this.model!;
-    // for (const s of scope) {
-    //   if (s.EQ(RootScope)) continue;
-    //   const node = m.getNodeById(s.name)!;
-    //   m = this.modelService.getModelUniversally(node.props.fragmentSrc!)!;
-    // }
-    // return m;
-  }
   focus() {
     this.view.focus();
   }
   isFocused(): boolean {
     return this.view.isFocused();
   }
-  setModel(model: Optional<ICanvasModelMutator>): void {
+  setModel(model: Optional<IDocumentModel>): void {
     if (isNil(this._modelData) && isNil(model)) {
       // Current model is the new model
       return;
@@ -286,70 +225,12 @@ export class Canvas extends Disposable implements ICanvas {
     this._onDidChangeModel.fire(e);
   }
   updateModel(value: IDocument): void {
-    this.viewModel!.internal_disconnect(this.model!.uri.toString());
-    this.view!.internal_disconnect();
-    this.model!.replaceModel(value);
-    this.viewModel!.internal_connect(this.model!.uri.toString(), true);
-    this.view!.internal_connect();
-  }
-
-  getElementAtPosition(
-    x: number,
-    y: number,
-    // opts?: {
-    //   /** if true, returns the first selected element (with highest z-index)
-    //    of all hit elements */
-    //   preferSelected?: boolean;
-    // },
-  ): CanvasElement | null {
-    const allHitElements = this.getElementsAtPosition(
-      x,
-      y,
-    );
-    if (allHitElements.length > 1) {
-      NOTIMPLEMENTED();
-      // if (opts?.preferSelected) {
-      //   for (let index = allHitElements.length - 1; index > -1; index--) {
-      //     if (this.state.selectedElementIds[allHitElements[index].id]) {
-      //       return allHitElements[index];
-      //     }
-      //   }
-      // }
-      // const elementWithHighestZIndex =
-      //   allHitElements[allHitElements.length - 1];
-      // // If we're hitting element with highest z-index only on its bounding box
-      // // while also hitting other element figure, the latter should be considered.
-      // return isHittingElementBoundingBoxWithoutHittingElement(
-      //   elementWithHighestZIndex,
-      //   this.state,
-      //   this.frameNameBoundsCache,
-      //   x,
-      //   y,
-      // )
-      //   ? allHitElements[allHitElements.length - 2]
-      //   : elementWithHighestZIndex;
-    }
-    if (allHitElements.length === 1) {
-      return allHitElements[0];
-    }
-    return null;
-  }
-
-  private getElementsAtPosition(
-    x: number,
-    y: number,
-  ): CanvasElement[] {
-    const tier1Nodes = this.model.getChildrenNodesOfId(RootNodeId);
-    const elements = tier1Nodes.map(n => this.view.document.getElementById(n.id)!);
-
-    return getElementsAtPosition(elements, (element) => hitTest(element, this, x, y,),);
-  }
-  setSelectedElements(els: CanvasElement[]) {
-    let prev = this.selectedElements;
-    this.selectedElements = els;
-    if (!isArrayShallowEqual(prev, this.selectedElements)) {
-      this.view.reflowOverlay(this);
-    }
+    NOTIMPLEMENTED();
+    // this.viewModel!.internal_disconnect(this.model!.uri.toString());
+    // this.view!.internal_disconnect();
+    // this.model!.replaceModel(value);
+    // this.viewModel!.internal_connect(this.model!.uri.toString(), true);
+    // this.view!.internal_connect();
   }
 
   reflow() {
@@ -358,7 +239,6 @@ export class Canvas extends Disposable implements ICanvas {
   }
 
   //#region canvasState
-  selectedElements: CanvasElement[] = [];
   get zoom() {
     return this.view.zoom;
   }
@@ -366,7 +246,9 @@ export class Canvas extends Disposable implements ICanvas {
 }
 
 class CanvasContextKeysManager extends Disposable {
-  constructor(canvas: Canvas, contextKeyService: IContextKeyService, toolService: IToolService) {
+  constructor(canvas: Canvas,
+              contextKeyService: IContextKeyService,
+              toolService: IToolService) {
     super();
 
     CanvasContextKeys.hitTestLevel.bindTo(contextKeyService);

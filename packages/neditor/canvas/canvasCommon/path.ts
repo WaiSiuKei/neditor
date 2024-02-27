@@ -1,11 +1,7 @@
 import { IIdentifier } from '../../common/record/common';
 import { Element } from '../../engine/dom/element';
-import { Scope, ScopedIdentifier } from '../canvasCommon/scope';
+import { Scope, ScopedIdentifier } from './scope';
 import { Optional } from '../../base/common/typescript';
-
-export enum ComponentTypes {
-  TrailingBreak = 'TrailingBreak'
-}
 
 export const AttrNameOfId = 'id' as const;
 export const AttrNameOfScope = 'data-scope' as const;

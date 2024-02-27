@@ -1,5 +1,6 @@
 // Although the CSS 2.1 specification assumes that the text is simply a part of
 import { Color } from '../../base/common/color';
+import { Rect } from '../../base/common/geometry/rect';
 import { RGBAColorValue } from '../cssom/rgba_color_value';
 import { RectF } from '../math/rect_f';
 import { Background } from '../render_tree/background';
@@ -43,7 +44,6 @@ import { Shadow } from '../render_tree/shadow';
 import { isNil } from '@neditor/core/base/common/type';
 import { QuadF } from '../math/quad_f';
 import { MapCoordinatesFlags } from './map_coordinates_flags';
-import { Rect } from '@neditor/core/base/common/geometry';
 import { RectLayoutUnit } from './rect_layout_unit';
 import { PointLayoutUnit } from './point_layout_unit';
 import { SizeLayoutUnit } from './size_layout_unit';
@@ -129,7 +129,8 @@ export class TextBox extends Box {
   /**
    * 这里传入的是 visual offset
    */
-  setSelection(arg1?: number | undefined, arg2?: number | undefined) {
+  setSelection(arg1?: number | undefined,
+               arg2?: number | undefined) {
     let from: number;
     let to: number;
     if (isNil(arg1)) {
@@ -566,7 +567,8 @@ export class TextBox extends Box {
 
     return stream;
   }
-  DumpChildrenWithIndent(stream: string, indent: number): string {
+  DumpChildrenWithIndent(stream: string,
+                         indent: number): string {
     stream = Box.prototype.DumpChildrenWithIndent.call(this, stream, indent);
 
     stream = this.DumpIndent(stream, indent);
@@ -582,7 +584,11 @@ export class TextBox extends Box {
     desired_offset: LayoutUnit,
     is_placement_requirement_met: boolean,
     is_placed: boolean,
-    placed_offset: LayoutUnit): { is_placement_requirement_met: boolean, is_placed: boolean, placed_offset: LayoutUnit } {
+    placed_offset: LayoutUnit): {
+    is_placement_requirement_met: boolean,
+    is_placed: boolean,
+    placed_offset: LayoutUnit
+  } {
     // If the ellipsis has already been placed, then the text is fully truncated
     // by the ellipsis.
     if (is_placed) {
@@ -962,7 +968,8 @@ export class TextBox extends Box {
     // quads.push_back(LocalRectToAbsoluteQuad(r, mode));
 // });
   }
-  RectOfSlice(visualAnchorOffset: number, visualFocusOffset: number) {
+  RectOfSlice(visualAnchorOffset: number,
+              visualFocusOffset: number) {
     const anchorOffsetInParagraph = this.visualPositionToPositionInParagraph(visualAnchorOffset);
     const focusOffsetInParagraph = this.visualPositionToPositionInParagraph(visualFocusOffset);
     const start = Math.max(anchorOffsetInParagraph, this.text_start_position_);
@@ -986,7 +993,8 @@ export class TextBox extends Box {
     const left = Math.min(startLocation, endLocation);
     return new Rect(offsetX + left, y, Math.abs(endLocation - startLocation), h);
   }
-  RelativeRectOfSlice(anchorOffset: number, focusOffset: number) {
+  RelativeRectOfSlice(anchorOffset: number,
+                      focusOffset: number) {
     const anchorOffsetInParagraph = this.visualPositionToPositionInParagraph(anchorOffset);
     const focusOffsetInParagraph = this.visualPositionToPositionInParagraph(focusOffset);
     const start = Math.max(anchorOffsetInParagraph, this.text_start_position_);

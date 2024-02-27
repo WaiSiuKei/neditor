@@ -2,6 +2,7 @@ import { EnumAndLiteral } from '../../../base/common/typescript';
 import { ITypedRecord, RecordType } from './base';
 
 export enum LayoutType {
+  auto = 'auto',
   float = 'float',
   table = 'table',
   flex = 'flex',

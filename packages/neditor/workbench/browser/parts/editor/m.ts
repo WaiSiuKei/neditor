@@ -1,92 +1,122 @@
 import { IDocument } from '../../../../common/record';
+import { RecordType } from '../../../../common/record/types/base';
+import { LayoutType } from '../../../../common/record/types/block';
 import { RootNodeId } from '../../../../platform/model/common/model';
-import { RecordType } from '../../../../common/node';
 
 const a: IDocument = {
   nodes: {
     [RootNodeId]: {
       id: RootNodeId,
-      type: NodeType.Root
+      type: RecordType.Root,
+      from: '',
+      order: '',
+      width: 0,
+      height: 0,
+      top: 0,
+      left: 0,
     },
     div1: {
       id: 'div1',
-      type: NodeType.Block,
-      style: {
-        width: '300px',
-        height: 'auto',
-        top: '100px',
-        left: '50px',
-        position: 'relative',
-        backgroundColor: 'white',
-        padding: '10px',
-        borderColor: '#add6ff',
-        borderStyle: 'solid',
-        borderWidth: '1px',
-      },
+      type: RecordType.Block,
+      // style: {
+      //   width: '300px',
+      //   height: 'auto',
+      //   top: '100px',
+      //   left: '50px',
+      //   position: 'relative',
+      //   backgroundColor: 'white',
+      //   padding: '10px',
+      //   borderColor: '#add6ff',
+      //   borderStyle: 'solid',
+      //   borderWidth: '1px',
+      // },
       from: RootNodeId,
       order: '0.5',
+      width: 0,
+      height: 0,
+      top: 0,
+      left: 0,
+      display: LayoutType.auto,
     },
     p1: {
       id: 'p1',
-      type: NodeType.Block,
-      style: {
-        width: 'auto',
-        height: 'auto',
-        position: 'relative',
-        display: 'block',
-        lineHeight: '40px',
-        overflowWrap: 'break-word',
-        whiteSpace: 'pre-wrap',
-      },
+      type: RecordType.Block,
+      // style: {
+      //   width: 'auto',
+      //   height: 'auto',
+      //   position: 'relative',
+      //   display: 'block',
+      //   lineHeight: '40px',
+      //   overflowWrap: 'break-word',
+      //   whiteSpace: 'pre-wrap',
+      // },
       from: 'div1',
       order: '0.1',
+      width: 0,
+      height: 0,
+      top: 0,
+      left: 0,
+      display: LayoutType.auto,
     },
     title1: {
       id: 'title1',
-      type: NodeType.Text,
-      style: {
-        display: 'inline',
-        position: 'relative',
-        fontFamily: '"source han sans"',
-        fontSize: '28px',
-        color: 'black'
-      },
+      type: RecordType.Text,
+      // style: {
+      //   display: 'inline',
+      //   position: 'relative',
+      //   fontFamily: '"source han sans"',
+      //   fontSize: '28px',
+      //   color: 'black'
+      // },
       content: 'Title',
       from: 'p1',
-      order: '0.1'
+      order: '0.1',
+      width: 0,
+      height: 0,
+      top: 0,
+      left: 0,
     },
     p2: {
       id: 'p2',
-      type: NodeType.Block,
-      style: {
-        width: 'auto',
-        height: 'auto',
-        position: 'relative',
-        display: 'block',
-        lineHeight: '20px',
-        overflowWrap: 'break-word',
-        whiteSpace: 'pre-wrap'
-      },
+      type: RecordType.Block,
+      // style: {
+      //   width: 'auto',
+      //   height: 'auto',
+      //   position: 'relative',
+      //   display: 'block',
+      //   lineHeight: '20px',
+      //   overflowWrap: 'break-word',
+      //   whiteSpace: 'pre-wrap'
+      // },
       from: 'div1',
       order: '0.2',
+      width: 0,
+      height: 0,
+      top: 0,
+      left: 0,
+      display: LayoutType.float
     },
     text1: {
       id: 'text1',
-      type: NodeType.Text,
-      style: {
-        display: 'inline',
-        position: 'relative',
-        fontFamily: '"source han sans"',
-        fontSize: '14px',
-        color: 'black'
-      },
+      type: RecordType.Text,
+      // style: {
+      //   display: 'inline',
+      //   position: 'relative',
+      //   fontFamily: '"source han sans"',
+      //   fontSize: '14px',
+      //   color: 'black'
+      // },
       content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco',
       from: 'p2',
-      order: '0.1'
+      order: '0.1',
+      width: 0,
+      height: 0,
+      top: 0,
+      left: 0,
     },
     // div2: {
     //   id: 'div2',
-    //   type: NodeType.Block,
+    //   type: RecordType.Block,
     //   style: {
     //     width: '300px',
     //     height: 'auto',
@@ -106,7 +136,7 @@ const a: IDocument = {
     // },
     // title2: {
     //   id: 'title2',
-    //   type: NodeType.Text,
+    //   type: RecordType.Text,
     //   style: {
     //     display: 'block',
     //     fontFamily: '"source han sans"',
@@ -122,7 +152,7 @@ const a: IDocument = {
     // },
     // text2: {
     //   id: 'text2',
-    //   type: NodeType.Text,
+    //   type: RecordType.Text,
     //   style: {
     //     display: 'block',
     //     fontFamily: '"source han sans"',
@@ -139,116 +169,4 @@ const a: IDocument = {
   }
 };
 
-const b: IDocument = {
-  "nodes": {
-    "root": {
-      "id": "root",
-      "type": "root"
-    },
-    "div1": {
-      "id": "div1",
-      "type": "block",
-      "style": {
-        "width": "300px",
-        "height": "auto",
-        "top": "100px",
-        "left": "50px",
-        "position": "relative",
-        "backgroundColor": "white",
-        "padding": "10px",
-        "borderColor": "#add6ff",
-        "borderStyle": "solid",
-        "borderWidth": "1px"
-      },
-      "from": "root",
-      "order": "0.5"
-    },
-    "p1": {
-      "id": "p1",
-      "type": "block",
-      "style": {
-        "width": "auto",
-        "height": "auto",
-        "position": "relative",
-        "display": "block",
-        "lineHeight": "40px",
-        "overflowWrap": "break-word",
-        "whiteSpace": "pre-wrap"
-      },
-      "from": "div1",
-      "order": "0.1"
-    },
-    "title1": {
-      "id": "title1",
-      "type": "text",
-      "style": {
-        "display": "inline",
-        "position": "relative",
-        "fontFamily": "\"source han sans\"",
-        "fontSize": "28px",
-        "color": "black"
-      },
-      "content": "Tit",
-      "from": "p1",
-      "order": "0.5"
-    },
-    "p2": {
-      "id": "p2",
-      "type": "block",
-      "style": {
-        "width": "auto",
-        "height": "auto",
-        "position": "relative",
-        "display": "block",
-        "lineHeight": "20px",
-        "overflowWrap": "break-word",
-        "whiteSpace": "pre-wrap"
-      },
-      "from": "div1",
-      "order": "0.2"
-    },
-    "text1": {
-      "id": "text1",
-      "type": "text",
-      "style": {
-        "display": "inline",
-        "position": "relative",
-        "fontFamily": "\"source han sans\"",
-        "fontSize": "14px",
-        "color": "black"
-      },
-      "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco",
-      "from": "p2",
-      "order": "0.1"
-    },
-    "e6264d97-d6c8-46e0-a70d-ca2d7f7a2ab4": {
-      "id": "e6264d97-d6c8-46e0-a70d-ca2d7f7a2ab4",
-      "style": {
-        "display": "inline",
-        "position": "relative",
-        "fontFamily": "\"source han sans\"",
-        "fontSize": "28px",
-        "color": "black"
-      },
-      "type": "text",
-      "content": "l",
-      "from": "p1",
-      "order": "0.75"
-    },
-    "95c3c975-ae16-4adf-b769-1da9ac0364a6": {
-      "id": "95c3c975-ae16-4adf-b769-1da9ac0364a6",
-      "style": {
-        "display": "inline",
-        "position": "relative",
-        "fontFamily": "\"source han sans\"",
-        "fontSize": "28px",
-        "color": "black"
-      },
-      "type": "text",
-      "content": "e",
-      "from": "p1",
-      "order": "0.875"
-    }
-  }
-}
-export default b;
+export default a;

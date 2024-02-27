@@ -3,10 +3,6 @@ import { devicePixelRatio } from '@neditor/core/base/browser/devicePixelRatio';
 import { toPX } from '@neditor/core/base/browser/css';
 import { RenderTarget } from '@neditor/core/engine/renderer/backend/render_target';
 import { SkResourceProvider } from '@neditor/core/engine/renderer/rasterizer/sk_resource_provider';
-import { Matrix } from '@neditor/core/base/common/geometry';
-import {
-  ICanvasViewModel,
-} from '../../../viewModel/viewModel';
 import { ICanvasView } from '../../view';
 import { mountAPP } from './app';
 import { Emitter } from '../../../../base/common/event';
@@ -39,7 +35,6 @@ export class Canvas extends Disposable {
   constructor(
     private container: HTMLElement,
     private view: ICanvasView,
-    private vm: ICanvasViewModel,
   ) {
     super();
     let canvas = document.createElement('canvas') as HTMLCanvasElement;
@@ -156,13 +151,14 @@ export class Canvas extends Disposable {
       position: 'relative'
     } as CSSStyleDeclaration);
     doc.appendChild(html);
-    this._register(mountAPP(this.vm, doc));
+    // this._register(mountAPP(this.vm, doc));
     doc.DispatchOnLoadEvent();
     this._onMounted.fire();
   }
 
   // Pass the application preload or start timestamps from Starboard.
-  SetApplicationStartOrPreloadTimestamp(is_preload: boolean, timestamp: number) {
+  SetApplicationStartOrPreloadTimestamp(is_preload: boolean,
+                                        timestamp: number) {
     DCHECK(this.web_module_);
     this.web_module_.SetApplicationStartOrPreloadTimestamp(is_preload, timestamp);
   }
