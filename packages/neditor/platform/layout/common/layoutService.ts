@@ -75,14 +75,6 @@ export class LayoutService implements ILayoutService {
     return this.canvas.model;
   }
 
-  onBeforeTransact() {
-    this.pushCallStack();
-  }
-
-  onAfterTransact() {
-    this.popCallStack();
-  }
-
   syncDoc(root: IRootNode,
           options: ISyncOptions = DefaultSyncOptions) {
     if (root !== this.currentTreeSource) {
@@ -111,6 +103,7 @@ export class LayoutService implements ILayoutService {
       if (!l) {
         l = new LayoutObject(e, this);
         this.layoutObjects.set(l.id, l);
+        if (!e.parent) debugger;
         const parentLayoutObject = this.layoutObjects.get(e.parent!.id)!;
         parentLayoutObject.addChild(l);
         l.syncDeclarations(opts);
@@ -187,12 +180,6 @@ export class LayoutService implements ILayoutService {
       });
     };
     this.updating = true;
-    /**
-     * editor 的 base.beforeCommit 是在一个 yjs doc transact 的回调里面发出的，
-     * 这样的话，进行布局计算之后，布局变动生效产生的变动会记录在同一个 transact 里面。
-     * 但是也有可能布局计算是业务方在进行某种意想不到的操作然后主动调用发起的，
-     * 保险起见，还是尽量包裹在事务里面比较好。
-     */
     try {
       if (this.ready) {
         doRelayout();
@@ -231,18 +218,18 @@ export class LayoutService implements ILayoutService {
   scheduleReLayout(dirtyRoots: string[] = []) {
     dirtyRoots.forEach((layoutUUID) => this.dirtyRoots.add(layoutUUID));
     if (this.callStackDepth === 0) {
-      this.syncDoc(this.doc.getRoot(), { isInitializing: false });
+      this.syncDoc(this.doc.root, { isInitializing: false });
     }
   }
 
   forceReLayout() {
     trace('forceReLayout');
     let all = true;
-    this.syncDoc(this.doc.getRoot(), { forceRelayout: true });
+    this.syncDoc(this.doc.root, { forceRelayout: true });
   }
 
-  sync(doc?: IDocumentModel) {
-    this.syncDoc(doc?.getRoot() || this.doc.getRoot(), { isInitializing: true });
+  bind(doc?: IDocumentModel) {
+    this.syncDoc(doc?.root || this.doc.root, { isInitializing: true });
   }
 
   commitLayout(l: ILayoutObject,

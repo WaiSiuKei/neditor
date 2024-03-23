@@ -1,6 +1,8 @@
 import { isArrayShallowEqual } from '../../base/common/array';
 import { ILayoutService } from '../../platform/layout/common/layout';
 import { LayoutService } from '../../platform/layout/common/layoutService';
+import { IRenderTreeService } from '../../platform/renderTree/common/renderTree';
+import { RenderTreeService } from '../../platform/renderTree/common/renderTreeService';
 import { TextToolID } from '../../workbench/contrib/tool/text/textTool';
 import { begin, end } from '../canvasCommon/scheduler';
 import { ICanvas, IModelChangedEvent } from './canvas';
@@ -51,6 +53,7 @@ export class Canvas extends Disposable implements ICanvas {
   _contextKeyService: IContextKeyService;
   _instantiationService: IInstantiationService;
   _layoutService: ILayoutService;
+  _renderTreeService: IRenderTreeService;
 
   private _modelData: Optional<ModelData>;
   private _historyHelper!: HistoryHelper;
@@ -79,6 +82,7 @@ export class Canvas extends Disposable implements ICanvas {
     serviceCollection.set(IContextKeyService, this._contextKeyService);
     this._register(this._instantiationService = instantiationService.createChild(serviceCollection));
     this._register(this._layoutService = this._instantiationService.createInstance(LayoutService, this));
+    this._register(this._renderTreeService = this._instantiationService.createInstance(RenderTreeService));
     this._register(new CanvasContextKeysManager(this, contextKeyService, toolService));
 
     inputService.addTrackedCanvas(this);
@@ -95,7 +99,8 @@ export class Canvas extends Disposable implements ICanvas {
     const listenersToRemove: IDisposable[] = [];
     listenersToRemove.push(model.onDidChangeContent((e) => this._onDidChangeModelContent.fire(e)));
     listenersToRemove.push(model.onWillDispose(() => this.setModel(undefined)));
-    this._layoutService.sync(model);
+    this._layoutService.bind(model);
+    // const renderTree = this._renderTreeService.bind(layoutTree);
     const view = this._createView();
     view.domNode.setAttribute('data-uri', model.uri.toString());
 

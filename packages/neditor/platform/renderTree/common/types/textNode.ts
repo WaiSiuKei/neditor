@@ -15,6 +15,7 @@ import { ColorRGBA } from '../components/colorRgba';
 import { GlyphBuffer } from '../components/glyphBuffer';
 import { Shadow } from '../components/shadow';
 import { NodeVisitor } from '../nodeVisitor';
+import { RenderTreeNode } from './baseNode';
 
 export class TextNodeBuilder {
   offset: Vector2d;
@@ -51,7 +52,7 @@ export class TextNodeBuilder {
 // of the text, and vertically it will be on the text's baseline.  This means
 // that the text bounding box may cover area above and below the TextNode's
 // origin.
-export class TextNode extends Node {
+export class TextNode extends RenderTreeNode {
   data_: TextNodeBuilder;
   static ID = 1;
   id = TextNode.ID++;
@@ -71,10 +72,10 @@ export class TextNode extends Node {
     }
   }
 
-  Accept(visitor: NodeVisitor) {
+  accept(visitor: NodeVisitor) {
     visitor.VisitTextNode(this);
   }
-  GetBounds() {
+  getBounds() {
     let bounds = this.data_.glyph_buffer.GetBounds();
     if (this.data_.shadows) {
       for (let i = 0; i < this.data_.shadows.length; ++i) {

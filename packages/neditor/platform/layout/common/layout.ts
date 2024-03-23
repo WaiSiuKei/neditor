@@ -10,13 +10,12 @@ export interface ILayoutService extends IDisposable {
   // pushCallStack(): boolean;
   // popCallStack(): boolean;
   // resetCallStack(): void;
-  // forceReLayout(): void;
-  sync(model: IDocumentModel): void;
+  bind(model: IDocumentModel): void;
   // loadAlgorithms(): Promise<void>;
   algorithms: ILayoutAlgorithm[];
   // layoutTrees: Map<string, ILayoutObject>;
-  commitLayout(l: ILayoutObject,
-               data: Partial<LayoutData>): void;
+  // commitLayout(l: ILayoutObject,
+  //              data: Partial<LayoutData>): void;
 }
 
 export interface ILayoutAlgorithm {
@@ -42,7 +41,6 @@ export interface ILayoutObject extends IDisposable {
   setNode<T>(type: string,
              val: T): void;
   deleteNode(type: string): void;
-  commitLayout(l: Partial<LayoutData>): void;
   resetStructureDirty(type: string): void;
   resetLayoutDirty(type: string): void;
 }

@@ -25,7 +25,7 @@ export class MatrixTransformNodeBuilder {
 
 // A MatrixTransformNode applies a specified affine matrix transform,
 // |transform| to a specified sub render tree node, |source|.
-export class MatrixTransformNode extends Node {
+export class MatrixTransformNode extends RenderTreeNode {
   private data_: MatrixTransformNodeBuilder;
 
   // Forwarding constructor to the set of Builder constructors.
@@ -37,11 +37,11 @@ export class MatrixTransformNode extends Node {
     this.data_ = new MatrixTransformNodeBuilder(source, transform);
   }
 
-  Accept(visitor: NodeVisitor) {
+  accept(visitor: NodeVisitor) {
     visitor.VisitMatrixTransformNode(this);
   }
-  GetBounds() {
-    return Quad.FromMatrix3AndRect(this.data_.transform, this.data_.source.GetBounds()).BoundingBox();
+  getBounds() {
+    return Quad.FromMatrix3AndRect(this.data_.transform, this.data_.source.getBounds()).BoundingBox();
   }
 
   data() { return this.data_; }

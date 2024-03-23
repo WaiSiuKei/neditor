@@ -6,8 +6,8 @@ import {
   EventType, getDomNodePagePosition,
   IEventMerger
 } from '@neditor/core/base/browser/dom';
+import { Matrix3 } from '../../../base/common/geometry/matrix3';
 import { IPointerHandlerHelper } from "./mouseHandler";
-import { IMatrix, Matrix } from "@neditor/core/base/common/geometry";
 
 /**
  * The position of the editor in the page.
@@ -66,7 +66,7 @@ export class CanvasMouseEvent extends StandardMouseEvent {
    */
   public readonly relativePos: CoordinatesRelativeToEditor;
 
-  constructor(e: MouseEvent, isFromPointerCapture: boolean, editorViewDomNode: HTMLElement, transform: IMatrix) {
+  constructor(e: MouseEvent, isFromPointerCapture: boolean, editorViewDomNode: HTMLElement, transform: Matrix3) {
     super(e);
     this.isFromPointerCapture = isFromPointerCapture;
     this.pos = new PageCoordinates(this.posx, this.posy);
@@ -129,7 +129,7 @@ export function createEditorPagePosition(editorViewDomNode: HTMLElement): Editor
   return new EditorPagePosition(editorPos.left, editorPos.top, editorPos.width, editorPos.height);
 }
 
-export function createCoordinatesRelativeToEditor(transform: IMatrix, editorPagePosition: EditorPagePosition, pos: PageCoordinates) {
+export function createCoordinatesRelativeToEditor(transform: Matrix3, editorPagePosition: EditorPagePosition, pos: PageCoordinates) {
   // The editor's page position is read from the DOM using getBoundingClientRect().
   //
   // getBoundingClientRect() returns the actual dimensions, while offsetWidth and offsetHeight

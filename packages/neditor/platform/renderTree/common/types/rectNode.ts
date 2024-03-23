@@ -3,6 +3,7 @@ import { Border } from '../components/border';
 import { Brush } from '../components/brush';
 import { RoundedCorners } from '../components/roundedCorners';
 import { NodeVisitor } from '../nodeVisitor';
+import { RenderTreeNode } from './baseNode';
 
 export class RectNodeBuilder {
 
@@ -56,7 +57,7 @@ export class RectNodeBuilder {
 }
 
 // A filled rectangle with a border and rounded corners.
-export class RectNode extends Node {
+export class RectNode extends RenderTreeNode {
   private data_: RectNodeBuilder;
 
   constructor(builder: RectNodeBuilder)
@@ -76,10 +77,10 @@ export class RectNode extends Node {
     }
   }
 
-  Accept(visitor: NodeVisitor) {
+  accept(visitor: NodeVisitor) {
     visitor.VisitRectNode(this);
   }
-  GetBounds() {
+  getBounds() {
     return this.data_.rect;
   }
 

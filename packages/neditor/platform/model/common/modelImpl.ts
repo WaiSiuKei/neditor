@@ -1,3 +1,4 @@
+import { coalesce } from '../../../base/common/array';
 import { Emitter, Event } from '../../../base/common/event';
 import { Disposable, IDisposable } from '../../../base/common/lifecycle';
 import { NOTIMPLEMENTED } from '../../../base/common/notreached';
@@ -170,25 +171,31 @@ export class BaseDocumentModel<T extends IDocument> extends Disposable implement
   }
 
   protected _processInput(input: T): T {
-    // @ts-ignore
-    const ret = reactive(input);
-    keys(ret.nodes).forEach(k => {
-      const n = ret.nodes[k] as IDocumentRecord;
+    keys(input.nodes).forEach(k => {
+      const n = input.nodes[k] as IDocumentRecord;
       switch (n.type) {
         case RecordType.Root:
-          this.nodes.set(k, new RootNode(n, this));
+          this.nodes.set(k, reactive(new RootNode(n, this)));
           break;
         case RecordType.Text:
-          this.nodes.set(k, new TextNode(n, this));
+          this.nodes.set(k, reactive(new TextNode(n, this)));
           break;
         case RecordType.Block:
-          this.nodes.set(k, new BlockNode(n, this));
+          this.nodes.set(k, reactive(new BlockNode(n, this)));
           break;
         default:
           NOTIMPLEMENTED();
       }
     });
-    return ret as T;
+    for (let key of this.nodes.keys()) {
+      const n = this.nodes.get(key)!;
+      if (n.type === RecordType.Root || n.type === RecordType.Block) {
+        const children = coalesce(this.getChildrenNodesOfId(n.id));
+        n.children = children;
+        children.forEach(c => c.parent = n);
+      }
+    }
+    return input;
   }
 
   get uri(): URI {
@@ -224,8 +231,12 @@ export class BaseDocumentModel<T extends IDocument> extends Disposable implement
     return this.nodes.get(id);
   }
 
-  getRoot() {
+  get root() {
     return this.getNodeById(RootNodeId)! as IRootNode;
+  }
+  getChildrenNodesOfId(id: string) {
+    return Array.from(this.nodes.values()).filter(n => n.from === id).sort((a,
+                                                                            b) => a.order > b.order ? 1 : -1) as IDescendantNode[];
   }
 
   addNode(n: IDescendantNode) {

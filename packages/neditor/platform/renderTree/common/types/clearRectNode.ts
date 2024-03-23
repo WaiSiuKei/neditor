@@ -1,8 +1,9 @@
 import { Rect } from '../../../../base/common/geometry/rect';
 import { ColorRGBA } from '../components/colorRgba';
 import { NodeVisitor } from '../nodeVisitor';
+import { RenderTreeNode } from './baseNode';
 
-class Builder {
+class ClearRectNodeBuilder {
   // The destination rectangle.
   rect: Rect;
 
@@ -14,19 +15,19 @@ class Builder {
   }
 }
 
-export class ClearRectNode extends Node {
-  private data_: Builder;
+export class ClearRectNode extends RenderTreeNode {
+  private data_: ClearRectNodeBuilder;
 
   constructor(rect: Rect,
               color: ColorRGBA) {
     super();
-    this.data_ = new Builder(rect, color);
+    this.data_ = new ClearRectNodeBuilder(rect, color);
   }
 
-  Accept(visitor: NodeVisitor) {
+  accept(visitor: NodeVisitor) {
     visitor.VisitClearRectNode(this);
   }
-  GetBounds() { return this.data_.rect; }
+  getBounds() { return this.data_.rect; }
 
   data() { return this.data_; }
 }

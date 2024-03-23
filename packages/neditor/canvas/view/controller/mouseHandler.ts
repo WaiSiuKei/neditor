@@ -1,7 +1,6 @@
 import { addDisposableListener, addStandardDisposableListener, EventType as DOMEventType } from '@neditor/core/base/browser/dom';
 import { IKeyboardEvent } from '@neditor/core/base/browser/keyboardEvent';
 import { tail } from '@neditor/core/base/common/array';
-import { IMatrix } from '@neditor/core/base/common/geometry';
 import { Disposable } from '@neditor/core/base/common/lifecycle';
 import { NOTIMPLEMENTED, NOTREACHED } from '@neditor/core/base/common/notreached';
 import { isNumber } from '@neditor/core/base/common/type';
@@ -10,6 +9,7 @@ import { DLOG, WARNING } from '@neditor/core/base/logging';
 import { HitTestOptions, DOMHitTestResult } from '@neditor/core/engine/layout/layout_manager';
 import { createMouseEvent, InputEventType, IKeyboardInputEvent, IMouseTarget, KeyboardInputEvent, WheelInputEvent, TInputEventType, } from '@neditor/core/platform/input/browser/event';
 import { IMouseWheelEvent } from '../../../base/browser/mouseEvent';
+import { Matrix3 } from '../../../base/common/geometry/matrix3';
 import { HitTestLevel } from '../../../platform/input/common/input';
 import { MouseTargetType } from '../../canvas/browser';
 import { GlobalEditorPointerMoveMonitor } from '../../canvas/dom';
@@ -36,7 +36,7 @@ export function createMouseMoveEventMerger() {
 export interface IPointerHandlerHelper {
   viewDomNode: HTMLElement;
   hitTest(posx: number, posy: number, opt?: HitTestOptions): DOMHitTestResult[];
-  getTransform(): IMatrix;
+  getTransform(): Matrix3;
   getHitTestLevel(eventType: TInputEventType): HitTestLevel;
 }
 

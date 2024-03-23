@@ -43,6 +43,7 @@ abstract class BaseNode<T extends IDocumentRecord = IDocumentRecord> {
   readonly id: IIdentifier;
   abstract get type(): EnumAndLiteral<RecordType>;
   parent: IAncestorNode | undefined;
+  readonly children: IDescendantNode[] = [];
   constructor(
     public data: T,
     protected model: IDocumentModel,
@@ -140,7 +141,6 @@ abstract class BaseNode<T extends IDocumentRecord = IDocumentRecord> {
 }
 
 abstract class ParentNode<T extends IDocumentRecord> extends BaseNode<T> {
-  readonly children: IDescendantNode[] = [];
   removeChildAt(idx: number): void {
     const children = this.children;
     const toDelete = children[idx];

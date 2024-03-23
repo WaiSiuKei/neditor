@@ -1,5 +1,5 @@
-import { IMatrix } from '@neditor/core/base/common/geometry';
 import { Event } from '../../base/common/event';
+import { Matrix3 } from '../../base/common/geometry/matrix3';
 import { IDisposable } from '../../base/common/lifecycle';
 import { Document } from '../../engine/dom/document';
 import { HitTestLevel } from '../../platform/input/common/input';
@@ -18,7 +18,7 @@ export enum CursorStyle {
 
 export interface ICanvasView extends IDisposable {
   domNode: HTMLElement;
-  mx: IMatrix;
+  mx: Matrix3;
   zoom: number;
   document: Document;
   layoutManager: LayoutManager;

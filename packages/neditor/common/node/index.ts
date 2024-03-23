@@ -8,11 +8,11 @@ export interface ITypedNode extends ITypedRecord {
   insertAfter(ref: IDescendantNode): void;
   remove(): void;
   parent: IAncestorNode | undefined;
+  children: IDescendantNode[];
   attach(): void;
   detach(): void;
 }
 export interface IAsAncestor extends Omit<ITypedNode, 'type'> {
-  children: IDescendantNode[];
   appendChildren(...toAdd: IDescendantNode[]): void;
 }
 export interface IAsDescendant extends Omit<ITypedNode, 'type'> {

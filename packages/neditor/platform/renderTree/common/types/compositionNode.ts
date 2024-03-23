@@ -108,11 +108,11 @@ export class CompositionNode extends RenderTreeNode {
     return this.data_;
   }
 
-  GetBounds() {
+  getBounds() {
     return this.cached_bounds_;
   }
 
-  Accept(visitor: NodeVisitor) {
+  accept(visitor: NodeVisitor) {
     visitor.VisitCompositionNode(this);
   }
   private ComputeBounds(): Rect {
@@ -121,7 +121,7 @@ export class CompositionNode extends RenderTreeNode {
     // Take the union of the bounding rectangle for all child nodes, and use that
     // as our bounding rectangle.
     for (let child of this.data_.children()) {
-      bounds.union(child.GetBounds());
+      bounds.union(child.getBounds());
     }
 
     bounds.offset(this.data_.offset());

@@ -5,6 +5,7 @@ import { Rect } from '../../../../base/common/geometry/rect';
 import { Vector2d } from '../../../../base/common/geometry/vector2d';
 import { Image } from '../components/image';
 import { NodeVisitor } from '../nodeVisitor';
+import { RenderTreeNode } from './baseNode';
 
 export class ImageNodeBuilder {
 
@@ -23,7 +24,7 @@ export class ImageNodeBuilder {
   // matrix that scales the image coordinates by 0.5 in all directions, the
   // image will appear zoomed out.
   local_transform: Matrix3 = Matrix3.Identity();
-  constructor(builder: ImageNodeBuilder)
+  constructor(data: ImageNodeBuilder)
   // If no width/height are specified, the native width and height of the
   // image will be selected and used as the image node's width and height.
   constructor(source: Image)
@@ -71,9 +72,9 @@ export class ImageNodeBuilder {
       this.destination_rect == other.destination_rect &&
       this.local_transform == other.local_transform;
   }
-};
+}
 
-export class ImageNode extends Node {
+export class ImageNode extends RenderTreeNode {
 
   constructor(...args: unknown[]) {
     super();
@@ -81,14 +82,14 @@ export class ImageNode extends Node {
     this.data_ = new ImageNodeBuilder(...args);
   }
 
-  Accept(visitor: NodeVisitor) {
+  accept(visitor: NodeVisitor) {
     visitor.VisitImageNode(this);
   }
-  GetBounds(): Rect {
+  getBounds(): Rect {
     return this.data_.destination_rect;
   }
 
   data() { return this.data_; }
 
   private data_: ImageNodeBuilder;
-};
+}

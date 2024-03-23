@@ -109,7 +109,6 @@ function set(
   receiver: object
 ): boolean {
   if (!isMutating()) {
-    debugger;
     console.warn(`Set operation on key "${String(key)}" failed: target is readonly.`, target);
     return true;
   }

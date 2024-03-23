@@ -32,6 +32,7 @@ export type INodeInit = IBlockNodeInit | ITextNodeInit | IFragmentNodeInit
 export interface IDocumentModel<T extends IDocument = IDocument> extends IDisposable {
   readonly uri: URI;
   readonly document: T;
+  readonly root: IRootNode;
   readonly onDidChangeContent: Event<IModelContentChangedEvent>;
   readonly onWillDispose: Event<void>;
   /**
@@ -53,7 +54,6 @@ export interface IDocumentModel<T extends IDocument = IDocument> extends IDispos
   addNode(n: IDescendantNode): void;
   removeNode(n: IDescendantNode): void;
   getNodeById(id: IIdentifier): Optional<IModelNode>;
-  getRoot(): IRootNode;
   // getPreviousSiblingNodeOfId(id: IIdentifier): Optional<IDescendantNode>;
   // getNextSiblingNodeOfId(id: IIdentifier): Optional<IDescendantNode>;
   // getAncestorNodesOfId(id: IIdentifier): IAncestorNode[]; // root 在最前
